@@ -2221,4 +2221,113 @@ Answer:
 
   4
 #+end_src
+*** Exercise 1.15
+Exercise:
+#+begin_quote
+...
+#+end_quote
+
+Answer:
+#+begin_src emacs-lisp
+  (defun cube (x) (* x x x))
+  (defun p (x) (- (* 3 x) (* 4 (cube x))))
+  (defun sine (angle)
+    (if (not (> (abs angle) 0.1))
+        angle
+      (p (sine (/ angle 3.0))))) ;; there is a paranthesis too much in the book
+#+end_src
+
+#+begin_src emacs-lisp
+  (defun cube (x) (* x x x))
+  (defun p (x) (- (* 3 x) (* 4 (cube x))))
+  (defun sine (angle)
+    (if (not (> (abs angle) 0.1))
+        angle
+      (p (sine (/ angle 3.0)))))
+
+
+  (sine 12.15) ;; -0.39980345741334
+  (p (sine (/ 12.15 3.0)))
+  (p (sine 4.05))
+  (p (p (sine (/ 4.05 3.0))))
+  (p (p (sine 1.3499999999999999)))
+  (p (p (p (sine (/ 1.3499999999999999 3.0)))))
+  (p (p (p (sine 0.44999999999999996))))
+  (p (p (p (p (sine (/ 0.44999999999999996 3.0))))))
+  (p (p (p (p (sine 0.15)))))
+  (p (p (p (p (p (sine (/ 0.15 3.0)))))))
+  (p (p (p (p (p (sine 0.049999999999999996))))))
+  (p (p (p (p (p (sine 0.049999999999999996))))))
+  (p (p (p (p (p 0.049999999999999996)))))
+  (p (p (p (p (- (* 3 0.049999999999999996) (* 4 (cube 0.049999999999999996)))))))
+  (p (p (p (p 0.1495))))
+  (p (p (p 0.4351345505)))
+  (p (p 0.9758465331678772))
+  (p -0.7895631144708228)
+  (- -2.3686893434124685 -1.9688858859991285)
+  -0.39980345741334  
+#+end_src
+1. Procedure ~p~ is applied five times.
+
+2. Order of growth in space? Guess: O(n), because the amount of
+   ``hidden things'' to remember (for the interpreter) seems to grow linearly
+   with the growth of the input. 
+
+   Order of growth in time? Guess: O(n), because the number of steps
+   seems to grow linearly with the growth of the input.
+*** 1.2.4 Exponentiation
+$b^n = b \times b^(n-1)$, and $b^0 = 1$.  Translating this into a
+procedure:
+#+begin_src emacs-lisp
+  (defun expt (b n)
+    (if (= n 0)
+        1
+      (* b (expt b (- n 1)))))
+#+end_src
+This requires  ϴ(n) steps and  ϴ(n) space.
+
+We have have already seen such a kind of process (linear recursion)
+with factorial. JUst as with factorial, we can write a procedurs that
+evolves a linear iterative process:
+
+#+begin_src emacs-lisp
+  (defun expt-iter (b counter product)
+    (if (= counter 0)
+        product
+      (expt-iter b
+                 (- counter 1)
+                 (* b product))))
+#+end_src
+This process requires ϴ(n) steps and ϴ(1) space.
+
+We can be faster. 
+#+begin_src emacs-lisp
+  (defun fast-expt (b n)
+    (cond ((= n 0)
+           1)
+          ((even? n)
+           (square (fast-expt b (/ n 2))))
+          (t
+           (* b (fast-expt b (- n 1))))))
+
+  (defun (even? n)
+      (= (remainder n 2) 0))
+#+end_src
+~fast-expt~ evolves a process that grows /logarithmically/ with n in
+both space and time.
+
+*** Exercise 1.16
+#+begin_quote
+Design a procedure that evolves an iterative exponentiation process
+that uses successive squaring and uses a logarithmic number of steps,
+as does ~fast-expt~. (Hint: Using the observation that $(b^{b/2})^2 =
+(b^2)^{n/2}$, keep, along with the exponent n and the base b, an
+additional state variable a, and define the state transformation in
+such a way that the product abn is unchanged from state to state. At
+the beginning of the process a is taken to be 1, and the answer is
+given by the value of a at the end of the process. In general, the
+technique of defining an invariant quantity that remains unchanged
+from state to state is a powerful way to think about the design of
+iterative algorithms.)
+#+end_quote
 
