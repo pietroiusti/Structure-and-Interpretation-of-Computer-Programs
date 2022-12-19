@@ -2535,7 +2535,7 @@ Answer:
 
   (defun fast-* (a b)
     (cond ((= b 1) a)
-          ((even b) (+ (double (fast-* a (halve b)))))
+          ((even b) (double (fast-* a (halve b))))
           (t (+ a (fast-* a (- b 1))))))
 #+end_src
 * Skipped exercises
