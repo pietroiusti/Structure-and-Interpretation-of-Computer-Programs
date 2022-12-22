@@ -2538,6 +2538,33 @@ Answer:
           ((even b) (double (fast-* a (halve b))))
           (t (+ a (fast-* a (- b 1))))))
 #+end_src
+
+*** Exercise 1.18
+Exercise:
+#+begin_quote
+Using the results of Exercise 1.16 and Exercise 1.17, devise a
+procedure that generates an iterative process for multiplying two
+integers in terms of adding, doubling, and halving and uses a
+logarithmic number of steps (fn: This algorithm, which is sometimes
+known as the “Russian peasant method” of multiplication, is
+ancient. Examples of its use are found in the Rhind Papyrus, one of
+the two oldest mathematical documents in existence, written about 1700
+B.C. (and copied from an even older document) by an Egyptian scribe
+named A’h-mose.)
+#+end_quote
+
+Answer
+#+begin_src emacs-lisp
+  (defun fast-*-i (a b)
+    (fast-*-iter a b 0))
+
+  (defun fast-*-iter (a b c)
+    (cond ((= c 0) 0)
+          ((even b) (fast-*-iter (double a) (halve b) c))
+          (t (fast-*-iter a (- b 1) (+ a c))
+#+end_src
+
+
 * Skipped exercises
 List of the exercises I have skipped:
 - Exercise 1.13, p. 42.
