@@ -2688,6 +2688,45 @@ operan only when needed
   (% (% 206 40) (% 40 (% 206 40))) ;; 15, 16, 17, 18
 #+end_src
 
+
+#+begin_src emacs-lisp
+  ;; applicative order evaluation
+  (defun gcd (a b)
+    (if (= b 0)
+        a
+      (gcd b (% a b))))
+
+  (gcd 206 40)
+  (if (= 40 0)
+      206
+    (gcd 40 (% 206 40)))
+
+  (gcd 40 (% 206 40)) ; 1
+  (gcd 40 6)
+  (if (= 6 0)
+      40
+    (gcd 6 (% 40 6)))
+
+  (gcd 6 (% 40 6)) ; 2
+  (gcd 6 4)
+  (if (= 4 0)
+      6
+    (gcd 4 (% 6 4)))
+
+  (gcd 4 (% 6 4)) ; 3
+  (gcd 4 2)
+  (if (= 2 0)
+      4
+    (gcd 2 (% 4 2)))
+
+  (gcd 2 (% 4 2)) ; 4
+  (gcd 2 0)
+  (if (= 0 0)
+      2
+    (gcd 0 (% 2 0)))
+
+  2
+#+end_src
 * Skipped exercises
 List of the exercises I have skipped:
 - Exercise 1.13, p. 42.
