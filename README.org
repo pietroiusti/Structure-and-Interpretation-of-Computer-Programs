@@ -2727,6 +2727,589 @@ operan only when needed
 
   2
 #+end_src
+
+*** 1.2.6 Example: Testing for Primality
+Here is one way to find whether a number is prime:
+#+begin_src emacs-lisp
+  (defun smallest-divisor (n)
+    (find-divisor n 2))
+
+  (defun find-divisor (n test-divisor)
+    (cond ((> (square test-divisor) n)
+           n)
+          ((dividesp test-divisor n)
+           test-divisor)
+          (t (find-divisor
+              n
+              (+ test-divisor 1)))))
+
+  (defun dividesp (a b)
+    (= (% b a ) 0))
+
+  (defun primep (n)
+    (= n (smallest-divisor n)))
+#+end_src
+
+In the worst case scenario we have to call test-divisor $\sqrt{n}$
+times. So, the order of growth is $\Theta (\sqrt{n})$.
+
+
+The authors also present a $\Theta (log(n))$ algorithm to tests
+primality. It is based on the so-called Fermat's Little Theorem.
+
+- Fermat's Little Theorem: If $n$ is a prime number and $a$ is any
+  positive integer less than n, then $a$ raised ot the $n^{th}$ power
+  is congruent to $a$ modulo $n$.
+
+#+begin_src emacs-lisp
+  (defun expmod (base exp m)
+    (cond ((= exp 0) 1)
+          ((evenp exp)
+           (%
+            (square (expmod base (/ exp 2) m))
+            m))
+          (t
+           (%
+            (* base (expmod base (- exp 1) m))
+            m))))
+
+  (defun try-it (a n)
+    (= (expmod a n n) a))
+
+  (defun fermat-test (n)
+    (try-it (+ 1 (random (- n 1))) n))
+
+  (defun fast-primep (n times)
+    (cond ((= times 0) t)
+          ((fermat-test n)
+           (fast-primep n (- times 1)))
+          (t nil)))
+
+  (defun evenp (n)
+    (= (% n 2) 0)
+#+end_src
+*** ex 1.21
+Exercise:
+#+begin_quote
+Use the smallest-divisor procedure to find the smallest divisor of
+each of the following numbers: 199, 1999, 19999.
+#+end_quote
+
+Answer:
+#+begin_src emacs-lisp
+  (smallest-divisor 199)   ;; => 199
+#+end_src
+
+This is the series of procedure calls:
+#+begin_src emacs-lisp
+  (smallest-divisor 199)
+  (find-divisor 199 2)
+  (cond ((> (square 2) 199)
+         199)
+        ((dividesp 2 199)
+         2)
+        (t (find-divisor
+            199
+            (+ 2 1))))
+  (find-divisor 199 3)
+  (find-divisor 199 4)
+  (find-divisor 199 5)
+  (find-divisor 199 6)
+  (find-divisor 199 7)
+  (find-divisor 199 8)
+  (find-divisor 199 9)
+  (find-divisor 199 10)
+  (find-divisor 199 11)
+  (find-divisor 199 12)
+  (find-divisor 199 13)
+  (find-divisor 199 14)
+  (find-divisor 199 15)
+  199
+#+end_src
+
+
+#+begin_src emacs-lisp
+  (smallest-divisor 1999)  ;; => 1999
+#+end_src
+
+This is the series of procedure calls:
+#+begin_src emacs-lisp
+  (smallest-divisor 1999)
+  (find-divisor 1999 2)
+
+  (cond ((> (square 2) 1999)
+         1999)
+        ((dividesp 2 1999)
+         2)
+        (t (find-divisor
+               1999
+               (+ 2 1))))
+
+  (find-divisor 1999 3)
+
+  (find-divisor 1999 4)
+
+  ;; ...
+
+  (find-divisor 1999 45)
+
+  1999
+#+end_src
+
+
+
+#+begin_src emacs-lisp
+  (smallest-divisor 19999) ;; => 7
+#+end_src
+This is the series of procedure calls:
+#+begin_src emacs-lisp
+  (smallest-divisor 19999)
+
+  (find-divisor 19999 2)
+
+  (find-divisor 19999 3)
+
+  (find-divisor 19999 4)
+
+  (find-divisor 19999 5)
+
+  (find-divisor 19999 6)
+
+  (find-divisor 19999 7)
+  7
+#+end_src
+*** ex 1.22
+#+begin_quote
+Most Lisp implementations include a primitive called runtime that
+returns an integer that specifies the amount of time the system has
+been running (measured, for example, in microseconds). The following
+timed-prime-test procedure, when called with an integer n, prints n
+and checks to see if n is prime. If n is prime, the procedure prints
+three asterisks followed by the amount of time used in performing the
+test.
+
+#+begin_src scheme
+  (define (timed-prime-test n)
+    (newline)
+    (display n)
+    (start-prime-test n (runtime)))
+  (define (start-prime-test n start-time)
+    (if (prime? n)
+        (report-prime (- (runtime) 
+                         start-time))))
+  (define (report-prime elapsed-time)
+    (display " *** ")
+    (display elapsed-time))
+#+end_src
+
+Using this procedure, write a procedure search-for-primes that checks
+the primality of consecutive odd integers in a specified range. Use
+your procedure to find the three smallest primes larger than 1000;
+larger than 10,000; larger than 100,000; larger than 1,000,000. Note
+the time needed to test each prime. Since the testing algorithm has
+order of growth of $\theta (\sqrt{n})$, you should expect that testing
+for primes around 10,000 should take about $\sqrt{10}$ times as long
+as testing for primes around 1000. Do your timing data bear this out?
+How well do the data for 100,000 and 1,000,000 support the $\theta
+(\sqrt{n})$ prediction? Is your result compatible with the notion that
+programs on your machine run in time proportional to the number of
+steps required for the computation?
+#+end_quote
+
+
+Answer:
+
+For this one I'm using (Dr)Racket, which provides a version of Scheme
+specifically modified in order to be used for SICP's code (useful here
+in that it provides ~runtime~).
+
+#+begin_src scheme
+  #lang sicp
+  (define (square x)
+    (* x x))
+
+  (define (smallest-divisor n)
+    (find-divisor n 2))
+
+  (define (find-divisor n test-divisor)
+    (cond ((> (square test-divisor) n) 
+           n)
+          ((divides? test-divisor n) 
+           test-divisor)
+          (else (find-divisor 
+                 n 
+                 (+ test-divisor 1)))))
+
+  (define (divides? a b)
+    (= (remainder b a) 0))
+
+  (define (prime? n)
+    (= n (smallest-divisor n)))
+
+  (define (timed-prime-test n)
+    (newline)
+    (display n)
+    (start-prime-test n (runtime)))
+
+  (define (start-prime-test n start-time)
+    (if (prime? n)
+        (report-prime (- (runtime) 
+                         start-time))))
+
+  (define (report-prime elapsed-time)
+    (display " *** ")
+    (display elapsed-time))
+
+  (timed-prime-test 199) ;; 199 *** 6
+#+end_src
+
+#+begin_src scheme
+  (define (search-for-primes begin end)
+    (cond ((< begin end)
+           (timed-prime-test begin)
+           (search-for-primes (+ 2 begin) end))))
+#+end_src
+
+#+begin_src scheme
+  (search-for-primes 1001 1021)
+  ;; 1001
+  ;; 1003
+  ;; 1005
+  ;; 1007
+  ;; 1009 *** 5
+  ;; 1011
+  ;; 1013 *** 4
+  ;; 1015
+  ;; 1017
+  ;; 1019 *** 3
+
+  (search-for-primes 10001 10050)
+  ;; 10001
+  ;; 10003
+  ;; 10005
+  ;; 10007 *** 12
+  ;; 10009 *** 9
+  ;; 10011
+  ;; 10013
+  ;; 10015
+  ;; 10017
+  ;; 10019
+  ;; 10021
+  ;; 10023
+  ;; 10025
+  ;; 10027
+  ;; 10029
+  ;; 10031
+  ;; 10033
+  ;; 10035
+  ;; 10037 *** 8
+  ;; 10039 *** 8
+  ;; 10041
+  ;; 10043
+  ;; 10045
+  ;; 10047
+  ;; 10049
+
+  (search-for-primes 100001 100050)
+  ;; 100001
+  ;; 100003 *** 22
+  ;; 100005
+  ;; 100007
+  ;; 100009
+  ;; 100011
+  ;; 100013
+  ;; 100015
+  ;; 100017
+  ;; 100019 *** 21
+  ;; 100021
+  ;; 100023
+  ;; 100025
+  ;; 100027
+  ;; 100029
+  ;; 100031
+  ;; 100033
+  ;; 100035
+  ;; 100037
+  ;; 100039
+  ;; 100041
+  ;; 100043 *** 21
+  ;; 100045
+  ;; 100047
+  ;; 100049 *** 20
+
+  (search-for-primes 1000001 1000051)
+
+  ;; 1000001
+  ;; 1000003 *** 79
+  ;; 1000005
+  ;; 1000007
+  ;; 1000009
+  ;; 1000011
+  ;; 1000013
+  ;; 1000015
+  ;; 1000017
+  ;; 1000019
+  ;; 1000021
+  ;; 1000023
+  ;; 1000025
+  ;; 1000027
+  ;; 1000029
+  ;; 1000031
+  ;; 1000033 *** 63
+  ;; 1000035
+  ;; 1000037 *** 62
+  ;; 1000039 *** 65
+  ;; 1000041
+  ;; 1000043
+  ;; 1000045
+  ;; 1000047
+  ;; 1000049
+#+end_src
+
+
+
+# #+begin_quote
+# you should expect that testing for primes around 10,000 should take
+# about $\sqrt{10}$ times as long as testing for primes around 1000. Do
+# your timing data bear this out?
+# #+end_quote
+# The numbers after 1000 took 5, 4, 3. The numbers after 10000 took 12,
+# 9 and 8. (I don't know why time decreases with bigger numbers).
+
+# Now, (* 5 (sqrt 10)) 15 something, (* 4 (sqrt 10)) is 12 something, (*
+# 3 (sqrt 10)) is 9 something. So, yeah, more or less...
+
+
+# #+begin_quote
+# How well do the data for 100,000 and 1,000,000 support the $\theta
+# (\sqrt{n})$ prediction?
+# #+end_quote
+
+# The numbers after 100000 took 22 and 21. The numbers after 1000001
+# took 79, 63, and 62.
+
+# (* 22 (sqrt 10)) is 69 something. (* 21 (sqrt 10)) is 66 something. So
+# yeah, again, more or less...
+
+# #+begin_quote
+# Is your result compatible with the notion that programs on your
+# machine run in time proportional to the number of steps required for
+# the computation?
+# #+end_quote
+# I don't see why not.
+
+In today's computers these operations take microseconds. I have been
+told that the accuracy of these measurements is not to be trusted,
+given the small size of these amounts of time.
+
+We can, however, use biggers numbers.
+
+Computing ~(timed-prime-test 34888314291653)~ --- I've chosen randomly
+--- took 642.775 milliseconds. These should be more than enough to
+have an acceptable accuracy in our benchmarking. Let's start our
+experiments from here.
+
+Let's find the first three primes starting from 34888314291653.
+
+#+begin_src scheme
+  ;; 34888314291653 *** 701102
+  ;; 34888314291655
+  ;; 34888314291657
+  ;; 34888314291659
+  ;; 34888314291661
+  ;; 34888314291663
+  ;; 34888314291665
+  ;; 34888314291667 *** 895322
+  ;; 34888314291669
+  ;; 34888314291671
+  ;; 34888314291673
+  ;; 34888314291675
+  ;; 34888314291677
+  ;; 34888314291679
+  ;; 34888314291681
+  ;; 34888314291683
+  ;; 34888314291685
+  ;; 34888314291687
+  ;; 34888314291689
+  ;; 34888314291691
+  ;; 34888314291693
+  ;; 34888314291695
+  ;; 34888314291697
+  ;; 34888314291699
+  ;; 34888314291701
+  ;; 34888314291703
+  ;; 34888314291705
+  ;; 34888314291707
+  ;; 34888314291709
+  ;; 34888314291711
+  ;; 34888314291713 *** 630255
+#+end_src
+
+Now we multiply 34888314291653 by ten and find the first three primes
+starting from there. 34888314291653 times 10 is 348883142916530.
+
+#+begin_src scheme
+  ;; 348883142916531
+  ;; 348883142916533 *** 2027795
+  ;; 348883142916535
+  ;; 348883142916537
+  ;; 348883142916539
+  ;; 348883142916541
+  ;; 348883142916543
+  ;; 348883142916545
+  ;; 348883142916547
+  ;; 348883142916549
+  ;; 348883142916551
+  ;; 348883142916553
+  ;; 348883142916555
+  ;; 348883142916557
+  ;; 348883142916559
+  ;; 348883142916561
+  ;; 348883142916563
+  ;; 348883142916565
+  ;; 348883142916567
+  ;; 348883142916569
+  ;; 348883142916571
+  ;; 348883142916573
+  ;; 348883142916575
+  ;; 348883142916577
+  ;; 348883142916579
+  ;; 348883142916581
+  ;; 348883142916583
+  ;; 348883142916585
+  ;; 348883142916587
+  ;; 348883142916589
+  ;; 348883142916591
+  ;; 348883142916593
+  ;; 348883142916595
+  ;; 348883142916597
+  ;; 348883142916599
+  ;; 348883142916601
+  ;; 348883142916603
+  ;; 348883142916605
+  ;; 348883142916607
+  ;; 348883142916609
+  ;; 348883142916611
+  ;; 348883142916613 *** 1893341
+  ;; 348883142916615
+  ;; 348883142916617
+  ;; 348883142916619
+  ;; 348883142916621
+  ;; 348883142916623
+  ;; 348883142916625
+  ;; 348883142916627
+  ;; 348883142916629
+  ;; 348883142916631
+  ;; 348883142916633
+  ;; 348883142916635
+  ;; 348883142916637
+  ;; 348883142916639
+  ;; 348883142916641
+  ;; 348883142916643
+  ;; 348883142916645
+  ;; 348883142916647
+  ;; 348883142916649
+  ;; 348883142916651
+  ;; 348883142916653
+  ;; 348883142916655
+  ;; 348883142916657
+  ;; 348883142916659
+  ;; 348883142916661
+  ;; 348883142916663
+  ;; 348883142916665
+  ;; 348883142916667
+  ;; 348883142916669
+  ;; 348883142916671
+  ;; 348883142916673
+  ;; 348883142916675
+  ;; 348883142916677
+  ;; 348883142916679
+  ;; 348883142916681
+  ;; 348883142916683
+  ;; 348883142916685
+  ;; 348883142916687
+  ;; 348883142916689
+  ;; 348883142916691
+  ;; 348883142916693
+  ;; 348883142916695
+  ;; 348883142916697
+  ;; 348883142916699
+  ;; 348883142916701
+  ;; 348883142916703
+  ;; 348883142916705
+  ;; 348883142916707
+  ;; 348883142916709
+  ;; 348883142916711
+  ;; 348883142916713
+  ;; 348883142916715
+  ;; 348883142916717
+  ;; 348883142916719
+  ;; 348883142916721
+  ;; 348883142916723
+  ;; 348883142916725
+  ;; 348883142916727
+  ;; 348883142916729
+  ;; 348883142916731
+  ;; 348883142916733
+  ;; 348883142916735
+  ;; 348883142916737
+  ;; 348883142916739 *** 1809663
+#+end_src
+
+(* 701102 (sqrt 10)) = 2217079.192099371. With 348883142916533 we
+took 2027795, so the prediction is roughly correct.
+
+
+Let us now test whether the number we find after (*
+10 348883142916530) and those after (* 10 10 348883142916530) fulfill
+the prediction too.
+
+#+begin_quote
+3488831429165323 *** 5971326
+#+end_quote
+
+#+begin_src scheme
+  (search-for-primes 3488831429165301 3488831429165401)
+  ;; ...
+  ;; 3488831429165323 *** 5971326
+  ;; ...
+#+end_src
+
+#+begin_src scheme
+  (search-for-primes 34888314291653011 34888314291653511)
+  ;; ...
+  ;; 34888314291653021 *** 16052655
+  ;; ...
+#+end_src
+
+(* 5971326 (sqrt 10)) 18882990.81138261. Again, the prediction seems
+roughly correct.
+
+*** ex 1.23
+#+begin_quote
+The ~smallest-divisor~ procedure shown at the start of this section
+does lots of needless testing: After it checks to see if the number is
+divisible by 2 there is no point in checking to see if it is divisible
+by any larger even numbers. This suggests that the values used for
+~test-divisor~ should not be 2, 3, 4, 5, 6, …, but rather 2, 3, 5, 7,
+9, …. To implement this change, define a procedure next that returns 3
+if its input is equal to 2 and otherwise returns its input
+plus 2. Modify the ~smallest-divisor~ procedure to use ~(next
+test-divisor)~ instead of ~(+ test-divisor 1)~. With
+~timed-prime-test~ incorporating this modified version of
+~smallest-divisor~, run the test for each of the 12 primes found in
+Exercise 1.22. Since this modification halves the number of test
+steps, you should expect it to run about twice as fast. Is this
+expectation confirmed? If not, what is the observed ratio of the
+speeds of the two algorithms, and how do you explain the fact that it
+is different from 2?
+#+end_quote
+
+
+
+*** ex 1.25
+- check fn 46
+
 * Skipped exercises
 List of the exercises I have skipped:
 - Exercise 1.13, p. 42.
