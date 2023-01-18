@@ -3305,11 +3305,76 @@ speeds of the two algorithms, and how do you explain the fact that it
 is different from 2?
 #+end_quote
 
+Answer:
+#+begin_src scheme
+  (define (smallest-divisor-mod n)
+    (find-divisor-mod n 2))
 
+  (define (find-divisor-mod n test-divisor)
+    (cond ((> (square test-divisor) n) 
+           n)
+          ((divides? test-divisor n) 
+           test-divisor)
+          (else (find-divisor 
+                 n 
+                 (next test-divisor)))))
 
+  ;; ...
+
+  (define (next n)
+    (if (= n 2)
+        3
+        (+ n 1)))
+
+  (define (prime?-mod n)
+    (= n (smallest-divisor-mod n)))
+
+  (define (timed-prime-test-mod n)
+    (newline)
+    (display n)
+    (start-prime-test n (runtime)))
+
+  (define (start-prime-test-mod n start-time)
+    (if (prime?-mod n)
+        (report-prime (- (runtime) 
+                         start-time))))
+#+end_src
 *** ex 1.25
 - check fn 46
+*** 1.3 Formulating Abstractions with Higher-Order Procedures
+*** 1.3.1 Procedures as arguments
+*** Exercise 1.29
+#+begin_quote
+Simpson’s Rule is a more accurate method of numerical integration than
+the method illustrated above. Using Simpson’s Rule, the integral of a
+function $f$ between a and b is approximated as
 
+$\frac{h}{3} (y_0 + 4y_1 + 2y_2 + 4y_3 + 2y_4 + ... + 2y_{n-2} +
+2y_{n-1} + y_n)$,
+
+
+where $h = (b - a) / n$, for some even integer $n$, and $y_k = f(a +
+kh)$. (Increasing $n$ increases the accuracy of the approximation.)
+Define a procedure that takes as arguments $f$, $a$, $b$, and $n$ and
+returns the value of the integral, computed using Simpson's Rule. Use
+your procedure to integrate ~cube~ between 0 and 1 (with $n = 100$ and
+$n = 1000$), and compare the results to those of the ~integral~
+procedure shown above.
+#+end_quote
+
+
+Answer:
+#+begin_src scheme
+  (define (integral f a b n)
+  (define (next x)
+    (if (x is odd)
+        (...)
+        (...)))
+  (* (/ (/ (- b a ) n) 3)
+     (+ y0
+        (sum ...)
+        yn)))    
+#+end_src
 * Skipped exercises
 List of the exercises I have skipped:
 - Exercise 1.13, p. 42.
