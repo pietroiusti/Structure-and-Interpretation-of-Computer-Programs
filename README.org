@@ -124,7 +124,7 @@ A programmer should acquire good algorithms and idioms. (xiii)
 - The evaluation rule is /recursive/.
 
 - We can view the evaluation in terms of a tree (See p. 10).
-  
+
   [[./figure1-1.gif]]
 
 - Tree accumulation.
@@ -264,17 +264,17 @@ Translate the following expression into prefix form
 $\frac{5 + 4 + (2 - (3 - (6 + \frac{4}{5})))}{3(6 - 2)(2 - 7)}$
 #+end_quote
 
-Answer: 
+Answer:
 #+begin_src elisp
-  (/ (+ 5 
-        4 
+  (/ (+ 5
+        4
         (- 2
            (- 3
               (+ 6
-                 (/ 4 5))))) 
-     (* 3 
-        (- 6 2) 
-        (- 2 7))) 
+                 (/ 4 5)))))
+     (* 3
+        (- 6 2)
+        (- 2 7)))
 #+end_src
 *** Exercise 1.3
 Exercise:
@@ -377,12 +377,12 @@ and then evaluated. And '0' evaluates to 0.
 
 - More generally, mathematics is usually concerned with ``declarative
   knowledge'', whereas computer science is concerned with ``imperative
-  knowledge''.  
+  knowledge''.
 
 - Iteration can be accomplished by calling a procedure. We don't need
-  any looping construct.  
+  any looping construct.
 *** Exercise 1.6
-Exercise: 
+Exercise:
 
 #+begin_quote
 Alyssa P. Hacker doesn't see why ~if~ needs to be provided as a
@@ -448,7 +448,7 @@ procedure that uses this kind of end test. Does this work better for
 small and large numbers?
 #+end_quote
 
-Answer: 
+Answer:
 
 This is a pretty small number: $0.00025$. It's square root is
 $\sqrt{0.00025} = 0.0158113883$ (I have used a calculator).
@@ -534,7 +534,7 @@ general as an abstraction of these square-root and cube-root
 procedures.)
 #+end_quote
 
-Answer: 
+Answer:
 
 #+begin_src emacs-lisp
   (defun cuberoot (x)
@@ -602,7 +602,7 @@ action'' (computing 6!):
 
 Here is another way to compute the factorial:
 #+begin_src scheme
-  (define (factorial n) 
+  (define (factorial n)
     (fact-iter 1 1 n))
 
   (define (fact-iter product counter max-count)
@@ -666,13 +666,13 @@ argument by 1, and dec, which decrements its argument by 1.
 
 #+begin_src scheme
   (define (+ a b)
-    (if (= a 0) 
-        b 
+    (if (= a 0)
+        b
         (inc (+ (dec a) b))))
 
   (define (+ a b)
-    (if (= a 0) 
-        b 
+    (if (= a 0)
+        b
         (+ (dec a) (inc b))))
 #+end_src
 
@@ -1184,8 +1184,8 @@ Here is an iterative solution in js I could quickly come up with:
       } else {
         previousLine = line(previousLine);
         console.log(previousLine);
-      }    
-    }  
+      }
+    }
   }
 
   //Compute line given previous one
@@ -1213,7 +1213,7 @@ bed, I came up with a solution.
 You can think of the triangle just as a bunch of lines/rows, each of
 which is one element more than the previous one.
 
-#+begin_src 
+#+begin_src
 a
 b, c
 d, e, f
@@ -1222,7 +1222,7 @@ g, h, i, j
 #+end_src
 
 What helped me to find a solution was using a row[col] notation.
-#+begin_src 
+#+begin_src
 0[0]
 1[0], 1[1]
 2[0], 2[1], 2[2]
@@ -1292,12 +1292,12 @@ Here how the process looks like when using the substitution model:
 
   (defun cc (amount kinds-of-coins)
     (cond ((= amount 0) 1)
-          ((or (< amount 0) 
-               (= kinds-of-coins 0)) 
+          ((or (< amount 0)
+               (= kinds-of-coins 0))
            0)
-          (t 
+          (t
            (+ (cc amount (- kinds-of-coins 1))
-              (cc (- amount (first-denomination 
+              (cc (- amount (first-denomination
                              kinds-of-coins))
                   kinds-of-coins)))))
 
@@ -1315,7 +1315,7 @@ Here how the process looks like when using the substitution model:
   (cc 11 5)
 
   (+ (cc 11 (- 5 1))
-     (cc (- 11 (first-denomination 
+     (cc (- 11 (first-denomination
                 5))
          5))
 
@@ -1326,7 +1326,7 @@ Here how the process looks like when using the substitution model:
      0)
 
   (+ (+ (cc 11 (- 4 1))
-        (cc (- 11 (first-denomination 
+        (cc (- 11 (first-denomination
                    4))
             4))
      0)
@@ -1340,7 +1340,7 @@ Here how the process looks like when using the substitution model:
      0)
 
   (+ (+ (+ (cc 11 (- 3 1))
-           (cc (- 11 (first-denomination 
+           (cc (- 11 (first-denomination
                       3))
                3))
         0)
@@ -1352,11 +1352,11 @@ Here how the process looks like when using the substitution model:
      0)
 
   (+ (+ (+ (+ (cc 11 (- 2 1))
-              (cc (- 11 (first-denomination 
+              (cc (- 11 (first-denomination
                          2))
                   2))
            (+ (cc 1 (- 3 1))
-              (cc (- 1 (first-denomination 
+              (cc (- 1 (first-denomination
                         3))
                   3)))
         0)
@@ -1377,15 +1377,15 @@ Here how the process looks like when using the substitution model:
      0)
 
   (+ (+ (+ (+ (+ (cc 11 (- 1 1))
-                 (cc (- 11 (first-denomination 
+                 (cc (- 11 (first-denomination
                             1))
                      1))
               (+ (cc 6 (- 2 1))
-                 (cc (- 6 (first-denomination 
+                 (cc (- 6 (first-denomination
                            2))
                      2)))
            (+ (+ (cc 1 (- 2 1))
-                 (cc (- 1 (first-denomination 
+                 (cc (- 1 (first-denomination
                            2))
                      2))
               0))
@@ -1414,19 +1414,19 @@ Here how the process looks like when using the substitution model:
 
   (+ (+ (+ (+ (+ 0
                  (+ (cc 10 (- 1 1))
-                    (cc (- 10 (first-denomination 
+                    (cc (- 10 (first-denomination
                                1))
                         1)))
               (+ (+ (cc 6 (- 1 1))
-                    (cc (- 6 (first-denomination 
+                    (cc (- 6 (first-denomination
                               1))
                         1))
                  (+ (cc 1 (- 2 1))
-                    (cc (- 1 (first-denomination 
+                    (cc (- 1 (first-denomination
                               2))
                         2))))
            (+ (+ (+ (cc 1 (- 1 1))
-                    (cc (- 1 (first-denomination 
+                    (cc (- 1 (first-denomination
                               1))
                         1))
                  0)
@@ -1478,16 +1478,16 @@ Here how the process looks like when using the substitution model:
   (+ (+ (+ (+ (+ 0
                  (+ 0
                     (+ (cc 9 (- 1 1))
-                       (cc (- 9 (first-denomination 
+                       (cc (- 9 (first-denomination
                                  1))
                            1))))
               (+ (+ 0
                     (+ (cc 5 (- 1 1))
-                       (cc (- 5 (first-denomination 
+                       (cc (- 5 (first-denomination
                                  1))
                            1)))
                  (+ (+ (cc 1 (- 1 1))
-                       (cc (- 1 (first-denomination 
+                       (cc (- 1 (first-denomination
                                  1))
                            1))
                     0)))
@@ -1543,13 +1543,13 @@ Here how the process looks like when using the substitution model:
                  (+ 0
                     (+ 0
                        (+ (cc 8 (- 1 1))
-                          (cc (- 8 (first-denomination 
+                          (cc (- 8 (first-denomination
                                     1))
                               1)))))
               (+ (+ 0
                     (+ 0
                        (+ (cc 4 (- 1 1))
-                          (cc (- 4 (first-denomination 
+                          (cc (- 4 (first-denomination
                                     1))
                               1))))
                  1))
@@ -1605,13 +1605,13 @@ Here how the process looks like when using the substitution model:
                  (+ 0
                     (+ 0
                        (+ 0 (+ (cc 7 (- 1 1))
-                               (cc (- 7 (first-denomination 
+                               (cc (- 7 (first-denomination
                                          1))
                                    1))))))
               (+ (+ 0
                     (+ 0
                        (+ 0 (+ (cc 3 (- 1 1))
-                               (cc (- 3 (first-denomination 
+                               (cc (- 3 (first-denomination
                                          1))
                                    1)))))
                  1))
@@ -1672,14 +1672,14 @@ Here how the process looks like when using the substitution model:
                     (+ 0
                        (+ 0
                           (+ 0 (+ (cc 6 (- 1 1))
-                                  (cc (- 6 (first-denomination 
+                                  (cc (- 6 (first-denomination
                                             1))
                                       1)))))))
               (+ (+ 0
                     (+ 0
                        (+ 0
                           (+ 0 (+ (cc 2 (- 1 1))
-                                  (cc (- 2 (first-denomination 
+                                  (cc (- 2 (first-denomination
                                             1))
                                       1))))))
                  1))
@@ -1749,7 +1749,7 @@ Here how the process looks like when using the substitution model:
                           (+ 0
                              (+ 0
                                 (+ (cc 5 (- 1 1))
-                                   (cc (- 5 (first-denomination 
+                                   (cc (- 5 (first-denomination
                                              1))
                                        1))))))))
               (+ (+ 0
@@ -1758,7 +1758,7 @@ Here how the process looks like when using the substitution model:
                           (+ 0
                              (+ 0
                                 (+ (cc 1 (- 1 1))
-                                   (cc (- 1 (first-denomination 
+                                   (cc (- 1 (first-denomination
                                              1))
                                        1)))))))
                  1))
@@ -1837,7 +1837,7 @@ Here how the process looks like when using the substitution model:
                              (+ 0
                                 (+ 0
                                    (+ (cc 4 (- 1 1))
-                                      (cc (- 4 (first-denomination 
+                                      (cc (- 4 (first-denomination
                                                 1))
                                           1)))))))))
               (+ (+ 0
@@ -1911,7 +1911,7 @@ Here how the process looks like when using the substitution model:
                                 (+ 0
                                    (+ 0
                                       (+ (cc 3 (- 1 1))
-                                         (cc (- 3 (first-denomination 
+                                         (cc (- 3 (first-denomination
                                                    1))
                                              1))))))))))
               (+ (+ 0 1)
@@ -1977,7 +1977,7 @@ Here how the process looks like when using the substitution model:
                                    (+ 0
                                       (+ 0
                                          (+ (cc 2 (- 1 1))
-                                            (cc (- 2 (first-denomination 
+                                            (cc (- 2 (first-denomination
                                                       1))
                                                 1)))))))))))
               2)
@@ -2029,7 +2029,7 @@ Here how the process looks like when using the substitution model:
                                       (+ 0
                                          (+ 0
                                             (+ (cc 1 (- 1 1))
-                                               (cc (- 1 (first-denomination 
+                                               (cc (- 1 (first-denomination
                                                          1))
                                                    1))))))))))))
               2)
@@ -2247,11 +2247,11 @@ represent tree generated by ~count-change~ in the following way:
                       /       /\        /      / \         |\____     \       |      |
                    __/     __/  \      /      /   \        |     \___  \_____ |      |
                   |       /      |    |      /     \       |         |      | |      |
-                  0 (cc 9 0) (cc 8 1) 0 (cc 5 0) (cc 4 1) (cc 1 0) (cc 0 1) 0 0      1         
+                  0 (cc 9 0) (cc 8 1) 0 (cc 5 0) (cc 4 1) (cc 1 0) (cc 0 1) 0 0      1
                       |          /\          |        |\__       \   |
                       |         /  \         |        |   \       \  |
                       0  (cc 8 0)  (cc 7 1)  0  (cc 4 0) (cc 3 1) 0  1
-                          |          /\          |          /\     
+                          |          /\          |          /\
                           |         /  \         |         /  \
                           0  (cc 7 0)  (cc 6 1)  0  (cc 3 0)  (cc 2 1)
                                |          /\          |          /\
@@ -2266,14 +2266,14 @@ represent tree generated by ~count-change~ in the following way:
                                             |           /\
                                             |          /  \
                                             0   (cc 3 0)  (cc 2 1)
-                                                   |           /\ 
+                                                   |           /\
                                                    |          /  \
                                                    0   (cc 2 0)  (cc 1 1)
                                                           |           /\
-                                                          |          /  \ 
+                                                          |          /  \
                                                           0   (cc 1 0)  (cc 0 1)
                                                                   |        |
-                                                                  0        1  
+                                                                  0        1
 #+end_src
 This looks like a tree recursive processe like that of ~fib~. And
 #+begin_quote
@@ -2356,7 +2356,7 @@ Answer:
   (p (p 0.9758465331678772))
   (p -0.7895631144708228)
   (- -2.3686893434124685 -1.9688858859991285)
-  -0.39980345741334  
+  -0.39980345741334
 #+end_src
 1. Procedure ~p~ is applied five times.
 
@@ -2401,7 +2401,7 @@ evolves a linear iterative process:
 #+end_src
 This process requires ϴ(n) steps and ϴ(1) space.
 
-We can be faster. 
+We can be faster.
 #+begin_src emacs-lisp
   (defun fast-expt (b n)
     (cond ((= n 0)
@@ -2587,7 +2587,7 @@ logarithmic number of steps:
     (fib-iter 1 0 0 1 n))
 
   (define (fib-iter a b p q count)
-    (cond ((= count 0) 
+    (cond ((= count 0)
            b)
           ((even? count)
            (fib-iter a
@@ -2595,11 +2595,11 @@ logarithmic number of steps:
                      ⟨??⟩  ;compute p'
                      ⟨??⟩  ;compute q'
                      (/ count 2)))
-          (else 
-           (fib-iter (+ (* b q) 
-                        (* a q) 
+          (else
+           (fib-iter (+ (* b q)
+                        (* a q)
                         (* a p))
-                     (+ (* b p) 
+                     (+ (* b p)
                         (* a q))
                      p
                      q
@@ -2895,7 +2895,7 @@ test.
     (start-prime-test n (runtime)))
   (define (start-prime-test n start-time)
     (if (prime? n)
-        (report-prime (- (runtime) 
+        (report-prime (- (runtime)
                          start-time))))
   (define (report-prime elapsed-time)
     (display " *** ")
@@ -2932,12 +2932,12 @@ in that it provides ~runtime~).
     (find-divisor n 2))
 
   (define (find-divisor n test-divisor)
-    (cond ((> (square test-divisor) n) 
+    (cond ((> (square test-divisor) n)
            n)
-          ((divides? test-divisor n) 
+          ((divides? test-divisor n)
            test-divisor)
-          (else (find-divisor 
-                 n 
+          (else (find-divisor
+                 n
                  (+ test-divisor 1)))))
 
   (define (divides? a b)
@@ -2953,7 +2953,7 @@ in that it provides ~runtime~).
 
   (define (start-prime-test n start-time)
     (if (prime? n)
-        (report-prime (- (runtime) 
+        (report-prime (- (runtime)
                          start-time))))
 
   (define (report-prime elapsed-time)
@@ -3311,12 +3311,12 @@ Answer:
     (find-divisor-mod n 2))
 
   (define (find-divisor-mod n test-divisor)
-    (cond ((> (square test-divisor) n) 
+    (cond ((> (square test-divisor) n)
            n)
-          ((divides? test-divisor n) 
+          ((divides? test-divisor n)
            test-divisor)
-          (else (find-divisor 
-                 n 
+          (else (find-divisor
+                 n
                  (next test-divisor)))))
 
   ;; ...
@@ -3336,7 +3336,7 @@ Answer:
 
   (define (start-prime-test-mod n start-time)
     (if (prime?-mod n)
-        (report-prime (- (runtime) 
+        (report-prime (- (runtime)
                          start-time))))
 #+end_src
 *** ex 1.25
@@ -3366,15 +3366,155 @@ procedure shown above.
 Answer:
 #+begin_src scheme
   (define (integral f a b n)
-  (define (next x)
-    (if (x is odd)
-        (...)
-        (...)))
-  (* (/ (/ (- b a ) n) 3)
-     (+ y0
-        (sum ...)
-        yn)))    
+    (define (next x)
+      (if (x is odd)
+          (...)
+          (...)))
+    (* (/ (/ (- b a ) n) 3)
+       (+ y0
+          (sum ...)
+          yn)))
 #+end_src
+
+#+begin_src scheme
+#lang sicp
+(define (sum term a next b)
+  (if (> a b)
+      0
+      (+ (term a)
+         (sum term (next a) next b))))
+
+(define (cube x) (* x x x))
+
+(define (integral f a b n)
+
+    (define (f-mod) ;;<== takes not arg?!
+      (define (f2 x)
+        (* 2 (f x)))
+      (define (f4 x)
+        (* 4 (f x)))
+      (if (= (remainder a 2) 0)
+          f2
+          f4))
+
+    (define (next x)
+      (+ x
+         1
+         (* (+ x 1)
+            (/ (- b a ) n))))
+
+    (* (/ (/ (- b a ) n) 3)
+       (+ (f 0)
+          (sum f-mod
+               (+ (+ 1 a)
+                  (* (+ 1 a)
+                     (/ (- b a ) n)))
+               next
+               b)
+          (f (+ n
+                (* n
+                   (/ (- b a ) n)))))))
+
+(define (integral-first f a b dx)
+  (define (add-dx x) (+ x dx))
+  (* (sum f (+ a (/ dx 2.0)) add-dx b)
+     dx))
+#+end_src
+
+#+begin_src scheme
+  #lang sicp
+  (define (sum term a next b)
+    (if (> a b)
+        0
+        (+ (term a)
+           (sum term (next a) next b))))
+
+  (define (cube x) (* x x x))
+
+  (define (integral f a b n)
+    (define (f-mod x)
+      (define (f2 x)
+        (* 2 (f x)))
+      (define (f4 x)
+        (* 4 (f x)))
+      (cond ((= x 0) (f x))
+            ((= x n) (f x))
+            ((= (remainder (- x a) 2) 0) (f2 x))
+            (else (f4 x))))
+    (define (next x)
+      (+ x
+         1
+         (* (+ x 1) (/ (- b a) n))))
+    (* (/ (/ (- b a) n) 3)
+       (sum f-mod a next b)
+       n))
+
+  ;;(integral cube 0 1 1000) ; ==> 0 :(
+#+end_src
+
+#+begin_src scheme
+  #lang sicp
+  (define (sum term a next b)
+    (if (> a b)
+        0
+        (+ (term a)
+           (sum term (next a) next b))))
+
+  (define (cube x) (* x x x))
+
+  (define (integral f a b n)
+    (define (f-mod x)
+      (define (f2 x)
+        (* 2 (f x)))
+      (define (f4 x)
+        (* 4 (f x)))
+      (cond ((= x 0) (f x))
+            ((= x n) (f x))
+            ((= (remainder (- x a) 2) 0) (f2 x))
+            (else (f4 x))))
+
+    (define (next x)
+      (+ x 1))
+
+    (* (/ (/ (- b a) n) 3)
+       (sum f-mod (* a (/ (- b a) n)) next b)
+       n))
+
+  (integral cube 0 1 1000) ;; 1*1/3 :(
+#+end_src
+
+#lang sicp
+(define (sum term a next b)
+  (if (> a b)
+      0
+      (+ (term a)
+         (sum term (next a) next b))))
+
+(define (cube x) (* x x x))
+
+(define (integral f a b n)
+
+  (define (f-mod x)
+    (define (f2 x)
+      (* 2 (f x)))
+    (define (f4 x)
+      (* 4 (f x)))
+    (cond ((= x a) (f x))
+          ((= (- (/ x (/ (- b a) n)) a) n) (f x))
+          ((= (remainder (- (/ x (/ (- b a) n)) a) 2) 0) (f2 x))
+          (else (f4 x))))
+
+  (define (next x)
+    (+ x
+       (/ (- b a) n)))
+
+  (* (/ (/ (- b a) n) 3)
+     (sum f-mod
+          a
+          next
+          (+ a (* n (/ (- b a) n))))))
+
+(integral cube 0 1 100);; 1/4 :)
 * Skipped exercises
 List of the exercises I have skipped:
 - Exercise 1.13, p. 42.
