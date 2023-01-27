@@ -3609,7 +3609,22 @@ Here is one way of computing an approximation to $\pi$.
      4.0)
 #+end_src
 
+My ~product~ procedure generates a recursive process ($\Theta(n)$ in
+time and space). Here is a ~product~ that generates an iterative
+process ($\Theta(n)$ in time, $\Theta(1)$ in space).
 
+#+begin_src scheme
+  (define (product term a next b)
+    (define (iter a result)
+      (if (> a b)
+          result
+          (iter (next a) (* (term a) result))))
+    (iter a 1))
+#+end_src
+
+We can notice that we start our iteration multiplying by 1, whereas we
+were /ending/ our recursion multiplying by 1. (Analogously with ~sum~
+and 0).
 
 * Skipped exercises
 List of the exercises I have skipped:
