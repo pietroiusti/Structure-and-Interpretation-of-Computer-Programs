@@ -3626,6 +3626,75 @@ We can notice that we start our iteration multiplying by 1, whereas we
 were /ending/ our recursion multiplying by 1. (Analogously with ~sum~
 and 0).
 
+*** Exercise 1.32
+#+begin_quote
+1) Show that ~sum~ and ~product~ (Exercise 1.31) are both special cases
+   of a still more general notion called ~accumulate~ that combines a
+   collection of terms, using some general accumulation function:
+
+   #+begin_src scheme
+     (accumulate combiner null-value term a next b)
+   #+end_src
+
+   ~Accumulate~ takes as arguments the same term and range specifications
+   as ~sum~ and ~product~, together with a ~combiner~ procedure (of two
+   arguments) that specifies how the current term is to be combined with
+   the accumulation of the preceding terms and a null-value that
+   specifies what base value to use when the terms run out. Write
+   accumulate and show how sum and product can both be defined as simple
+   calls to accumulate.
+
+2) If your accumulate procedure generates a recursive process, write
+   one that generates an iterative process. If it generates an
+   iterative process, write one that generates a recursive process.
+#+end_quote
+
+Answer:
+
+By looking at the recursive version of ~sum~ and ~product~, we can
+observe that only certain elements in the two bodies are
+different. They are:
+- The first expression after the if;
+- The procedure applied in the tail call;
+
+As far as I can tentatively see, this means that the concepts
+expressed ~sum~ and ~product~ belong to a more general concept.
+
+This latter concept /abstracts/ over the two parts of the body
+mentioned. The first abstraction is an abstraction over a numeric
+value. The second abstraction is an abstraction over a procedure.
+
+This more general concept can itself be expressed by a procedure
+definition
+
+#+begin_src scheme
+  (define (accumulate combiner null-value term a next b)
+    (if (> a b)
+        null-value
+        (combiner (term a)
+                  (accumulate combiner null-value term (next a) next b))))
+#+end_src
+
+#+begin_src scheme
+  (sum identity 1 inc 5) ;; => 15
+  (accumulate + 0 identity 1 inc 5) ;; => 15
+
+  (product identity 2 inc 9) ;; => 362880
+  (accumulate * 1 identity 2 inc 9) ;; => 362880
+#+end_src
+
+My accumulate generate a recursive process. Here is an iterative
+version:
+#+begin_src scheme
+  (define (accumulate combiner null-value term a next b)
+    (define (iter a result)
+      (if (> a b)
+          result
+          (iter (next a) (combiner (term a) result))))
+    (iter a null-value))
+#+end_src
+
+
 * Skipped exercises
 List of the exercises I have skipped:
 - 1.13.
