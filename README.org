@@ -3694,7 +3694,7 @@ version:
     (iter a null-value))
 #+end_src
 
-*** 1.33
+*** Exercese 1.33
 Exercise:
 #+begin_quote
 You can obtain an even more general version of ~accumulate~ (Exercise
@@ -3723,6 +3723,18 @@ Answer:
         (else (filtered-accumulate combiner filter null-value term (next a) next b))))
 #+end_src
 
+#+begin_src scheme
+  (define (sum-of-the-squares-of-primes a b)
+    (filtered-accumulate + prime? 0 square a inc2 b))
+#+end_src
+
+#+begin_src scheme
+  (define (product-int-less-than-rel-prime-to n)
+    (define (rel-prime-to-n x)
+      (= (gcd x n)
+         1))
+    (filtered-accumulate * rel-prime-to-n 1 1 inc1 (- n 1)))
+#+end_src
 * Skipped exercises
 List of the exercises I have skipped:
 - 1.13.
