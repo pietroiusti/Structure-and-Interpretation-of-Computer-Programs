@@ -3694,7 +3694,7 @@ version:
     (iter a null-value))
 #+end_src
 
-*** Exercese 1.33
+*** Exercise 1.33
 Exercise:
 #+begin_quote
 You can obtain an even more general version of ~accumulate~ (Exercise
@@ -3735,6 +3735,49 @@ Answer:
          1))
     (filtered-accumulate * rel-prime-to-n 1 1 inc1 (- n 1)))
 #+end_src
+
+*** Exercise 1.34
+#+begin_quote
+Suppose we define the procedure
+
+#+begin_src scheme
+  (define (f g) (g 2))
+#+end_src
+
+Then we have
+
+#+begin_src scheme
+  (f square)
+  4
+
+  (f (lambda (z) (* z (+ z 1))))
+  6
+#+end_src
+
+What happens if we (perversely) ask the interpreter to evaluate the
+combination (f f)? Explain?
+#+end_quote
+
+Answer:
+
+According to the substitution model:
+#+begin_src 
+(f f)
+(f 2)
+(2 2)
+#+end_src
+
+In `(2 2)`, `2` is used a if it denoted a procedures. But `2` does not
+denote a procedure. `2` denotes a number. So, I predict that the
+interpreter will complain about this.
+
+In fact, DrRacket says:
+#+begin_quote
+application: not a procedures;
+expected a procedures that can be applied to arguments
+given: 2
+#+end_quote
+
 * Skipped exercises
 List of the exercises I have skipped:
 - 1.13.
