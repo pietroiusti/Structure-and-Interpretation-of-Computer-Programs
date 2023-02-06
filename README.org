@@ -3778,6 +3778,52 @@ expected a procedures that can be applied to arguments
 given: 2
 #+end_quote
 
+*** Exercise 1.41
+#+begin_src scheme
+  ;; (((double (double double)) inc) 5)
+
+  ;; (double inc) => (lambda (x) (inc (inc x)))
+
+  ;; (double double) => (lambda (x) (double (double x)))
+
+  ;; (double (double double)) =>
+  ;; (lambda (x) ((lambda (x) (double (double x)))
+  ;;             ((lambda (x) (double (double x))) x)))
+
+  ((double (double double) inc))
+  ;; =>
+  ((lambda (x) (double (double x)))
+   (double (double inc)))
+  ;; =>
+  ((lambda (x) (double (double x)))
+   (double (lambda (x) (inc (inc x)))))
+  ;; => 
+  ((lambda (x) (double (double x)))
+   (lambda (x) ((lambda (x) (inc (inc x)))
+                ((lambda (x) (inc (inc x))) x))))
+  ;; =>
+  (double (double (lambda (x) ((lambda (x) (inc (inc x)))
+                               ((lambda (x) (inc (inc x))) x)))))
+  ;; => 
+  (double (lambda (x)
+            ((lambda (x) ((lambda (x) (inc (inc x)))
+                          ((lambda (x) (inc (inc x))) x)))
+             ((lambda (x) ((lambda (x) (inc (inc x)))
+                           ((lambda (x) (inc (inc x))) x))) x))))
+  ;; =>
+  (lambda (x) ((lambda (x)
+                 ((lambda (x) ((lambda (x) (inc (inc x)))
+                               ((lambda (x) (inc (inc x))) x)))
+                  ((lambda (x) ((lambda (x) (inc (inc x)))
+                                ((lambda (x) (inc (inc x))) x))) x)))
+               ((lambda (x)
+                  ((lambda (x) ((lambda (x) (inc (inc x)))
+                                ((lambda (x) (inc (inc x))) x)))
+                   ((lambda (x) ((lambda (x) (inc (inc x)))
+                                 ((lambda (x) (inc (inc x))) x))) x)))
+                x)))
+#+end_src
+
 * Skipped exercises
 List of the exercises I have skipped:
 - 1.13.
