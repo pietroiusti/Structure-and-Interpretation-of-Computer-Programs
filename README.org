@@ -3824,6 +3824,61 @@ given: 2
                 x)))
 #+end_src
 
+*** Exercise 1.42
+Exercise:
+
+#+begin_quote
+Let $f$ and $g$ be two one-argument functions. The /composition/ $f$
+after $g$ is defined to be the function $x \mapsto f(g(x))$. Define a
+procedure ~compose~ that implements composition. For example, if ~inc~
+is a procedure that adds 1 to its argument,
+
+#+begin_src scheme
+  ((compose square inc) 6)
+  49
+#+end_src
+#+end_quote
+
+Answer:
+
+#+begin_src scheme
+  (define (compose f1 f2)
+    (lambda (x) (f1 (f2 x))))
+#+end_src
+
+*** 1.43
+Exercise:
+
+#+begin_quote
+If $f$ is a numerical function and $n$ is a positive integer, then we
+can form the $n^{th}$ repeated application of $f$, which is defined to
+be the function whose value at $x$ is $f(f(…(f(x))…))$. For example,
+if $f$ is the function $x \mapsto x+1$, then the $n^{th}$ repeated
+application of $f$ is the function $x \mapsto x+n$. If $f$ is the
+operation of squaring a number, then the $n^{th}$ repeated application
+of $f$ is the function that raises its argument to the $2^{n}$ -th
+power. Write a procedure that takes as inputs a procedure that
+computes $f$ and a positive integer $n$ and returns the procedure that
+computes the $n^{th}$ repeated application of $f$. Your procedure
+should be able to be used as follows:
+
+#+begin_src scheme
+((repeated square 2) 5)
+625
+#+end_src
+
+Hint: You may find it convenient to use ~compose~ from Exercise 1.42.
+#+end_quote
+
+Answer:
+
+#+begin_src scheme
+  (define (repeatedly-apply f n)
+    (cond ((= x 1) f)
+          ((= x 2) (compose f f))
+          (else (compose f (repeatedly-apply f (- n 1))))))
+#+end_src
+
 * Skipped exercises
 List of the exercises I have skipped:
 - 1.13.
