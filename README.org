@@ -3846,7 +3846,7 @@ Answer:
     (lambda (x) (f1 (f2 x))))
 #+end_src
 
-*** 1.43
+*** Exercise 1.43
 Exercise:
 
 #+begin_quote
@@ -3873,10 +3873,23 @@ Hint: You may find it convenient to use ~compose~ from Exercise 1.42.
 Answer:
 
 #+begin_src scheme
-  (define (repeatedly-apply f n)
+  (define (repeated f n)
     (cond ((= x 1) f)
           ((= x 2) (compose f f))
           (else (compose f (repeatedly-apply f (- n 1))))))
+#+end_src
+
+*** Exercise 1.44
+#+begin_src scheme
+  (define (smooth f)
+    (lambda (x)
+      (/ 3
+         (+ (f (- x 0.01))
+            (f x)
+            (f (+ x 0.01))))))
+
+  (define (10th-smoothed-f f)
+    ((repeated smooth 10) f))
 #+end_src
 
 * Skipped exercises
