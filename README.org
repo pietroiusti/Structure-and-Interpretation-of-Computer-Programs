@@ -3767,11 +3767,11 @@ According to the substitution model:
 (2 2)
 #+end_src
 
-In `(2 2)`, `2` is used a if it denoted a procedures. But `2` does not
+In `(2 2)`, `2` is used as if it denoted a procedure. But `2` does not
 denote a procedure. `2` denotes a number. So, I predict that the
 interpreter will complain about this.
 
-In fact, DrRacket says:
+In fact, when trying to evaluate the combination, DrRacket says:
 #+begin_quote
 application: not a procedures;
 expected a procedures that can be applied to arguments
@@ -3935,4 +3935,9 @@ List of the exercises I have skipped:
 - 1.26.
 - 1.27.
 - 1.28.
-  
+- 1.35
+- 1.36
+- 1.37
+- 1.38
+- 1.39
+- 1.45
