@@ -3346,7 +3346,7 @@ the numbers I have tested are too small. Another possible explanation
 is that Racket performs some optimizations.
 *** ex 1.25
 - check fn 46
-*** 1.3 Formulating Abstractions with Higher-Order Procedures
+** 1.3 Formulating Abstractions with Higher-Order Procedures
 *** 1.3.1 Procedures as arguments
 *** Exercise 1.29
 #+begin_quote
@@ -4226,7 +4226,7 @@ Answer:
                           (average guess (/ x guess))))
      1.0))
 #+end_src
-* Skipped exercises
+** Skipped exercises
 List of the exercises I have skipped:
 - 1.13.
 - 1.19.
@@ -4241,3 +4241,32 @@ List of the exercises I have skipped:
 - 1.38
 - 1.39
 - 1.45
+
+* 2. Building Abstractions with Data
+** 2.1 Introduction to Data Abstraction
+*** Exercise 2.1
+Exercise:
+
+#+begin_quote
+Define a better version of make-rat that handles both positive and
+negative arguments. Make-rat should normalize the sign so that if the
+rational number is positive, both the numerator and denominator are
+positive, and if the rational number is negative, only the numerator
+is negative.
+#+end_quote
+
+Answer:
+#+begin_src scheme
+  (define (make-rat n d)
+    (let ((g (gcd n d)))
+      (if (or (and (> n 0) (> d 0))
+              (and (< n 0) (< d 0)))
+          (cons (/ (abs n) (abs g)) 
+                (/ (abs d) (abs g)))
+          (cons (- (/ (abs n) (abs g)))
+                (/ (abs d) (abs g))))))
+
+  (print-rat (make-rat 2 4))  ;; =>  1/2  
+  (print-rat (make-rat -2 4)) ;; => -1/2
+  (print-rat (make-rat 2 -4)) ;; => -1/2
+#+end_src
