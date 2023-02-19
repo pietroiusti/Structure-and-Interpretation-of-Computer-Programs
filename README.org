@@ -4330,3 +4330,48 @@ Answer:
 
   (print-point (mid-point-segment (make-segment (make-point 2 2) (make-point 6 4))))
 #+end_src
+*** Exercise 2.3
+- Representation 1:
+  - Constructor: takes 4 lines l1, l2, l3, l4 and constructs
+    ( ( l1 . l2 ) . ( l3 . l4 ) ).
+    
+    #+begin_src scheme
+      (define (make-rec l1 l2 l3 l4)
+        (cons (cons l1 l2) (l3 l4)))
+    #+end_src
+  - Selectors:
+    #+begin_src scheme
+      (define (length rec) ...)
+    #+end_src
+
+    #+begin_src scheme
+      (define (width rec) ...)
+    #+end_src
+
+- Representation 2: 
+  - Constructor: takes 4 points p1, p2, p3, p4 and constructs
+    ( ( p1 . p2 ) . ( p3 . p4 ) ).
+
+    #+begin_src scheme
+      (define (make-rec p1 p2 p3 p4)
+        (cons (cons p1 p2) (p3 p4)))
+    #+end_src
+
+  - Selectors:
+    #+begin_src scheme
+      (define (length rec) ...)
+    #+end_src
+
+    #+begin_src scheme
+      (define (width rec) ...)
+    #+end_src
+
+- Procedures that work with both representations:
+  #+begin_src scheme
+    (define (perimeter rec)
+      (* 2
+         (+ (length rec) (width rec))))
+
+    (define (area rec)
+      (* (length rec) (width rec)))
+  #+end_src
