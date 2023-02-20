@@ -4331,47 +4331,68 @@ Answer:
   (print-point (mid-point-segment (make-segment (make-point 2 2) (make-point 6 4))))
 #+end_src
 *** Exercise 2.3
-- Representation 1:
-  - Constructor: takes 4 lines l1, l2, l3, l4 and constructs
-    ( ( l1 . l2 ) . ( l3 . l4 ) ).
-    
-    #+begin_src scheme
-      (define (make-rec l1 l2 l3 l4)
-        (cons (cons l1 l2) (l3 l4)))
-    #+end_src
-  - Selectors:
-    #+begin_src scheme
-      (define (length rec) ...)
-    #+end_src
+Exercise:
 
-    #+begin_src scheme
-      (define (width rec) ...)
-    #+end_src
+#+begin_quote
+Implement a representation for rectangles in a plane. (Hint: You may
+want to make use of Exercise 2.2.) In terms of your constructors and
+selectors, create procedures that compute the perimeter and the area
+of a given rectangle. Now implement a different representation for
+rectangles. Can you design your system with suitable abstraction
+barriers, so that the same perimeter and area procedures will work
+using either representation?
+#+end_quote
 
-- Representation 2: 
-  - Constructor: takes 4 points p1, p2, p3, p4 and constructs
-    ( ( p1 . p2 ) . ( p3 . p4 ) ).
+Answer:
 
-    #+begin_src scheme
-      (define (make-rec p1 p2 p3 p4)
-        (cons (cons p1 p2) (p3 p4)))
-    #+end_src
+I'm assuming the sides of the rectangle and the axes are parallel.
 
-  - Selectors:
-    #+begin_src scheme
-      (define (length rec) ...)
-    #+end_src
+Sides are represented by segment whose points whose order is
+clockwise, E.g., left-side: (bottom-point . top-point), top-side:
+(left-point . right-point).
 
-    #+begin_src scheme
-      (define (width rec) ...)
-    #+end_src
+1st representation:
+#+begin_src scheme
+  (define (make-rec left-side top-side)
+    (cons left top))
 
-- Procedures that work with both representations:
+  (define (length rec)
+    (let ((top-left-point (cdr (car rec)))
+          (top-right-point (car (cdr rec))))
+      (abs (- (x-point top-right-point)
+              (x-point top-left-point)))))
+
+  (define (width rec)
+    (let ((bottom-left-point (car (car rec)))
+          (top-left-point (cdr (car rec))))
+      (abs (- (y-point top-left-point)
+              (y-point bottom-left-point)))))
+#+end_src
+
+2nd representation:
+#+begin_src scheme
+  (define (make-rec right-side bottom-side)
+    (cons right-side bottom-side))
+
+  (define (length rec)
+    (let ((bottom-left-point (cdr (cdr rec)))
+          (bottom-right-point (car (cdr rec))))
+      (abs (- (x-point bottom-right-point)
+              (x-point bottom-left-point)))))
+
+  (define (width rec)
+    (let ((top-right-point (car (car rec)))
+          (bottom-right-point (car (cdr rec))))
+      (abs (- (y-point top-right-point)
+              (y-point bottom-right-point)))))
+#+end_src
+
+- Procedures which work with both representations:
   #+begin_src scheme
     (define (perimeter rec)
       (* 2
          (+ (length rec) (width rec))))
-
+    
     (define (area rec)
       (* (length rec) (width rec)))
   #+end_src
