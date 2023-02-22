@@ -4396,3 +4396,59 @@ clockwise, E.g., left-side: (bottom-point . top-point), top-side:
     (define (area rec)
       (* (length rec) (width rec)))
   #+end_src
+*** Exercise 2.4
+*Exercise*:
+
+#+begin_quote
+Here is an alternative procedural representation of pairs. For this
+representation, verify that (car (cons x y)) yields x for any objects
+x and y.
+
+#+begin_src scheme
+  (define (cons x y) 
+    (lambda (m) (m x y)))
+
+  (define (car z) 
+    (z (lambda (p q) p)))
+#+end_src
+
+What is the corresponding definition of cdr? (Hint: To verify that
+this works, make use of the substitution model of 1.1.5.)
+#+end_quote
+
+*Answer*:
+
+~(car (cons x y))~ is the application ~car~ to the result of the
+application of ~cons~ to ~x~ and ~y~.
+
+The application of ~cons~ to ~x~ and ~y~ is ~(lambda (m) (m x y))~.
+
+So, the application of car to the application of ~cons~ to ~x~ and ~y~
+is ~(car (lambda (m) (m x y)))~.
+
+We can now take the body of ~car~ and replace each istance of ~z~ with
+~(car (lambda (m) (m x y)))~. This gives us:
+
+#+begin_src scheme
+  ((lambda (m) (m x y)) (lambda (p q) p))
+#+end_src
+
+This latter combination is the application of ~(lambda (m) (m x y))~
+to ~(lambda (p q) p)~.
+
+We can now take the body of the first lambda (the procedure we are
+applying) and replace each instance of ~m~ with the second lambda
+(that to which we are applying the first lambda). This gives us:
+
+#+begin_src scheme
+  ((lambda (p q) p) x y)
+#+end_src
+
+This latter combination is the application of ~(lambda (p q) p)~ to
+~x~ and ~y~. Which evaluates to ~x~.
+
+The corresponding definition of ~cdr~ is:
+#+begin_src scheme
+  (define (cdr z) 
+    (z (lambda (p q) q)))
+#+end_src
