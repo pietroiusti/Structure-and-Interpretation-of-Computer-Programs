@@ -4546,3 +4546,61 @@ Answer:
       (lambda (x)
         (f (f x)))))
 #+end_src
+
+Addition:
+#+begin_src scheme
+  (define add (lambda (n1)
+                (lambda (n2)
+                  (lambda (f)
+                    (lambda (x)
+                      ((n2 f) ((n1 f) x)))))))
+
+  ;; or
+  
+  (define (add n1 n2)
+    (lambda (f)
+      (lambda (x)
+        ((n2 f) ((n1 f) x)))))
+
+  ;; lets try add 1 and 1
+  ;; 1 is (lambda (f) (lambda (x) (f x)))
+
+  (lambda (f)
+    (lambda (x)
+      (((lambda (f) (lambda (x) (f x))) f) (((lambda (f) (lambda (x) (f x))) f) x))))
+
+  (lambda (f)
+    (lambda (x)
+      ((lambda (x) (f x)) (((lambda (f) (lambda (x) (f x))) f) x))))
+
+  (lambda (f)
+    (lambda (x)
+      ((lambda (x) (f x)) ((lambda (x) (f x)) x))))
+
+  (lambda (f)
+    (lambda (x)
+      ((lambda (x) (f x)) (f x))))
+
+  (lambda (f)
+    (lambda (x)
+      ((lambda (x) (f x)) (f x))))
+
+  (lambda (f)
+    (lambda (x)
+      ((f (f x)))))
+
+  ;; lets try add 1 and 2
+  ;; 1 is (lambda (f) (lambda (x) (f x)))
+  ;; 2 is (lambda (f) (lambda (x) (f (f x))))
+
+  (lambda (f)
+    (lambda (x)
+      (((lambda (f) (lambda (x) (f x))) f) (((lambda (f) (lambda (x) (f (f x)))) f) x))))
+
+  ;; it seems to work...
+
+  (lambda (f)
+    (lambda (x)
+      ((f (f (f x))))))
+
+#+end_src
