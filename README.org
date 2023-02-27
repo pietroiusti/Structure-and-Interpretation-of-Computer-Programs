@@ -4604,3 +4604,31 @@ Addition:
       ((f (f (f x))))))
 
 #+end_src
+*** Exercise 2.7
+#+begin_src scheme
+  (define (lower-bound x) (car x))
+
+  (define (upper-bound x) (cdr x))
+#+end_src
+*** Exercise 2.8
+Following Alyssa's way of reasoning, we should determine what's the
+minimum value the subtraction could be, and let that value be the
+lower bound (the first argument of ~make-interval~). And we should
+determine what's the maximum value the subtraction could be, and let
+that value be the upper bound (the second argument of
+~make-interval~).
+
+The minimum value the subtraction could be is the result of
+subtracting the upper bound of y to the lower bound of x.
+
+The maximum value the subtraction could be is the result of
+subtracting the lower bound of y to the upper bound of x.
+
+So:
+
+#+begin_src scheme
+  (define (sub-interval x y)
+    (make-interval (- (lower-bound x) (upper-bound y))
+                   (- (upper-bound x) (lower-bound y))))
+#+end_src
+
