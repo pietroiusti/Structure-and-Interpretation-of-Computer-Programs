@@ -3594,7 +3594,7 @@ Here is ~factorial~ defined in terms of ~product~.
   (define (factorial n)
     (define (inc x) (+ 1 x))
     (define (indentity x) x)
-    (product identity 1 inc n))  
+    (product identity 1 inc n))
 #+end_src
 
 Here is one way of computing an approximation to $\pi$.
@@ -3761,7 +3761,7 @@ combination (f f)? Explain?
 Answer:
 
 According to the substitution model:
-#+begin_src 
+#+begin_src
 (f f)
 (f 2)
 (2 2)
@@ -4219,7 +4219,7 @@ Answer:
 #+end_src
 
 #+begin_src scheme
-  (define (sqrt x)  
+  (define (sqrt x)
     ((iterative-improve (lambda (guess)
                           (< (abs (- (square guess) x)) 0.001))
                         (lambda (guess)
@@ -4261,12 +4261,12 @@ Answer:
     (let ((g (gcd n d)))
       (if (or (and (> n 0) (> d 0))
               (and (< n 0) (< d 0)))
-          (cons (/ (abs n) (abs g)) 
+          (cons (/ (abs n) (abs g))
                 (/ (abs d) (abs g)))
           (cons (- (/ (abs n) (abs g)))
                 (/ (abs d) (abs g))))))
 
-  (print-rat (make-rat 2 4))  ;; =>  1/2  
+  (print-rat (make-rat 2 4))  ;; =>  1/2
   (print-rat (make-rat -2 4)) ;; => -1/2
   (print-rat (make-rat 2 -4)) ;; => -1/2
 #+end_src
@@ -4347,7 +4347,7 @@ Answer:
 
 I'm assuming the sides of the rectangle and the axes are parallel.
 
-Sides are represented by segment whose points whose order is
+Sides are represented by segments whose points whose order is
 clockwise, E.g., left-side: (bottom-point . top-point), top-side:
 (left-point . right-point).
 
@@ -4392,7 +4392,7 @@ clockwise, E.g., left-side: (bottom-point . top-point), top-side:
     (define (perimeter rec)
       (* 2
          (+ (length rec) (width rec))))
-    
+
     (define (area rec)
       (* (length rec) (width rec)))
   #+end_src
@@ -4405,10 +4405,10 @@ representation, verify that (car (cons x y)) yields x for any objects
 x and y.
 
 #+begin_src scheme
-  (define (cons x y) 
+  (define (cons x y)
     (lambda (m) (m x y)))
 
-  (define (car z) 
+  (define (car z)
     (z (lambda (p q) p)))
 #+end_src
 
@@ -4449,7 +4449,7 @@ This latter combination is the application of ~(lambda (p q) p)~ to
 
 The corresponding definition of ~cdr~ is:
 #+begin_src scheme
-  (define (cdr z) 
+  (define (cdr z)
     (z (lambda (p q) q)))
 #+end_src
 *** Exercise 2.5
@@ -4462,6 +4462,51 @@ definitions of the procedures ~cons~, ~car~, and ~cdr~.
 
 This one to me looks like a math exercise rather than a programming
 exercise.
+
+#+begin_src scheme
+  ;; from chapter 1 ******
+  (define (square x) (* x x))
+
+  (define (fast-expt b n)
+    (cond ((= n 0)
+           1)
+          ((even? n)
+           (square (fast-expt b (/ n 2))))
+          (else
+           (* b (fast-expt b (- n 1))))))
+
+  (define (even? n)
+    (= (remainder n 2) 0))
+  ;; *********************
+
+  (define (cons a b)
+    (* (fast-expt 2 a)
+       (fast-expt 3 b)))
+
+  (define (car x)
+    (define (car-iter x i)
+      (if (not (even? x))
+          i
+          (car-iter (/ x 2) (+ i 1))))
+    (car-iter x 0))
+
+  (define (cdr x)
+    (define (cdr-iter x i)
+      (if (not (= (remainder x 3) 0))
+          i
+          (cdr-iter (/ x 3) (+ i 1))))
+    (cdr-iter x 0))
+
+  (define my-pair (cons 3 2)) ;; my-pair is now 72
+  (car my-pair) ;; => 3
+  (cdr my-pair) ;; => 2
+
+  (cons 7 5)
+  (define another-pair (cons 7 5)) ;; another-pair is now 31104
+  (car another-pair) ;; => 7
+  (cdr another-pair) ;; => 5
+#+end_src
+
 *** Exercise 2.6
 Exercise:
 
@@ -4505,7 +4550,7 @@ Answer:
            (lambda (x) x))
          f)
         x))))
-  ;; => 
+  ;; =>
   (lambda (f)
     (lambda (x)
       (f
@@ -4530,7 +4575,7 @@ Answer:
            (lambda (x)
              (f x))) f)
         x))))
-  ;; => 
+  ;; =>
   (lambda (f)
     (lambda (x)
       (f
@@ -4556,7 +4601,7 @@ Addition:
                       ((n2 f) ((n1 f) x)))))))
 
   ;; or
-  
+
   (define (add n1 n2)
     (lambda (f)
       (lambda (x)
@@ -4611,6 +4656,8 @@ Addition:
   (define (upper-bound x) (cdr x))
 #+end_src
 *** Exercise 2.8
+*Answer*:
+
 Following Alyssa's way of reasoning, we should determine what's the
 minimum value the subtraction could be, and let that value be the
 lower bound (the first argument of ~make-interval~). And we should
@@ -4631,4 +4678,91 @@ So:
     (make-interval (- (lower-bound x) (upper-bound y))
                    (- (upper-bound x) (lower-bound y))))
 #+end_src
+*** Exercise 2.9
+*Exercise*:
+
+#+begin_quote
+The /width/ of an interval is half of the difference between its upper
+and lower bounds. The width is a measure of the uncertainty of the
+number specified by the interval. For some arithmetic operations the
+width of the result of combining two intervals is a function only of
+the widths of the argument intervals, whereas for others the width of
+the combination is not a function of the widths of the argument
+intervals. Show that the width of the sum (or difference) of two
+intervals is a function only of the widths of the intervals being
+added (or subtracted). Give examples to show that this is not true for
+multiplication or division.
+#+end_quote
+
+*Answer*:
+
+Let's take the interval (make-interval 1 2) and the interval
+(make-interval 3 4). The width of both is $\frac{1}{2}$. The sum of
+the two intervals is an interval whose lower bound is 4 and whose
+upper bound is 6. The width of the sum of the two interval is $(6-4)/2
+= 1$.
+
+Given this observation, we can hypothesize that the width of the sum
+of two intervals is the sum of the widths of the two intervals being
+added.
+
+Let's make another observation to see whether it is compatible with
+this hypothesis. Let's consider the interval (make-interval 3 6) and
+the interval (make-interval 5 9). The width of the former is
+$\frac{3}{2}$ and the width of the latter is $2$. The sum of the two
+intervals is an interval whose lower bound is 8 and whose upper bound
+is 15. The width of the sum of the two interval is $\frac{15 - 8}{2} =
+\frac{7}{2}$. $\frac{7}{2}$ is the sum of $\frac{3}{2}$ and $2$. This
+observation confirms the hypothesis that the width of the sum of two
+intervals is the sum of the widths of the two intervals being added.
+
+Let's try to somehow prove that it is generally the case that the
+width of the sum of two intervals is the sum of the widths of the two
+intervals being added.
+
+##############sketchy###################
+- The width of an interval is the the difference between upper bound
+  and lower bound divided by 2.
+
+- We can just focus on the difference, disregarding the division for
+  simplicity.
+
+- The sum of two interval a and b will have a difference which is the
+  sum of the differences of the two intervals. (because...)
+
+- But, if so, then the sum of the widths of a and b = the width of the
+  sum.
+
+- Therefore, the width of the sum is a function of the width of the
+  two intervals.
+########################################
+
+
+
+Example of how this is not true for multiplication.
+
+(make-interval 2 4) has a width of 1. (make-interval 3 5) has a width
+of 1 too. Their multiplication gives an interval whose lower bound is
+$6$ and whose upper bound is $20$. The width of the multiplication is
+$20 - 6 = 7$.
+
+If the width of the multiplication of two interval were a function of
+only the widths of the interval being multiplied, then the width of
+any other multiplication of two intervals whose widths are,
+respectively, 1 and 1, must be 7.
+
+We expect this hypothesis to be falsified.
+
+To try to falsify it, let's consider the two intervals (make-interval
+6 8) and (make-interval 10 12). The width of both is $1$. The
+multiplication gives an interval whose lower bound is $60$ and whose
+upper bound is 96. The width of the multiplication is $\frac{96 -
+60}{2} = \frac{36}{2} = 18$.
+
+We have computed the width of the multiplication of two intervals
+whose width was respectively $1$ and $1$. The result was 7. We have
+then computed the width of the multiplication of two different
+intervals whose width was, again, respectively, 1 and 1. Therefore, we
+can infer that the widht of the multiplication of two intervals is not
+a function of only the widths of the two intervals being multiplied.
 
