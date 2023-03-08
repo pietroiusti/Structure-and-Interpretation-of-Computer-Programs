@@ -4766,3 +4766,228 @@ intervals whose width was, again, respectively, 1 and 1. Therefore, we
 can infer that the widht of the multiplication of two intervals is not
 a function of only the widths of the two intervals being multiplied.
 
+*** Exercise 2.10
+*Exercise*:
+
+#+begin_quote
+Ben Bitdiddle, an expert systems programmer, looks over Alyssa’s
+shoulder and comments that it is not clear what it means to divide by
+an interval that spans zero. Modify Alyssa’s code to check for this
+condition and to signal an error if it occurs.
+#+end_quote
+
+*Answer*:
+
+#+begin_src scheme
+  (define (div-interval x y)
+    (if (= (lower-bound y) (upper-bound y))
+        (display "error")
+        (mul-interval x
+                      (make-interval
+                       (/ 1.0 (upper-bound y))
+                       (/ 1.0 (lower-bound y))))))
+#+end_src
+
+*** Exercise 2.11
+*Exercise*:
+
+#+begin_quote
+In passing, Ben also cryptically comments: “By testing the signs of
+the endpoints of the intervals, it is possible to break mul-interval
+into nine cases, only one of which requires more than two
+multiplications.” Rewrite this procedure using Ben’s suggestion.
+
+After debugging her program, Alyssa shows it to a potential user, who
+complains that her program solves the wrong problem. He wants a
+program that can deal with numbers represented as a center value and
+an additive tolerance; for example, he wants to work with intervals
+such as 3.5 ± 0.15 rather than [3.35, 3.65]. Alyssa returns to her
+desk and fixes this problem by supplying an alternate constructor and
+alternate selectors:
+
+#+begin_src scheme
+  (define (make-center-width c w)
+    (make-interval (- c w) (+ c w)))
+
+  (define (center i)
+    (/ (+
+        (lower-bound i)
+        (upper-bound i))
+       2))
+
+  (define (width i)
+    (/ (- (upper-bound i)
+          (lower-bound i))
+       2))
+#+end_src
+
+Unfortunately, most of Alyssa’s users are engineers. Real engineering
+situations usually involve measurements with only a small uncertainty,
+measured as the ratio of the width of the interval to the midpoint of
+the interval. Engineers usually specify percentage tolerances on the
+parameters of devices, as in the resistor specifications given
+earlier.
+#+end_quote
+
+*Answer*:
+** 2.2 Hierarchical Data and the Closure Property
+~Cons~ is used to ``glue`` two things together into a /pair/. This
+allows us to construct compound data.
+
+We can represent a pair using the so-called /box-and-pointer
+notation/, in which each object is represented as a /pointer/ to a box
+(the box for a pair is actually a double box):
+
+#+begin_src
+
+*Figure 2.2:* Box-and-pointer representation of `(cons 1 2)'.
+
+          +---+---+     +---+
+     ---->| * | *-+---->| 2 |
+          +-|-+---+     +---+
+            |
+            V
+          +---+
+          | 1 |
+          +---+
+
+[Figure from SICP Unofficial Texinfo Format version 2.neilvandyke4 (January 10, 2007)]
+#+end_src
+
+#+begin_quote
+We have already seen that cons can be used to combine not only numbers
+but pairs as well. [...] As a consequence, pairs provide a universal
+building block from which we can construct all sorts of data
+structures.
+#+end_quote
+
+The authors refer to the ability to create pairs whose elements are
+pairs as the /closure property/ of cons, borrowing the term from
+abstract algebra.
+
+#+begin_quote
+Closure is the key to power in any means of combination because it
+permits us to create /hierarchical structures/ --- structures made up
+of parts, which themselves are made up of parts, and so on.
+#+end_quote
+*** 2.2.1 Representing Sequences
+There are many ways to represent a sequence (an ordered collection of
+data objects) using pairs. Here is one:
+
+#+begin_src scheme
+  (cons 1
+        (cons 2
+              (cons 3
+                    (cons 4 nil))))
+#+end_src
+
+A sequence of pairs, formed by nested ~conses~, like that above, is
+called ~list~. Scheme provide the primitive ~list~ to create such
+sequences.
+
+#+begin_src scheme
+  (list <a_1> <a_2> ... <a_n>)
+#+end_src
+is equivalent to
+#+begin_src scheme
+  (cons ⟨a_1⟩
+        (cons ⟨a_2⟩
+              (cons ...
+                    (cons ⟨a_n⟩
+                     nil)...)))
+#+end_src
+
+Do not confuse the expression ~(list 1 2 3 4)~ with the list ~(1 2 3
+4)~...
+
+~car~... ~cdr~... ~cadr~...
+
+~nil~ can be thought of as a sequence with no elements, the ~empty
+list~.
+
+List operations (``cdring down'', ``consing up'',...)
+
+~length~:
+
+Recursively:
+#+begin_src scheme
+  (define (length items)
+    (if (null? items)
+        0
+        (+ 1 (length (cdr items)))))
+#+end_src
+
+Iteratively:
+#+begin_src scheme
+  (define (length items)
+    (define (length-iter a count)
+      (if (null? a)
+          count
+          (length-iter (cdr a) (+ 1 count))))
+    (length-iter items 0))
+#+end_src
+
+
+~list-ref~:
+
+#+begin_src scheme
+  (define (list-ref items n)
+    (if (= n 0)
+        (car items)
+        (list-ref (cdr items)
+                  (- n 1))))
+#+end_src
+
+~append~:
+
+#+begin_src scheme
+  (define (append list1 list2)
+    (if (null? list1)
+        list2
+        (cons (car list1)
+              (append (cdr list1)
+                      list2))))
+#+end_src
+*** Exercise 2.17
+Exercise:
+
+#+begin_quote
+Define a procedure last-pair that returns the list that contains only
+the last element of a given (nonempty) list:
+#+begin_src scheme
+  (last-pair (list 23 72 149 34))
+  (34)
+#+end_src
+#+end_quote
+
+Answer:
+
+#+begin_src
+(define (last-pair l)
+  (if (null? (cdr l))
+      l
+      (last-pair (cdr l))))
+#+end_src
+*** Exercise 2.18
+Exercise:
+
+#+begin_quote
+Define a procedure `reverse' that takes a list as argument and returns
+a list of the same elements in reverse order:
+
+#+begin_src scheme
+  (reverse (list 1 4 9 16 25))
+  (25 16 9 4 1)
+#+end_src
+#+end_quote
+
+Answer:
+
+#+begin_src scheme
+  (define (reverse l)
+    (define (reverse-iter l result)
+      (if (null? l)
+          result
+          (reverse-iter (cdr l) (cons (car l) result))))
+    (reverse-iter l (list)))
+#+end_src
