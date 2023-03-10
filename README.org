@@ -4905,7 +4905,8 @@ Do not confuse the expression ~(list 1 2 3 4)~ with the list ~(1 2 3
 ~nil~ can be thought of as a sequence with no elements, the ~empty
 list~.
 
-List operations (``cdring down'', ``consing up'',...)
+List operations (Two conventional programming techniques: ``cdring
+down'' and ``consing up'').
 
 ~length~:
 
@@ -4983,6 +4984,7 @@ a list of the same elements in reverse order:
 
 Answer:
 
+My intuitive solution was interative:
 #+begin_src scheme
   (define (reverse l)
     (define (reverse-iter l result)
@@ -4991,6 +4993,19 @@ Answer:
           (reverse-iter (cdr l) (cons (car l) result))))
     (reverse-iter l (list)))
 #+end_src
+
+After having solved the exercise iteratively, I've looked for a
+recursive solution on the web and I found this one:
+#+begin_src scheme
+  (define (reverse l)
+    (if (null? l)
+        nil
+        (append (reverse (cdr l))
+                (list (car l)))))
+#+end_src
+
+
+
 *** TODO Exercise 2.19
 *** Exercise 2.20
 #+begin_src scheme
