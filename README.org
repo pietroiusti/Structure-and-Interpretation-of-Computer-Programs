@@ -5058,3 +5058,47 @@ recursive solution on the web and I found this one:
   (same-parity3 1 2 3 4 5 6 7) ;; (1 3 5 7)
 
 #+end_src
+*** Exercise 2.21
+#+begin_src scheme
+  (define (square-list items)
+    (if (null? items)
+        nil
+        (cons (square (car items))
+              (square-list (cdr items)))))
+
+  (define (square-list items)
+    (map square items))
+#+end_src
+*** Exercise 2.22
+``...defining square-list this way produces the answer list in the
+reverse order of the one desired. Why?''
+
+That procedures conses the square of first element of the list `items`
+onto the empty list, obtaining foo0, the list that contains the square
+of first element of the list `items`. Then, it conses the square of
+the second element of the list `items` onto foo0, obtaining foo1, the
+list that that contains the square of second element of the list
+`items` and the square of first element of the list `items`, in that
+order. Then it conses the square of the third element onto foo1,
+obtaing foo2, the list that that contains the square of third element
+of the list `items`, the square of second element of the list `items`
+and the square of first element of the list `items`, in that
+order. etc.
+
+``This doesn’t work either. Explain.''
+
+That procedures conses nil into the first element of `items`,
+obtaining foo0, the pair whose first elemetn is nil and the second
+element is the first element of `items. Then, it conses foo0 into the
+second element of `items`, obtaining foo1, the pair whose first
+element is foo0 and second element is the second element of
+`items`. Then it conses foo1 onto the third element of `items`...
+
+*** Exercise 2.23
+#+begin_src scheme
+  (define (for-each proc items)
+    (if (null? items)
+        true
+        (and (proc (car items))
+             (for-each proc (cdr items)))))
+#+end_src
