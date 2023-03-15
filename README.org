@@ -4460,9 +4460,6 @@ as the integer that is the produce of $2^a3^b$. Give the corresponding
 definitions of the procedures ~cons~, ~car~, and ~cdr~.
 #+end_quote
 
-This one to me looks like a math exercise rather than a programming
-exercise.
-
 #+begin_src scheme
   ;; from chapter 1 ******
   (define (square x) (* x x))
@@ -5101,4 +5098,25 @@ element is foo0 and second element is the second element of
         true
         (and (proc (car items))
              (for-each proc (cdr items)))))
+#+end_src
+*** 2.2.2 Hierarchical Structures
+#+begin_src scheme
+  (define (count-leaves x)
+    (con ((null? x) 0)
+         ((not (pair? x)) 1)
+         (+ (count-leaves (car x))
+            (count-leaves (cdr x)))))
+#+end_src
+*** Exercise 2.24
+see notebook
+*** Exercise 2.25
+#+begin_src emacs-lisp
+  (setq x '(1 3 (5 7) 9))
+  (car (cdr (car (cdr (cdr x))))) ;; => 7
+
+  (setq x '((7)))
+  (car (car x)) ;; => 7
+
+  (setq x '(1 (2 (3 (4 (5 (6 7)))))))
+  (car (cdr (car (cdr (car (cdr (car (cdr (car (cdr (car (cdr x)))))))))))) ;; => 7
 #+end_src
