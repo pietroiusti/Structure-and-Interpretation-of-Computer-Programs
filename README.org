@@ -5126,3 +5126,40 @@ see notebook
   ;; (cons x y)   => ((1 2 3) 4 5 6)
   ;; (list x y)   => ((1 2 3) (4 5 6))
 #+end_src
+
+*** Exercise 2.27
+#+begin_src scheme
+  (define (deep-reverse x)
+    (define (iter x result)
+      (cond ((null? x) result)
+            ((not (pair? x)) x)
+            (else (iter (cdr x)
+                        (cons (iter (car x) nil) result))))) (iter x nil))
+#+end_src
+
+#+begin_src scheme
+  ;; I've read The Little Schemer a while ago, in which a function atom?
+  ;; like this one is defined:
+  (define (atom? x)
+    (and (not (pair? x)) (not (null? x))))
+
+  (define (deep-reverse x)
+    (define (iter x result)
+      (cond ((atom? x) x)
+            ((null? x) result)
+            (else (iter (cdr x)
+                        (cons (iter (car x) nil) result))))) (iter x nil))
+#+end_src
+
+#+begin_src emacs-lisp
+  (defun iter (x result)
+    (cond ((not (listp x)) x)
+          ((null x) result)
+          (t (iter (cdr x)
+                   (cons (iter (car x) nil) result)))))
+  (defun deep-reverse (x)
+    (iter x nil))
+
+  (deep-reverse '(1 2 3 (4 5)))
+  ;; => ((5 4) 3 2 1)
+#+end_src
