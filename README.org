@@ -5195,6 +5195,11 @@ tree arranged in left-to-right order. For example,
 #+end_src
 
 *** Exercise 2.29
+
+Answer:
+
+1)
+
 #+begin_src scheme
   (define (make-mobile left right)
     (list left right))
@@ -5215,6 +5220,8 @@ tree arranged in left-to-right order. For example,
     (car (cdr branch)))
 
 #+end_src
+
+2)
 
 - The total weight of a mobile is the total weight of the left branch
   plus the total weight of the left branch. (In this context,
@@ -5246,3 +5253,53 @@ With these three rules above we can write our function:
   (total-weight (make-mobile (make-branch 1 2) (make-mobile (make-branch 1 2) (make-branch 3 4)))) ;; => 8
   (total-weight (make-mobile (make-mobile (make-branch 1 2) (make-branch 3 4)) (make-mobile (make-branch 1 2) (make-branch 3 4)))) ;; => 12
 #+end_src
+
+3)
+
+#+begin_src scheme
+  (define (torque branch)
+    (* (branch-length branch)
+       (total-weight branch)))
+
+  (define (isBalanced mobile)
+    (cond ((not (pair? (branch-structure (right-branch mobile))))
+           (= (torque (left-branch mobile))
+              (torque (right-branch mobile))))
+          (else (and (= (torque (left-branch mobile))
+                        (torque (right-branch mobile)))
+                     (isBalanced (branch-structure (right-branch mobile)))))))
+
+  (isBalanced (make-mobile (make-branch 2 2) (make-branch 2 2))) ;; => #t
+  (isBalanced (make-mobile (make-branch 2 2) (make-branch 2 3))) ;; => #f
+
+  (isBalanced (make-mobile (make-branch 2 2)
+                           (make-branch 2 (make-mobile (make-branch 1 1)
+                                           (make-branch 1 1 ))))) ;; => #t 
+  (isBalanced (make-mobile (make-branch 2 2)
+                           (make-branch 2 (make-mobile (make-branch 2 1)
+                                                       (make-branch 1 1 ))))) ;; => #f
+#+end_src
+
+4)
+
+If we changed the representation of mobiles so to have
+#+begin_src scheme
+  (define (make-mobile left right)
+    (cons left right))
+
+  (define (make-branch length structure)
+    (cons length structure))
+#+end_src
+then, we would only need to change the selectors ~right-branch~ and
+~branch-structure~:
+#+begin_src scheme
+  (define (right-branch mobile)
+    (cdr mobile))
+
+  (define (branch-structure branch)
+    (cdr branch))
+#+end_src
+
+Both ~left-branch~ and ~branch-length~ would still work, and neither
+~total-weight~ nor ~isBalanced~ depend on the details of how mobiles
+and branchs are constructed.
