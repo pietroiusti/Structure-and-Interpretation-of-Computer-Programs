@@ -5303,3 +5303,41 @@ then, we would only need to change the selectors ~right-branch~ and
 Both ~left-branch~ and ~branch-length~ would still work, and neither
 ~total-weight~ nor ~isBalanced~ depend on the details of how mobiles
 and branchs are constructed.
+
+*** Exercise 2.30
+#+begin_quote
+Define a procedure square-tree analogous to the square-list procedure
+of Exercise 2.21. That is, square-tree should behave as follows:
+
+#+begin_src scheme
+  (square-tree
+   (list 1
+         (list 2 (list 3 4) 5)
+         (list 6 7)))
+  (1 (4 (9 16) 25) (36 49))
+#+end_src
+
+Define square-tree both directly (i.e., without using any higher-order
+procedures) and also by using map and recursion.
+#+end_quote
+
+#+begin_src scheme
+  (define (square x) (* x x))
+#+end_src
+
+#+begin_src scheme
+  (define (square-tree tree)
+    (cond ((null? tree) nil)
+          ((not (pair? tree)) (square tree))
+          (else (cons (square-tree (car tree))
+                      (square-tree (cdr tree))))))
+#+end_src
+
+#+begin_src scheme
+  (define (square-tree tree)
+    (map (lambda (sub-tree)
+           (if (pair? sub-tree)
+               (square-tree sub-tree)
+               (square sub-tree)))
+         tree))
+#+end_src
