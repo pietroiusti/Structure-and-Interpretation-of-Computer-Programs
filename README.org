@@ -5274,7 +5274,7 @@ With these three rules above we can write our function:
 
   (isBalanced (make-mobile (make-branch 2 2)
                            (make-branch 2 (make-mobile (make-branch 1 1)
-                                           (make-branch 1 1 ))))) ;; => #t 
+                                           (make-branch 1 1 ))))) ;; => #t
   (isBalanced (make-mobile (make-branch 2 2)
                            (make-branch 2 (make-mobile (make-branch 2 1)
                                                        (make-branch 1 1 ))))) ;; => #f
@@ -5339,5 +5339,26 @@ procedures) and also by using map and recursion.
            (if (pair? sub-tree)
                (square-tree sub-tree)
                (square sub-tree)))
+         tree))
+#+end_src
+
+*** Exercise 2.31
+``Directly'':
+#+begin_src scheme
+  (define (tree-map proc tree)
+    (cond ((null? tree) nil)
+          ((not (pair? tree)) (proc tree))
+          (else (cons (tree-map proc (car tree))
+                      (tree-map proc (cdr tree))))))
+
+                      #+end_src
+
+Using map:
+#+begin_src scheme
+  (define (tree-map proc tree)
+    (map (lambda (sub-tree)
+           (if (pair? sub-tree)
+               (tree-map proc sub-tree)
+               (proc sub-tree)))
          tree))
 #+end_src
