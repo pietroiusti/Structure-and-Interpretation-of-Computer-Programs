@@ -5364,6 +5364,7 @@ Using map:
 #+end_src
 
 *** Exercise 2.32
+The first guess was correct:
 #+begin_src scheme
   (define (subsets s)
     (if (null? s)
@@ -5373,4 +5374,48 @@ Using map:
                               (cons (car s) x))
                             rest)))))
 #+end_src
+
+Let's have a look at the evolution of the process evolved by subsets
+(as a tree):
+#+begin_src
+                                           (subsets (list 1 2 3))
+                                                   |
+                                                 append
+                                      ____________/ \____________
+                                     /                           \
+                              (subsets '(2 3))                map consing 1
+                                    |                             |
+                                  append                  (subsets '(2 3))
+                       ____________/ \____________                |
+                      /                           \              ...
+              (subsets '(3))                 map consing 2
+       ____________/ \____________                |
+      /                           \         (subsets '(3))
+(subsets '())             map consing 3           |
+      |                           |              ...
+   '(nil)                  (subsets '())
+                                  |
+                               '(nil)
+#+end_src
+
+We can see that for each list with one element /a/, ~subsets~ will
+return, correctly, a list /l1/ whose members are the empty list and
+/a/:
+#+begin_src 
+(a) => ( () (a) )
+#+end_src
+
+What if we add one element /b/ to the list with /a/? The right answer
+must be the list whose memembers are the members in /l1/ plus each
+member of /l1/ with /b/ in it:
+#+begin_src 
+(a b) => ( () (a) (b) (a b))
+#+end_src
+This is exactly what ~subsets~ does: it returns the list (created by
+appending) all members of /l1/ and each each member of /l1/ with b in
+it (that is, the result of applying ~append~ to /l1/ and the map of
+/l1/ in which we cons ~b~ in each element of /l1/).
+
+What if we add one element /c/ to the list with /a/ and /b/?
+Analogously...
 
