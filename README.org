@@ -5001,8 +5001,6 @@ recursive solution on the web and I found this one:
                 (list (car l)))))
 #+end_src
 
-
-
 *** TODO Exercise 2.19
 *** Exercise 2.20
 #+begin_src scheme
@@ -5401,14 +5399,14 @@ Let's have a look at the evolution of the process evolved by subsets
 We can see that for each list with one element /a/, ~subsets~ will
 return, correctly, a list /l1/ whose members are the empty list and
 /a/:
-#+begin_src 
+#+begin_src
 (a) => ( () (a) )
 #+end_src
 
 What if we add one element /b/ to the list with /a/? The right answer
 must be the list whose memembers are the members in /l1/ plus each
 member of /l1/ with /b/ in it:
-#+begin_src 
+#+begin_src
 (a b) => ( () (a) (b) (a b))
 #+end_src
 This is exactly what ~subsets~ does: it returns the list (created by
@@ -5419,3 +5417,121 @@ it (that is, the result of applying ~append~ to /l1/ and the map of
 What if we add one element /c/ to the list with /a/ and /b/?
 Analogously...
 
+*** 2.2.3 Sequences as Conventional Interfaces
+- Data abstraction permits us to:
+  - design programs without dealing with details of data
+    representation,
+  - experiment with alternative representations.
+
+- Here another powerful design principle fro working with data
+  strcutures is introduced: /conventional interfaces/.
+
+Consider the following two procedures. The first one computes the sum
+of the squares of the odd leaves of a tree. The second one constructs
+a list of all the even Fibonacci numbers up to ~n~.
+
+#+begin_src scheme
+  (define (sum-odd-squares tree)
+    (cond ((null? tree) 0)
+          ((not (pair? tree))
+           (if (odd? tree) (square tree) 0))
+          (else (+ (sum-odd-squares
+                    (car tree))
+                   (sum-odd-squares
+                    (cdr tree))))))
+#+end_src
+
+#+begin_src scheme
+  (define (even-fibs n)
+    (define (next k)
+      (if (> k n)
+          nil
+          (let ((f (fib k)))
+            (if (even? f)
+                (cons f (next (+ k 1)))
+                (next (+ k 1))))))
+    (next 0))
+#+end_src
+
+Those two functions don't look very similar. However, at a certain
+level of abstraction, they are:
+
+The first procedure:
+- *enumerates* the leaves of a tree;
+- *filters* them, selecting the odd ones;
+- *squares* each of the selected ones; and
+- *accumulates* the result using +, starting with 0.
+
+The second procedure:
+- *enumerates* the integers from 0 to n;
+- *computes* the Fibonacci number for each integer;
+- *filters* them, selecting the even ones; and
+- *accumulates* the result using ~cons~, starting with the empty list.
+
+These processes can be described in terms of ``signals flowing through
+a cascade of stages''.
+
+#+begin_src
+  +-------------+   +-------------+   +-------------+   +-------------+
+  | enumerate:  |-->| filter:     |-->| map:        |-->| accumulate: |
+  | tree leaves |   | odd?        |   | square      |   | +, 0        |
+  +-------------+   +-------------+   +-------------+   +-------------+
+
+  +-------------+   +-------------+   +-------------+   +-------------+
+  | enumerate:  |-->| map:        |-->| filter:     |-->| accumulate: |
+  | integers    |   | fib         |   | even?       |   | cons, ()    |
+  +-------------+   +-------------+   +-------------+   +-------------+
+#+end_src
+
+However, our two procedures fail to exhbit the signal-flow structure
+just described. If they did show such a structure, then we would
+achieve greater conceptual clarity.
+
+{...}
+
+#+begin_src scheme
+  (define (accumulate op initial sequence)
+    (if (null? sequence)
+        initial
+        (op (car sequence)
+            (accumulate op initial (cdr sequence)))))
+#+end_src
+
+# (define our-list '(1 2 3))
+# (op 1 (op 2 (op 3 initial))))
+# (accumulate + 0 our-list)
+# (+ 1 (+ 2 (+ 3 0))))
+# (cons (p 1) (cons (p 2) (cons (p 3) nil))))
+
+*** Exercise 2.33
+*Exercise*:
+
+Fill in the missing expressions to complete the following definitions
+of some basic list-manipulation operations as accumulations:
+
+*Answer*:
+
+To warmup, here is how you can use accumulate to return the list
+itself:
+#+begin_src scheme
+  (define (list-identity sequence)
+    (accumulate (lambda (x y) (cons x y)) nil sequence))
+#+end_src
+
+Given ~list-identity~, it's easy to write ~map~:
+#+begin_src scheme
+  (define (map p sequence)
+    (accumulate (lambda (x y) (cons (p x) y)) nil sequence))
+#+end_src
+
+Append:
+#+begin_src scheme
+  (define (append seq1 seq2)
+    (accumulate cons seq2 seq1))
+#+end_src
+
+Length:
+#+begin_src scheme
+  (define (length sequence)
+    (accumulate (lambda (x y) (+ 1 y)) 0 sequence))
+#+end_src
