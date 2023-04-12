@@ -5535,3 +5535,76 @@ Length:
   (define (length sequence)
     (accumulate (lambda (x y) (+ 1 y)) 0 sequence))
 #+end_src
+
+*** TODO Exercise 2.34
+I don't know what it means to evaluate a polynomial in x at a given
+value of x...
+
+#+begin_src scheme
+
+#+end_src
+*** Exercise 2.35
+#+begin_src scheme
+  (define (count-leaves t)
+    (accumulate <??>
+                <??>
+                (map <??> <??>)))
+#+end_src
+
+Hacky (cheating?) solution: just rename the old ~count-leaves~ as
+~count-leaves1~ and:
+#+begin_src scheme
+  (define (count-leaves t)
+    (accumulate +
+                0
+                (map count-leaves1
+                     t)))
+#+end_src
+
+Non-hacky solution:
+#+begin_src scheme
+  (define (map proc items)
+    (if (null? items)
+        nil
+        (cons (proc (car items))
+              (map proc (cdr items)))))
+
+  (define (accumulate op initial sequence)
+    (if (null? sequence)
+        initial
+        (op (car sequence)
+            (accumulate op
+                        initial
+                        (cdr sequence)))))
+
+  (define (append list1 list2)
+    (if (null? list1)
+        list2
+        (cons (car list1)
+              (append (cdr list1)
+                      list2))))
+  (define (fringe x)
+    (cond ((null? x) nil)
+          ((not (pair? x)) (list x))
+          (else (append (fringe (car x))
+                        (fringe (cdr x))))))
+
+  (define (length l)
+    (if (null? l)
+        0
+        (+ 1 (length (cdr l)))))
+
+  (define (gp-length l)
+    (if (not (pair? l))
+        1
+        (length l)))
+
+  (define (gp-count-leaves x)
+    (accumulate (lambda (a b)
+                  (+ (gp-length a)
+                     b))
+                0
+                (fringe x)))
+
+  (gp-count-leaves '(1 (2) (((3 4 5)) 4)))
+#+end_src
