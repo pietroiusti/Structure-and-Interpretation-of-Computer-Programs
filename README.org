@@ -5561,7 +5561,10 @@ Hacky (cheating?) solution: just rename the old ~count-leaves~ as
                      t)))
 #+end_src
 
-Non-hacky solution:
+The following solution uses ~map~ to ~fringe~ each member of ~t~ which
+is a pair, producing a list of atoms and one-level-lists; then it uses
+the accumulate to sum each member treated as a 1 if it's an atom or as
+the length of itself if it's a list.
 #+begin_src scheme
   (define (map proc items)
     (if (null? items)
@@ -5599,12 +5602,21 @@ Non-hacky solution:
         1
         (length l)))
 
-  (define (gp-count-leaves x)
+  (define (gp-count-leaves t)
     (accumulate (lambda (a b)
                   (+ (gp-length a)
                      b))
                 0
-                (fringe x)))
+                (map fringe t)))
 
   (gp-count-leaves '(1 (2) (((3 4 5)) 4)))
+#+end_src
+
+This above was my solution. I've been told another, better, solution:
+#+begin_src scheme
+  (define (dean-count-leaves t)
+    (accumulate +
+                0
+                (map
+                 (lambda (x) (if (pair? x) (dean-count-leaves x) 1)) t)))
 #+end_src
