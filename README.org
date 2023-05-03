@@ -1,5 +1,6 @@
 #+title: Structure and Interpretation of Computer Programs
 #+subtitle: Personal notes
+#+author: Giulio Pietroiusti
 #+options: num:nil
 
 
@@ -5162,6 +5163,25 @@ see notebook
   ;; => ((5 4) 3 2 1)
 #+end_src
 
+
+
+Recursive-process-evolving version:
+#+begin_src scheme
+  ;; first attempt...
+  ;; (define (deep-r t)
+  ;;   (cond ((null? t) nil)
+  ;;         ((pair? t) (append (deep-r (cdr t))
+  ;;                            (deep-r (car t))))
+  ;;         (else (list t))))
+
+  (define (deep-reverse t)
+    (cond ((null? t) nil)
+          ((pair? t) (append (list (deep-reverse (cdr t)))
+                             (list (deep-reverse (car t)))))
+          (else (list t))))
+#+end_src
+
+
 *** Exercise 2.28
 *Exercise*:
 
@@ -5192,9 +5212,65 @@ tree arranged in left-to-right order. For example,
                         (fringe (cdr x))))))
 #+end_src
 
+#+begin_src scheme
+  (define (fringe2 t)
+    (cond ((null? t) nil)
+          ((pair? t) (append (fringe2 (car t))
+                             (fringe2 (cdr t))))
+          (else (list t))))
+#+end_src
 *** Exercise 2.29
+*Exercise*:
 
-Answer:
+#+begin_quote
+A binary mobile consists of two branches, a left branch and a right
+branch. Each branch is a rod of a certain length, from which hangs
+either a weight or another binary mobile. We can represent a binary
+mobile using compound data by constructing it from two branches (for
+example, using ~list~):
+
+#+begin_src scheme
+  (define (make-mobile left right)
+    (list left right))
+#+end_src
+
+A branch is constructed from a ~length~ (which must be a number)
+together with a ~structure~, which may be either a number (representing
+a simple weight) or another mobile:
+
+#+begin_src scheme
+  (define (make-branch length structure)
+    (list length structure))
+#+end_src
+
+1. Write the corresponding selectors ~left-branch~ and ~right-branch~,
+   which return the branches of a mobile, and ~branch-length~ and
+   ~branch-structure~, which return the components of a branch.
+2. Using your selectors, define a procedure ~total-weight~ that returns
+   the total weight of a mobile.
+3. A mobile is said to be /balanced/ if the torque applied by its
+   top-left branch is equal to that applied by its top-right branch
+   (that is, if the length of the left rod multiplied by the weight
+   hanging from that rod is equal to the corresponding product for the
+   right side) and if each of the submobiles hanging off its branches
+   is balanced. Design a predicate that tests whether a binary mobile
+   is balanced.
+4. Suppose we change the representation of mobiles so that the
+   constructors are
+
+   #+begin_src scheme
+     (define (make-mobile left right)
+       (cons left right))
+
+     (define (make-branch length structure)
+       (cons length structure))
+   #+end_src
+
+   How much do you need to change your programs to convert to the new
+   representation?
+#+end_quote
+
+*Answer*:
 
 1)
 
@@ -5321,17 +5397,13 @@ procedures) and also by using map and recursion.
 
 #+begin_src scheme
   (define (square x) (* x x))
-#+end_src
 
-#+begin_src scheme
   (define (square-tree tree)
     (cond ((null? tree) nil)
           ((not (pair? tree)) (square tree))
           (else (cons (square-tree (car tree))
                       (square-tree (cdr tree))))))
-#+end_src
 
-#+begin_src scheme
   (define (square-tree tree)
     (map (lambda (sub-tree)
            (if (pair? sub-tree)
@@ -5618,5 +5690,15 @@ This above was my solution. I've been told another, better, solution:
     (accumulate +
                 0
                 (map
-                 (lambda (x) (if (pair? x) (dean-count-leaves x) 1)) t)))
+                 (lambda (x) (if (pair? x)
+                                 (dean-count-leaves x)
+                                 1)) t)))
+#+end_src
+*** 2.36
+#+begin_src scheme
+  (define (accumulate-n op init seqs)
+    (if (null? (car seqs))
+        nil
+        (cons (accumulate op init (map car seqs))
+              (accumulate-n op init (map cdr seqs)))))
 #+end_src
