@@ -5702,3 +5702,43 @@ This above was my solution. I've been told another, better, solution:
         (cons (accumulate op init (map car seqs))
               (accumulate-n op init (map cdr seqs)))))
 #+end_src
+*** 2.38
+#+begin_src scheme
+  (define (fold-right op initial sequence)
+    (if (null? sequence)
+        initial
+        (op (car sequence)
+            (fold-right op initial (cdr sequence)))))
+
+  (fold-right / 1 (list 1 2 3))
+  ;; (/ 1 (/ 2 (/ 3 1)))
+
+  (fold-right list nil (list 1 2 3))
+  ;; (list 1 (list 2 (list 3 nil)))
+
+  (define (fold-left op initial sequence)
+    (define (iter result rest)
+      (if (null? rest)
+          result
+          (iter (op result (car rest))
+                (cdr rest))))
+    (iter initial sequence))
+
+  (fold-left / 1 (list 1 2 3))
+  (/ (/ (/ 1 1) 2) 3)
+
+  (fold-left list nil (list 1 2 3))
+  ;; (list (list (list nil 1) 2) 3)
+#+end_src
+*** 2.39
+#+begin_src scheme
+  (define (reverse seq)
+    (fold-right (lambda (x y) (append y (list x)))
+                nil
+                seq))
+
+  (define (reverse seq)
+    (fold-left (lambda (x y) (append (list y) x))
+               nil
+               seq))
+#+end_src
