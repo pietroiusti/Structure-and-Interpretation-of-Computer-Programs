@@ -5760,3 +5760,26 @@ This above was my solution. I've been told another, better, solution:
           prime-sum?
           (unique-pairs n))))
 #+end_src
+*** 2.41
+#+begin_src scheme
+  ;; create a list of all possible pairs given a sequence
+  (define (all-pairs seq)
+    (accumulate
+     append
+     nil
+     (map (lambda (x)
+            (map (lambda (y)
+                   (cons x (list y)))
+                 (filter (lambda (e) (not (= e x))) seq)))
+          seq)))
+
+  ;; all triples from 1 to n
+  (define (all-triples n)
+    (accumulate
+     append
+     nil
+     (map (lambda (x)
+            (map (lambda (y) (cons x y))
+                 (all-pairs (enumerate-interval-except 1 n x))))
+          (enumerate-interval 1 n))))
+#+end_src
