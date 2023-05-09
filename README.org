@@ -5761,7 +5761,55 @@ This above was my solution. I've been told another, better, solution:
           (unique-pairs n))))
 #+end_src
 *** 2.41
+Excercise:
+
+#+begin_quote
+Write a procedure to find all ordered triples of distinct positive
+integers /i/, /j/, and /k/ less than or equal to a given integer /n/
+that sum to a given integer /s/.
+#+end_quote
+
+Answer:
+
+- We can:
+  - enumerate all ordered triples (see below how);
+  - filter them;
+
+- In order to enumerate all triples:
+  - for each element /e/, enumerate all the possible pairs from 1 to
+    /n/ without using /e/, and then adjoin /e/ to the front of each
+    pair.
+
+- In order to enumerate all possible pairs from 1 to /n/:
+  - for each element /e/ of the range from 1 to /n/, enumerate all
+    other elements of the range, and for each of those other elements
+    create the list ~(e other-element)~.
+
 #+begin_src scheme
+  (define (accumulate op initial seq)
+    (if (null? seq)
+        initial
+        (op (car seq)
+            (accumulate op initial (cdr seq)))))
+
+  (define (filter predicate seq)
+    (cond ((null? seq) nil)
+          ((predicate (car seq))
+           (cons (car seq) (filter predicate (cdr seq))))
+          (else (filter predicate (cdr seq)))))
+
+  (define (enumerate-interval low high)
+    (if (> low high)
+        nil
+        (cons low
+              (enumerate-interval
+               (+ low 1)
+               high))))
+
+  (define (enumerate-interval-except low high not-allowed)
+    (filter (lambda (x) (not (= x not-allowed)))
+            (enumerate-interval low high)))
+
   ;; create a list of all possible pairs given a sequence
   (define (all-pairs seq)
     (accumulate
@@ -5782,4 +5830,15 @@ This above was my solution. I've been told another, better, solution:
             (map (lambda (y) (cons x y))
                  (all-pairs (enumerate-interval-except 1 n x))))
           (enumerate-interval 1 n))))
+
+  (define (all-triples-sum n sum)
+    (filter (lambda (x)
+              (= (+ (car x)
+                    (car (cdr x))
+                    (car (cdr (cdr x))))
+                 sum))
+            (all-triples n)))
+
+  (all-triples-sum 56 8)
+  ;; => ((1 2 5) (1 3 4) (1 4 3) (1 5 2) (2 1 5) (2 5 1) (3 1 4) (3 4 1) (4 1 3) (4 3 1) (5 1 2) (5 2 1))
 #+end_src
