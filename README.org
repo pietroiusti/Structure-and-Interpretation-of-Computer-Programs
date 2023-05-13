@@ -5842,3 +5842,66 @@ Answer:
   (all-triples-sum 56 8)
   ;; => ((1 2 5) (1 3 4) (1 4 3) (1 5 2) (2 1 5) (2 5 1) (3 1 4) (3 4 1) (4 1 3) (4 3 1) (5 1 2) (5 2 1))
 #+end_src
+*** 2.42
+#+begin_src scheme
+  (define (queens board-size)
+    (define (queen-cols k)
+      (if (= k 0)
+          (list empty-board)
+          (filter
+           (lambda (positions) 
+             (safe? k positions))
+           (flatmap
+            (lambda (rest-of-queens)
+              (map (lambda (new-row)
+                     (adjoin-position 
+                      new-row 
+                      k 
+                      rest-of-queens))
+                   (enumerate-interval 
+                    1 
+                    board-size)))
+            (queen-cols (- k 1))))))
+    (queen-cols board-size))
+#+end_src
+#+begin_src scheme
+  (define (filter pred seq)
+    (cond ((null? seq) nil)
+          ((pred (car seq)) (cons (car seq) (filter pred (cdr seq))))
+          (else (filter pred (cdr seq)))))
+
+  (define (accumulate op initial seq)
+    (if (null? seq)
+        initial
+        (op (car seq)
+            (accumulate op initial (cdr seq)))))
+
+  (define (flatmap op seq)
+    (accumulate append nil (map op seq)))
+
+  (define (enumerate-interval low high)
+    (if (> low high)
+        nil
+        (cons low (enumerate-interval (+ low 1) high))))
+
+  (define (safe? k poss) #t) ;; TODO
+
+  (define (adjoin-position nr k rq)
+    (cons (list nr k) rq))
+
+  (define empty-board nil)
+
+  (define (queens board-size)
+    (define (queen-cols k)
+      (if (= k 0)
+          (list empty-board)
+          (filter
+           (lambda (positions) (safe? k positions))
+           (flatmap
+            (lambda (rest-of-queens)
+              (map (lambda (new-row)
+                     (adjoin-position new-row k rest-of-queens))
+                   (enumerate-interval 1 board-size)))
+            (queen-cols (- k 1))))))
+    (queen-cols board-size))
+#+end_src
