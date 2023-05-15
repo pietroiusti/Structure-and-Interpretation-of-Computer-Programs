@@ -5884,7 +5884,24 @@ Answer:
         nil
         (cons low (enumerate-interval (+ low 1) high))))
 
-  (define (safe? k poss) #t) ;; TODO
+  (define (safe? k poss)
+    (let ((queen (car (filter
+                       (lambda (q)
+                         (= (car (cdr q)) k))
+                       poss))))
+      (if (> (length
+              (filter
+               (lambda (p)
+                 (or (= (car queen)
+                        (car p))
+                     (= (- (car p) (car queen))
+                        (- (car (cdr p)) (car (cdr queen))))
+                     (= (- (car p) (car queen))
+                        (- (car (cdr queen)) (car (cdr p))))))
+               poss))
+             1)
+          #f
+          #t)))
 
   (define (adjoin-position nr k rq)
     (cons (list nr k) rq))
