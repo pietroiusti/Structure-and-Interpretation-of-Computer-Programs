@@ -5970,7 +5970,7 @@ behaviors as the ones already defined.
             (p1 painter
                 (p2 smaller smaller))))))
 #+end_src
-*** 2.47
+*** Ex. 2.47
 (to be checked)
 
 #+begin_src scheme
@@ -6001,5 +6001,35 @@ behaviors as the ones already defined.
   (define (edge2-frame frame)
     (cdr (cdr frame)))
 #+end_src
+*** Ex. 2.48
+(to be checked)
 
+#+begin_src scheme
+  (define (make-vect xcor ycor)
+    (cons xcor ycor))
+  ;; alternatively:
+  ;; (define make-vect cons)
+
+  (define (xcor-vect vect)
+    (car vect))
+  ;; alternatively:
+  ;; (define xcor-vect car)
+
+  (define (ycor-vect vect)
+    (cdr vect))
+  ;; alternatively
+  ;; (define ycor-vect cdr)
+
+  (define (add-vect v1 v2)
+    (make-vect (+ (xcor v1) (xcor v2))
+               (+ (ycor v1) (ycor v1))))
+
+  (define (sub-vect v1 v2)
+    (make-vect (- (xcor v1) (xcor v2))
+               (- (ycor v1) (ycor v2))))
+
+  (define (scale-vect vect s)
+    (make-vect (* (xcor vect) s)
+               (* (ycor vect) s)))
+#+end_src
 
