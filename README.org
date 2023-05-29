@@ -5849,17 +5849,17 @@ Answer:
       (if (= k 0)
           (list empty-board)
           (filter
-           (lambda (positions) 
+           (lambda (positions)
              (safe? k positions))
            (flatmap
             (lambda (rest-of-queens)
               (map (lambda (new-row)
-                     (adjoin-position 
-                      new-row 
-                      k 
+                     (adjoin-position
+                      new-row
+                      k
                       rest-of-queens))
-                   (enumerate-interval 
-                    1 
+                   (enumerate-interval
+                    1
                     board-size)))
             (queen-cols (- k 1))))))
     (queen-cols board-size))
@@ -5923,6 +5923,80 @@ Answer:
     (queen-cols board-size))
 #+end_src
 *** 2.2.4 Example: A Picture Language
+- ``...a simple language for drawing pictures that illustrates the
+  power of data abstraction and closure, and also exploits
+  higher-order procedures in an essential way.''
+
+
+- ``In this language, the data objects being combined are represented
+  as procedures rather than as list structure.''
+
+- the operations in this language satisfy the closure property. We are
+  therefore capable to ``build arbitrarily complicated patterns''.
+
+- ``When we began our study of programming in 1.1, we emphasized the
+  importance of describing a language by focusing on the language’s
+  primitives, its means of combination, and its means of
+  abstraction. We’ll follow that framework here.''
+
+- In this picture language there is only one kind of element: the
+  /painter/. A painter draws an image that is shifted and scaled to
+  fit withtin a designated parallelogram-shpaed frame.
+  - Painter ~wave~.
+  - Painter ~rogers~.
+
+- Operations that construct painters from painters.
+  - ~beside~.
+  - ~below~.
+  - ~flip-vert~
+  - ~flip-horiz~
+
+- Defining ~wave4~.
+
+- ``In building up a complex image in this manner we are exploiting
+  the fact that painters are closed under the language’s means of
+  combination.''
+
+- Defining ~wave4~ in terms of ~flipped-pairs~.
+
+- Defining recursive operations
+  - ~right-split~.
+  - ~corner-split~.
+
+- Defining ~square-limit~.
+
+- Abstracting patterns of combining painter operations.
+  - ~square-of-four~.
+  - Defining ~flipper-pairs~ in terms of ~square-of-four~.
+  - Defining ~square-limit~ in terms of ~square-of-four~.
+
+- A frame can be described by three vectors.
+
+- ~frame-coord-map~.
+
+- ``A painter is represented as a procedure that, given a frame as
+  argument, draws a particular image shifted and scaled to fit the
+  frame. That is to say, if ~p~ is a painter and ~f~ is a frame, then
+  we produce ~p~ ’s image in ~f~ by calling p with ~f~ as argument.''
+
+  #+begin_src scheme
+    (define (segments->painter segment-list)
+      (lambda (frame)
+        (for-each
+         (lambda (segment)
+           (draw-line
+            ((frame-coord-map frame)
+             (start-segment segment))
+            ((frame-coord-map frame)
+             (end-segment segment))))
+         segment-list)))
+  #+end_src
+
+# (paint (segments->painter (list (make-segment
+#                            (make-vect 0.2 0.5)
+#                            (make-vect 0.5 0.1)))))
+
+
 *** Ex. 2.44
 *Exercise*:
 
@@ -6057,4 +6131,43 @@ and selectors ~start-segment~ and ~end-segment~.
 
   (define (end-segment segment)
     (cdr segment))
+#+end_src
+
+*** 2.49
+#+begin_src scheme
+  ;; Painter that draws the outline of the frame
+  (segments->painter
+   (list
+    (make-segment (make-vect 0 0)
+                  (make-vect 0 1))
+    (make-segment (make-vect 0 1)
+                  (make-vect 1 1))
+    (make-segment (make-vect 1 1)
+                  (make-vect 1 0))
+    (make-segment (make-vect 1 0)
+                  (make-vect 0 0))))
+#+end_src
+
+#+begin_src scheme
+  ;; Painter that draws an ``X''
+  (segments->painter
+   (list
+    (make-segment (make-vect 0 0)
+                  (make-vect 1 1))
+    (make-segment (make-vect 1 0)
+                  (make-vect 0 1))))
+#+end_src
+
+#+begin_src scheme
+  ;; Painter that draws a diamond
+  (segments->painter
+        (list
+         (make-segment (make-vect 0.5 0)
+                       (make-vect 0 0.5))
+         (make-segment (make-vect 0 0.5)
+                       (make-vect 0.5 1))
+         (make-segment (make-vect 0.5 1)
+                       (make-vect 1 0.5))
+         (make-segment (make-vect 1 0.5)
+                       (make-vect 0.5 0))))
 #+end_src
