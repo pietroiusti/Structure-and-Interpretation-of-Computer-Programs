@@ -6171,3 +6171,31 @@ and selectors ~start-segment~ and ~end-segment~.
          (make-segment (make-vect 1 0.5)
                        (make-vect 0.5 0))))
 #+end_src
+
+*** Ex. 2.50
+#+begin_src scheme
+  (define (flip-horiz painter)
+    (transform-painter
+     painter
+     (make-vect 1.0 0.0)
+     (make-vect 0.0 0.0)
+     (make-vect 1.0 1.0)))
+#+end_src
+
+#+begin_src scheme
+  (define (rotate-cc-180 painter)
+    (transform-painter
+     painter
+     (make-vect 1.0 1.0)
+     (make-vect 0.0 1.0)
+     (make-vect 1.0 0.0)))
+#+end_src
+
+#+begin_src scheme
+  (define (rotate-cc-270 painter)
+    (transform-painter
+     painter
+     (make-vect 0.0 1.0)
+     (make-vect 0.0 0.0)
+     (make-vect 1.0 1.0)))
+#+end_src
