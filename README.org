@@ -6199,3 +6199,23 @@ and selectors ~start-segment~ and ~end-segment~.
      (make-vect 0.0 0.0)
      (make-vect 1.0 1.0)))
 #+end_src
+
+*** Ex. 2.51
+#+begin_src scheme
+  (define (below2 p1 p2)
+    (let ((paint-below (transform-painter
+                        p1
+                        (make-vect 0.0 0.0)
+                        (make-vect 1.0 0.0)
+                        (make-vect 0.0 0.5)))
+          (paint-above (transform-painter
+                        p2
+                        (make-vect 0.0 0.5)
+                        (make-vect 1.0 0.5)
+                        (make-vect 0.0 1.0))))
+      (lambda (frame)
+        (paint-below frame)
+        (paint-above frame))))
+
+  (paint (below2 einstein einstein))
+#+end_src
