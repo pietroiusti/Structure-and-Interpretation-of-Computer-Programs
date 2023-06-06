@@ -6219,3 +6219,25 @@ and selectors ~start-segment~ and ~end-segment~.
 
   (paint (below2 einstein einstein))
 #+end_src
+
+#+begin_src scheme
+  (define (rotate-counterclock-90 painter)
+    (transform-painter
+     painter
+     (make-vect 1.0 0.0)
+     (make-vect 1.0 1.0)
+     (make-vect 0.0 0.0)))
+
+  (define (rotate-clock-90 painter)
+    (transform-painter
+     painter
+     (make-vect 0.0 1.0)
+     (make-vect 0.0 0.0)
+     (make-vect 1.0 1.0)))
+
+  (define (below3 p1 p2)
+    (rotate-clock-90 (beside (rotate-counterclock-90 p1)
+                             (rotate-counterclock-90 p2))))
+
+  (paint (below3 einstein einstein))
+#+end_src
