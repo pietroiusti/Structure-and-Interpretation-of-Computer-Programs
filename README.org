@@ -6288,3 +6288,93 @@ and selectors ~start-segment~ and ~end-segment~.
 
   (paint (square-limit einstein 3))
 #+end_src
+
+** 2.3 Symbolic Data
+#+begin_quote
+All the compound data objects we have used so far were constructed
+ultimately from numbers. In this section we extend the
+representational capability of our language by introducing the ability
+to work with arbitrary symbols as data.
+#+end_quote
+
+*** 2.3.1 Quotation
+#+begin_quote
+In order to manipulate symbols we need a new element in our language:
+the ability to quote a data object
+#+end_quote
+
+~(list a b)~ constructs a list of the values of ~a~ and ~b~, not the
+list of ~a~ and ~b~ themselves (the symbols).
+
+As analytic philosophy students know,
+#+begin_quote
+[t]his issue is well known in the context of natural languages, where
+words and sentences may be regarded either as semantic entities or as
+character strings (syntactic entities)...
+#+end_quote
+
+(In fact, footnote 98 uses an example from Frege.)
+
+#+begin_quote
+We can follow this same practice to identify lists and symbols that
+are to be treated as data objects rather than as expressions to be
+evaluated.
+#+end_quote
+
+- ~eq~.
+
+#+begin_src scheme
+  (define (memq item x)
+    (cond ((null? x) false)
+          ((eq? item (car x)) x)
+          (else (memq item (cdr x)))))
+#+end_src
+
+*** Ex. 2.53
+*Exercise*:
+
+#+begin_quote
+What would the interpreter print in response to evaluating each of the
+following expressions?
+
+#+begin_src scheme
+  (list 'a 'b 'c)
+  (list (list 'george))
+  (cdr '((x1 x2) (y1 y2)))
+  (cadr '((x1 x2) (y1 y2)))
+  (pair? (car '(a short list)))
+  (memq 'red '((red shoes) (blue socks)))
+  (memq 'red '(red shoes blue socks))
+#+end_src
+#+end_quote
+
+*Answer*:
+
+#+begin_src scheme
+  (list 'a 'b 'c)
+  ;; => (a b c)
+  (list (list 'george))
+  ;; => ((george))
+  (cdr '((x1 x2) (y1 y2)))
+  ;; => ((y1 y2))
+  (cadr '((x1 x2) (y1 y2)))
+  ;; => (y1 y2)
+  (pair? (car '(a short list)))
+  ;; => #f
+  (memq 'red '((red shoes) (blue socks)))
+  ;; => #f
+  (memq 'red '(red shoes blue socks))
+  ;; => (red shoes blue socks)
+#+end_src
+
+*** Ex. 2.54
+#+begin_src scheme
+  (define (equal? a b)
+    (cond ((and (not (pair? a)) (not (pair? b)) (eq? a b))
+           true)
+          ((and (and (pair? a) (pair? b))
+                (equal? (car a) (car b))
+                (equal? (cdr a) (cdr b)))
+           true)
+          (else false)))
+#+end_src
