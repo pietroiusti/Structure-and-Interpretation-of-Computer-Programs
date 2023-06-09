@@ -6378,3 +6378,24 @@ following expressions?
            true)
           (else false)))
 #+end_src
+
+*** Ex. 2.55
+*Exercise*:
+
+#+begin_quote
+Eva Lu Ator types to the interpreter the expression
+
+#+begin_src scheme
+  (car ''abracadabra)
+#+end_src
+
+To her surprise, the interpreter prints back quote. Explain.
+#+end_quote
+
+*Answer*:
+
+From the interpreter's perspective, ~'abracadabra~ is actually ~(quote
+abracadabra)~ (see footnote 100). And ~''abracadabra~ is actually
+~(quote (quote abracadabra))~. The ~car~ of the latter is indeed
+~quote~.
+
