@@ -6408,4 +6408,40 @@ abracadabra)~ (see footnote 100). And ~''abracadabra~ is actually
           (else (cons (car s1)
                       (union-set (cdr s1) s2)))))
 #+end_src
+*** Ex. 2.60
+I wouldn't change neither ~element-of-set?~ nor ~intersection-set~. To
+their complexity remains the same; respectively, linear and
+exponential.
 
+This is the way I would write ~adjoin-set~:
+
+#+begin_src scheme
+  (define (adjoin-set x set)
+    (cons x set))
+#+end_src
+
+Its complexity is constant. We just have to do one operation,
+regardless of the size of the set.
+
+This is the way I would write ~union-set~:
+
+#+begin_src scheme
+  (define (union-set s1 s2)
+    (if ((null? s1) s2)
+        (else (cons (car s1)
+                    (union-set (cdr s1) s2)))))
+#+end_src
+
+Its complexity is linear. We have to go through each element of one of
+the two lists.
+
+*** Ex. 2.61
+
+#+begin_src scheme
+  (define (adjoin-set x set)
+    (cond ((null? set) (cons x set))
+          ((= x (car set)) set)
+          ((< x (car set)) (cons x set))
+          (else (cons (car set)
+                      (adjoin-set x (cdr set))))))
+#+end_src
