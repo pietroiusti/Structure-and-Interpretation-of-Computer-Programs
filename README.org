@@ -6574,3 +6574,13 @@ the two lists.
                                       (make-tree 11 nil nil))))
   ;; => (1 3 5 7 9 11)
 
+#+end_src
+
+It looks like tree->list-1 and tree->list-2 give always the same
+result.
+
+In time, they seem to grow at the same pace (Are you sure? Doesn't the
+append in tree->list-1 makes it grow faster?).
+
+In space, tree->list-2 seems to grow more slowly, because one the two
+recursive calls is a tail call (scheme optmizes in that case).
