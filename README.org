@@ -6584,3 +6584,10 @@ append in tree->list-1 makes it grow faster?).
 
 In space, tree->list-2 seems to grow more slowly, because one the two
 recursive calls is a tail call (scheme optmizes in that case).
+
+*** Ex. 2.64
+#+begin_src scheme
+  (list->tree '(1 3 5 7 9 11))
+  ;; => (5 (1 () (3 () ())) (9 (7 () ()) (11 () ())))
+#+end_src
+
