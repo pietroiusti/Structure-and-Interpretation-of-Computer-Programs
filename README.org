@@ -6586,8 +6586,34 @@ In space, tree->list-2 seems to grow more slowly, because one the two
 recursive calls is a tail call (scheme optmizes in that case).
 
 *** Ex. 2.64
-#+begin_src scheme
-  (list->tree '(1 3 5 7 9 11))
-  ;; => (5 (1 () (3 () ())) (9 (7 () ()) (11 () ())))
+I've done a quite horrible job but here it is:
+
+The function applies a recursive strategy. The central element of the
+list given will be the entry of the tree. The central element is the
+element whose index is the quotient of ~(- n 1)~ and ~2~, where n is
+the length of the list. Then the left and the right branch are
+computed. The left branch is the car of ~left-result~, that is, the
+result of the recursive call (~partial-tree~) applied to the original
+list and the quotient of ~(- n 1)~ and ~2~. The result of this latter
+recursive call is needed in order for computing the right branch as
+well. For the right tree is the car of ~right-result~, that is, the
+recursive call (~partial-tree~) applied to the ~cdr~ of ~left-result~
+and $(- n (+ left-size 1)$. The terminal case of partial-tree is
+represented by when n is 0. In that case the empty list is consed onto
+the given list.
+
+The tree produced by ~(list->tree '(1 3 5 7 9 11))~ is:
+
+#+begin_src
+      5
+    /   \
+   /     \
+  /       \
+ /         \
+1           9
+ \         / \
+  \       /   \
+   3     7    11
 #+end_src
+
 
