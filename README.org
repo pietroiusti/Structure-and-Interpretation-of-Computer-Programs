@@ -6674,3 +6674,28 @@ an implementation of merge sort. Given so, ~union-set-bt~ and
     (list->tree (intersection-set (sort (tree->list-1 set1))
                                   (sort ((tree->list-1 set2))))
 #+end_src
+
+*** Ex. 2.66
+#+begin_src scheme
+(define (key el)
+  (car el))
+
+;; In this set represented as a tree, the keys are the cars of the elements.
+(list->tree '( (1 "el with key 1") (2 "el with key 2") (3 "etc") (4 "foo") (6 "bar") (7 "baz")))
+;; =>((3 "etc") ((1 "el with key 1") () ((2 "el with key 2") () ())) ((6 "bar") ((4 "foo") () ()) ((7 "baz") () ())))
+
+(define (lookup given-key set)
+  (cond ((null? set) false)
+        ((= given-key (key (entry set)))
+         (entry set))
+        ((< given-key (key (entry set)))
+         (lookup given-key (left-branch set)))
+        (else (lookup given-key (right-branch set)))))
+
+(lookup 3 (list->tree '( (1 "el with key 1") (2 "el with key 2") (3 "etc") (4 "foo") (6 "bar") (7 "baz"))))
+;; => (3 "etc")
+
+(lookup 8 (list->tree '( (1 "el with key 1") (2 "el with key 2") (3 "etc") (4 "foo") (6 "bar") (7 "baz"))))
+;; => #f
+#+end_src
+
