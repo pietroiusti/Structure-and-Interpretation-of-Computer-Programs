@@ -6409,7 +6409,7 @@ abracadabra)~ (see footnote 100). And ~''abracadabra~ is actually
                       (union-set (cdr s1) s2)))))
 #+end_src
 *** Ex. 2.60
-I wouldn't change neither ~element-of-set?~ nor ~intersection-set~. To
+I wouldn't change neither ~element-of-set?~ nor ~intersection-set~. So
 their complexity remains the same; respectively, linear and
 exponential.
 
@@ -6699,3 +6699,185 @@ an implementation of merge sort. Given so, ~union-set-bt~ and
 ;; => #f
 #+end_src
 
+*** 2.3.4 Example: Huffman Encoding Trees
+In general, if we want to distinguish $n$ symbols, we need $\log_{2}n$
+bits per symbol. So, if we want to distinguish eight symbols A, B, C,
+D, E, F, G, H, then we need $\log_{2}n$ bits per symbols, that is, 3
+bits per symbol. For example:
+
+|   A |   B |   C |   D |   E |   F |   G |   H |
+|-----+-----+-----+-----+-----+-----+-----+-----|
+| 000 | 001 | 010 | 011 | 100 | 101 | 110 | 111 |
+|-----+-----+-----+-----+-----+-----+-----+-----|
+
+The message `BACADAEAFABBAAAGAH' would then be encoded as the string
+of 54 bits `001000010000011000100000101000001001000000000110000111'.
+
+This A-through-H code, like the ASCII code, is a /fixed-length/
+code. There are also /variable-length/ codes, like the Morse code.
+
+By assigning shorter codes to frequent symbols, /variable-length/
+codes can allow for considerable savings.
+
+With the following variable-length code
+
+| A |   B |    C |    D |    E |    F |    G |    H |
+|---+-----+------+------+------+------+------+------|
+| 0 | 100 | 1010 | 1011 | 1100 | 1101 | 1110 | 1111 |
+|---+-----+------+------+------+------+------+------|
+
+We would encode the same message above in 42 bits.
+
+However, we need a way to know when the end of a symbol is
+reached. One technique, used by in the Morse code, is using
+separators. Another solution consists in designing the code ``in such
+a way that no complete code for any symbol is the beginning (or
+/prefix/) of the code for another symbol. Such a code is called a
+/prefix code/''.
+
+One particular ``scheme'' for attaining savings by taking advantage of
+relative frequencies is called the Huffman encoding method.
+
+A Huffman code can be represented as a binary tree. The leaves hold
+the encoded symbols pluse a weight (whose usage we shall see). Each
+non-leaf node holds the set of all the symbols below it and the sum of
+their weights.
+
+#+begin_src
+    *Figure 2.18:* A Huffman encoding tree.
+    (From SICP Unofficial Texinfo Format version 2.neilvandyke4 (January 10, 2007))
+
+                    {A B C D E F G H} 17
+                             ,*
+                            / \
+                           /   \
+                         A 8    * {B C D E F G H} 9
+                     __________/ \_____________
+                    /                          \
+         {B C D} 5 *                            * {E F G H} 4
+                  / \                       ___/ \___
+                 /   \                     /         \
+               B 3    * {C D} 2   {E F} 2 *           * {G H} 2
+                     / \                 / \         / \
+                    /   \               /   \       /   \
+                  C 1   D 1           E 1   F 1   G 1   H 1
+#+end_src
+
+To encode: start at the root, and move down until your reach a
+leaf. If you go left add a 0, otherwise add a 1.
+
+To decode: start at the root and use the 0s and 1s to decide whether
+to go left or right.
+
+**** Generating Huffman trees
+
+#+begin_src
+Initial leaves {(A 8) (B 3) (C 1) (D 1) (E 1) (F 1) (G 1) (H 1)}
+Merge          {(A 8) (B 3) ({C D} 2) (E 1) (F 1) (G 1) (H 1)}
+Merge          {(A 8) (B 3) ({C D} 2) ({E F} 2) (G 1) (H 1)}
+Merge          {(A 8) (B 3) ({C D} 2) ({E F} 2) ({G H} 2)}
+Merge          {(A 8) (B 3) ({C D} 2) ({E F G H} 4)}
+Merge          {(A 8) ({B C D} 5) ({E F G H} 4)}
+Merge          {(A 8) ({B C D E F G H} 9)}
+Final merge    {({A B C D E F G H} 17)}
+#+end_src
+
+**** Representing Huffman trees
+
+#+begin_src scheme
+
+  ;; Leaf constructor
+  (define (make-leaf symbol weight)
+    (list 'leaf symbol weight))
+
+  (define (leaf? object)
+    (eq? (car object) 'leaf))
+
+  ;; Leaf selectors:
+  (define (symbol-leaf x) (cadr x))
+
+  (define (weight-leaf x) (caddr x))
+
+  ;; Tree constructor:
+  (define (make-code-tree left right)
+    (list left
+          right
+          (append (symbols left) (symbols right))
+          (+ (weight left) (weight right))))
+
+  ;; Tree selectors:
+  (define (left-branch tree) (car tree))
+
+  (define (right-branch tree) (cadr tree))
+
+  (define (symbols tree)
+    (if (leaf? tree)
+        (list (symbol-leaf tree))
+        (caddr tree)))
+
+  (define (weight tree)
+    (if (leaf? tree)
+        (weight-leaf tree)
+        (cadddr tree)))
+#+end_src
+
+
+**** The decoding procedure
+
+#+begin_src scheme
+  (define (decode bits tree)
+    (define (decode-1 bits current-branch)
+      (if (null? bits)
+          '()
+          (let ((next-branch
+                 (choose-branch (car bits) current-branch)))
+            (if (leaf? next-branch)
+                (cons (symbol-leaf next-branch)
+                      (decode-1 (cdr bits) tree))
+                (decode-1 (cdr bits) next-branch)))))
+    (decode-1 bits tree))
+
+  (define (choose-branch bit branch)
+    (cond ((= bit 0) (left-branch branch))
+          ((= bit 1) (right-branch branch))
+          (else (error "bad bit -- CHOOSE-BRANCH" bit))))
+#+end_src
+
+**** Sets of weighted elements
+
+#+begin_src scheme
+  (define (adjoin-set x set)
+    (cond ((null? set) (list x))
+          ((< (weight x) (weight (car set))) (cons x set))
+          (else (cons (car set)
+                      (adjoin-set x (cdr set))))))
+
+  (define (make-leaf-set pairs)
+    (if (null? pairs)
+        '()
+        (let ((pair (car pairs)))
+          (adjoin-set (make-leaf (car pair)    ; symbol
+                                 (cadr pair))  ; frequency
+                      (make-leaf-set (cdr pairs))))))
+#+end_src
+* 3 Modularity, Objects, and State
+** 3.4 Concurrency: Time Is of the Essence
+- We have seen that computational objects with local state are
+  powerful tools for modeling.
+
+- We had to pay a price though.
+  - Loss of referential transparency;
+  - Adoption of a more intricate environment model.
+
+#+begin_quote
+The central issue lurking beneath the complexity of state, sameness,
+and change is that by introducing assignment we are forced to admit
+time into our computational models. Before we introduced assignment,
+all our programs were timeless, in the sense that any expression that
+has a value always has the same value.
+#+end_quote
+
+#+begin_quote
+Building models in terms of computational objects with local state
+forces us to confront time as an essential concept in programming.
+#+end_quote
