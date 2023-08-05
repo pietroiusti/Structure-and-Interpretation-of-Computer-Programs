@@ -7024,6 +7024,41 @@ seeing whether it is the same as the original sample message.
     use a more performant ~element-of-set?~. (Anyway,
     ~element-of-set?~ is an abstraction...).
 
+**** Ex. 2.69
+*Exercise*:
+#+begin_quote
+The following procedure takes as its argument a list of
+symbol-frequency pairs (where no symbol appears in more than one pair)
+and generates a Huffman encoding tree according to the Huffman
+algorithm.
+
+#+begin_src scheme
+  (define (generate-huffman-tree pairs)
+    (successive-merge (make-leaf-set pairs)))
+#+end_src
+
+`Make-leaf-set' is the procedure given above that transforms the list
+of pairs into an ordered set of leaves.  `Successive-merge' is the
+procedure you must write, using `make-code-tree' to successively merge
+the smallest-weight elements of the set until there is only one
+element left, which is the desired Huffman tree.  (This procedure is
+slightly tricky, but not really complicated.  If you find yourself
+designing a complex procedure, then you are almost certainly doing
+something wrong.  You can take significant advantage of the fact that
+we are using an ordered set representation.)
+#+end_quote
+
+*Answer*:
+
+#+begin_src scheme
+  (define (successive-merge pairs)
+    (cond ((null? pairs) nil)
+          ((null? (cdr pairs)) pairs)
+          (else (successive-merge
+                 (cons (make-code-tree (car pairs) (cadr pairs))
+                       (cddr pairs))))))
+#+end_src
+
 * 3 Modularity, Objects, and State
 ** 3.4 Concurrency: Time Is of the Essence
 - We have seen that computational objects with local state are
