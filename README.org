@@ -7053,6 +7053,14 @@ we are using an ordered set representation.)
 #+begin_src scheme
   (define (successive-merge pairs)
     (cond ((null? pairs) nil)
+          ((null? (cdr pairs)) (car pairs))
+          (else (successive-merge
+                 (cons (make-code-tree (car pairs) (cadr pairs))
+                       (cddr pairs))))))
+#+end_src
+
+  (define (successive-merge pairs)
+    (cond ((null? pairs) nil)
           ((null? (cdr pairs)) pairs)
           (else (successive-merge
                  (cons (make-code-tree (car pairs) (cadr pairs))
