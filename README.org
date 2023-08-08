@@ -7059,13 +7059,64 @@ we are using an ordered set representation.)
                              (cddr pairs))))))
 #+end_src
 
-  (define (successive-merge pairs)
-    (cond ((null? pairs) nil)
-          ((null? (cdr pairs)) pairs)
-          (else (successive-merge
-                 (cons (make-code-tree (car pairs) (cadr pairs))
-                       (cddr pairs))))))
+**** Exercise 2.70
+#+begin_quote
+The following eight-symbol alphabet with associated relative
+frequencies was designed to efficiently encode the lyrics of 1950s
+rock songs. (Note that the “symbols” of an “alphabet” need not be
+individual letters.)
+
+#+begin_src
+A    2    NA  16
+BOOM 1    SHA  3
+GET  2    YIP  9
+JOB  2    WAH  1
 #+end_src
+
+Use ~generate-huffman-tree~ (Exercise 2.69) to generate a
+corresponding Huffman tree, and use ~encode~ (Exercise 2.68) to encode
+the following message:
+
+#+begin_src
+Get a job
+Sha na na na na na na na na
+
+Get a job
+Sha na na na na na na na na
+
+Wah yip yip yip yip
+yip yip yip yip yip
+Sha boom
+#+end_src
+
+How many bits are required for the encoding? What is the smallest
+number of bits that would be needed to encode this song if we used a
+fixed-length code for the eight-symbol alphabet?
+#+end_quote
+
+#+begin_src scheme
+  (define rock-tree
+    (generate-huffman-tree
+     '((A 2) (NA 16) (BOOM 1) (SHA 3) (GET 2) (YIP 9) (JOB 2) (WAH 1))))
+
+  (encode '(GET A JOB
+                SHA NA NA NA NA NA NA NA NA
+
+                GET A JOB
+                SHA NA NA NA NA NA NA NA NA
+
+                WAH YIP YIP YIP YIP
+                YIP YIP YIP YIP YIP
+                SHA BOOM)
+          rock-tree)
+#+end_src
+
+84 bits are required.
+
+If we used a fixed-length code, given that we have 8 symbols, we would
+need 3 bits for each symbol (Cf. p.161). The song is made of 36
+symbols, so to encode it with a fixed-length code we would need (*
+36 3) = 108 bits.
 
 * 3 Modularity, Objects, and State
 ** 3.4 Concurrency: Time Is of the Essence
