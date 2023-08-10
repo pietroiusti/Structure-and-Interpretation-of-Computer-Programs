@@ -7118,6 +7118,52 @@ need 3 bits for each symbol (Cf. p.161). The song is made of 36
 symbols, so to encode it with a fixed-length code we would need (*
 36 3) = 108 bits.
 
+**** Ex. 2.71
+*Exercise*:
+
+#+begin_quote
+Suppose we have a Huffman tree for an alphabet of n symbols, and that
+the relative frequencies of the symbols are
+$1,2,4,\dots,2^{n−1}$. Sketch the tree for $n=5$; for $n=10$. In such
+a tree (for general $n$) how many bits are required to encode the most
+frequent symbol? The least frequent symbol?
+#+end_quote
+
+*Answer*:
+
+#+begin_src scheme
+
+  ;; for n = 5:
+  ;; (((((leaf A 1) (leaf B 2) (A B) 3) (leaf C 4) (A B C) 7)
+  ;;   (leaf D 8) (A B C D) 15) (leaf E 16) (A B C D E) 31)
+  ;;
+  ;;                              *
+  ;;                         _____|____
+  ;;                        |          |
+  ;;                        *         E 16
+  ;;                    ____|____
+  ;;                   |         |
+  ;;                   *        D 8
+  ;;               ____|____
+  ;;               |       |
+  ;;               *      C 4
+  ;;               |
+  ;;           ____*____
+  ;;          |         |
+  ;;
+  ;;        A 1        B 2
+
+  ;; Analogously for n = 10...
+
+  ;; The newly created tree at each step of successive-merge is placed
+  ;; at the start, because its weight is one value less than then next
+  ;; element.
+#+end_src
+
+We need only 1 bit to represent the most frequent symbol.
+
+We need $n - 1$ to represent the least frequent symbol.
+
 * 3 Modularity, Objects, and State
 ** 3.4 Concurrency: Time Is of the Essence
 - We have seen that computational objects with local state are
