@@ -6702,7 +6702,7 @@ an implementation of merge sort. Given so, ~union-set-bt~ and
 *** 2.3.4 Example: Huffman Encoding Trees
 In general, if we want to distinguish $n$ symbols, we need $\log_{2}n$
 bits per symbol. So, if we want to distinguish eight symbols A, B, C,
-D, E, F, G, H, then we need $\log_{2}n$ bits per symbols, that is, 3
+D, E, F, G, H, then we need $\log_{2}8$ bits per symbols, that is, 3
 bits per symbol. For example:
 
 |   A |   B |   C |   D |   E |   F |   G |   H |
@@ -7163,7 +7163,92 @@ frequent symbol? The least frequent symbol?
 We need only 1 bit to represent the most frequent symbol.
 
 We need $n - 1$ to represent the least frequent symbol.
+**** Ex. 2.72
 
+#+begin_quote
+Consider the encoding procedure that you designed in Exercise
+2.68. What is the order of growth in the number of steps needed to
+encode a symbol? Be sure to include the number of steps needed to
+search the symbol list at each node encountered. To answer this
+question in general is difficult. Consider the special case where the
+relative frequencies of the $n$ symbols are as described in Exercise
+2.71, and give the order of growth (as a function of $n$) of the
+number of steps needed to encode the most frequent and least frequent
+symbols in the alphabet.
+#+end_quote
+
+
+** 2. 4 Multiple Represenations for Abstract Data
+/Data Abstraction/ keeps separate the /use/ from the /implementation/,
+the /interface/ from the /representation/.
+
+A Scheme programmer, for example, usually operates at a level of
+abstraction such that she doesn't have to worry about how ~car~,
+~cdr~, and ~cons~ are implemented. She just has to know /how they
+behave/. She just has to know that ~cons~ takes two entities and
+creates a further entity --- aptly called a ``pair''--- the
+application of ~car~ to which returns the first entity and the
+application of ~cdr~ to which returns the second entity. The
+implementation of how this works remains in the shadows.  In 2.1.1 we
+have seen ``how to separate the task of designing a program that uses
+rational numbers from the task of implemententing rational numbers.
+The ``abstractions barriers'' we are talking about can be thought of
+as horizontal barriers which are present at different levels (see
+Figure 2.1).
+
+Despite the benefits those barriers provide, those barriers are not
+enough. They are not enough, because there might be more than one
+useful representation for a certain data object and we might want to
+use all of them in our system. Complex numbers offer a
+more-or-less-toy example. Complex numbers can be represented in the
+so-called ``rectangular'' form --- is in terms of a real part and an
+imaginary part ---, or in the so-called ``polar'' form --- which is in
+terms of a magnitude and an angle. Each of those two representations is
+more appropriate than the other in certain circumstances.
+
+We need:
+ - NOT ONLY: ``data-abstraction barriers'' that isolate representation
+   from use;
+ - BUT ALSO: abstraction barriers that isolate different
+   represenations for the same data object and allow those different
+   design choices to coexist;
+ - MOREOVER: we need to able to add a certain representation to a
+   system /additively/, that is, without having to redesign or
+   reimplement it.
+
+You can think of those additional barriers as /vertica/ barriers (see
+Figure 2.19).
+
+THE ANSWER: generic procedures. (Main technique: type tags. To achieve
+``additiveness'': data-directed programming.)
+
+*** 2.4.1 Representations for Complex Numbers
+- Selectors and constructors that are our /abstract data/:
+  - Selectors:
+    - ~real-part~;
+    - ~imag-part~;
+    - ~magnitude~;
+    - ~angle~;
+  - Constructors:
+    - ~make-from-real-imag~;
+    - ~make-from-mag-ang~;
+
+- We can specify operations on complex numbers in terms of the
+  abstract data above:
+  - ~add-complex~;
+  - ~sub-complex~;
+  - ~mul-complex~;
+  - ~div-complex~;
+
+- Suppose that Ben and Alyssa have implemented two different
+  representations, the selectors and the constructors they have
+  created have the same name but they operate differently underneath
+  the hood.
+
+- Given that the operations add-complex, sub-complex, mul-complex, and
+  div-complex are implemented in terms of abstract data, adopting
+  Ben's representation or Alyssa's would make not difference: those
+  operations would work in both cases.
 * 3 Modularity, Objects, and State
 ** 3.4 Concurrency: Time Is of the Essence
 - We have seen that computational objects with local state are
