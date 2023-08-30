@@ -7249,6 +7249,31 @@ THE ANSWER: generic procedures. (Main technique: type tags. To achieve
   div-complex are implemented in terms of abstract data, adopting
   Ben's representation or Alyssa's would make not difference: those
   operations would work in both cases.
+
+*** Exercise 2.74
+Division1 could provide its package like that:
+
+#+begin_src scheme
+  (define (install-division1-package)
+    ;; internal procedures
+    (define (get-record file employee-name)
+      ;; ...
+      )
+
+    ;; interface to the rest of the system
+    (define (tag-file x) (attach-tag 'division1 x))
+    (define (tag-employee x) (attach-tag 'employee-division1 x))
+    (put 'get-record '(division1 employee-division1) get-record))
+#+end_src
+
+Other division would do anologously.
+
+A generic ~get-record~ procedure could then be implemented as follows:
+#+begin_src scheme
+  (define (get-record personnel-file name)
+    (apply-generic 'get-record personnel-file name))
+#+end_src
+
 * 3 Modularity, Objects, and State
 ** 3.4 Concurrency: Time Is of the Essence
 - We have seen that computational objects with local state are
