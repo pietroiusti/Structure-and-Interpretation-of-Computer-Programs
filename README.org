@@ -7274,6 +7274,133 @@ A generic ~get-record~ procedure could then be implemented as follows:
     (apply-generic 'get-record personnel-file name))
 #+end_src
 
+*** Exercise 2.75
+#+begin_src scheme
+  (define (make-from-mag-ang r a)
+    (define (dispatch op)
+      (cond ((eq? op 'real-part) (* r (cos a)))
+            ((eq? op 'imag-part) (* r (sin a)))
+            ((eq? op 'magnitude) r)
+            ((eq? op 'angle) a)
+            (else (error "Unknown op - MAKE-FROM-MAG-ANG" op))))
+    dispatch)
+#+end_src
+
+*** Exercise 2.76
+#+begin_quote
+As a large system with generic operations evolves, new types of data
+objects or new operations may be needed. For each of the three
+strategies --- generic operations with explicit dispatch,
+data-directed style, and message-passing-style --- describe the
+changes that must be made to a system in order to add new types or new
+operations. Which organization would be most appropriate for a system
+in which new types must often be added? Which would be most
+appropriate for a system in which new operations must often be added?
+#+end_quote
+
+**** Generic operations with explicti dispatch
+Okay, let's see what happens with *generic operations with explicit
+dispatch*.
+
+Let's start from the particular and then we'll try to generalize.
+
+***** Adding a new type
+Let's consider the complex number system in 2.4.2. Suppose that
+Richard comes up with a new way to represent complex numbers in terms
+of a foo and a bar. Richard has to write some analogous code to that
+of Ben and that of Alyssa in 2.4.2. That is, Richard had to provide a
+constructor and some selectors:
+#+begin_src scheme
+  (define (foo-Richard z) ...)
+
+  (define (bar-Richard z) ...)
+
+  (define (make-from-foo-bar foo bar)
+    (attach-tag 'Richard
+                ...))
+#+end_src
+
+Richard, also, has to look at what other representations there are in
+the system and provide the correspondent selectors and constructors
+(in our case there are two other representations: Ben's and Alyssa's.
+The former is in terms of a real and an imaginary part. The latter in
+terms of a magnitude and an angle.):
+
+#+begin_src scheme
+  (define (real-part-Richard z) ...)
+
+  (define (imag-part-Richard z) ...)
+
+  (define (magnitude-Richard z) ...)
+
+  (define (angle-rectangular z) ...)
+
+  (define (make-from-real-imag-Richard x y)
+    (attach-tag 'Richard
+                ...))
+
+  (define (make-from-mag-ang-Richard r a)
+    (attach-tag 'Richard
+                ...))
+#+end_src
+
+Moreover, now Ben and Alyssa should support Richard's representation:
+#+begin_src scheme
+  ;; Ben:
+  (define (foo-rectangular z) ...)
+
+  (define (bar-rectangular z) ...)
+
+  (define (make-from-foo-bar-rectangular x y)
+    (attach-tag 'rectangular ...))
+
+  ;; Alyssa:
+  (define (foo-polar z) ...)
+
+  (define (bar-polar z) ...)
+
+  (define (make-from-foo-bar-polar r a)
+    (attach-tag 'polar ...))
+#+end_src
+
+Then, each generic selectors should be updated. Each of them now
+should include an additional check for the Richard type. For example,
+~real-part~ should now look something like this:
+#+begin_src scheme
+  (define (real-part z)
+    (cond ((rectangular? z)
+           (real-part-rectangular (contents z)))
+          ((polar? z)
+           (real-part-polar (contents z)))
+          ((Richard? z)
+           (real-part-Richard (contents z)))
+          (else (error "Unknown type -- REAL-PART" z))))
+#+end_src
+
+Finally, a generic constructor should be provided (different
+implementations are possible.)
+#+begin_src scheme
+  (define (make-from-foo-bar
+           ...))
+#+end_src
+
+***** Adding a new operation
+Our system now has now four generic complex numbers operations:
+~div-complex~, ~sub-complex~, ~add-complex~, and ~mul-complex~.
+
+Now we want to add ~new-operation~ to the system.
+
+What happens?
+
+Assuming ~new-operation~ is defined in terms of the generl
+constructors and the generic selectors present in the system, then we
+should just define it:
+
+#+begin_src scheme
+  (define (new-operation z1 z2)
+    (...))
+#+end_src
+
 * 3 Modularity, Objects, and State
 ** 3.4 Concurrency: Time Is of the Essence
 - We have seen that computational objects with local state are
