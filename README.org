@@ -7189,38 +7189,74 @@ behave/. She just has to know that ~cons~ takes two entities and
 creates a further entity --- aptly called a ``pair''--- the
 application of ~car~ to which returns the first entity and the
 application of ~cdr~ to which returns the second entity. The
-implementation of how this works remains in the shadows.  In 2.1.1 we
-have seen ``how to separate the task of designing a program that uses
-rational numbers from the task of implemententing rational numbers.
-The ``abstractions barriers'' we are talking about can be thought of
-as horizontal barriers which are present at different levels (see
-Figure 2.1).
+implementation of how this works remains in the shadows. The
+programmer knows how to /use/ pairs, but she doens't have to know how
+pairs are represented.
+
+Section 2.1.1 showed a example of this kinds of ``abstractions
+barriers''. We saw there ``how to separate the task of designing a
+program that uses rational numbers from the task of implemententing
+rational numbers. The ``abstractions barriers'' we are talking about
+can be thought of as horizontal barriers which are present at
+different levels (see Figure 2.1). In that specific example, there are
+the following barriers:
+- ~cons~, ~car~, ~cdr~;
+- ~make-rat~, ~numer~, ~denom~;
+- ~add-rat~, ~sub-rat~, etc.;
+- programs that use rational numbers.
 
 Despite the benefits those barriers provide, those barriers are not
 enough. They are not enough, because there might be more than one
 useful representation for a certain data object and we might want to
 use all of them in our system. Complex numbers offer a
 more-or-less-toy example. Complex numbers can be represented in the
-so-called ``rectangular'' form --- is in terms of a real part and an
-imaginary part ---, or in the so-called ``polar'' form --- which is in
-terms of a magnitude and an angle. Each of those two representations is
-more appropriate than the other in certain circumstances.
+so-called ``rectangular'' form --- which is in terms of a real part
+and an imaginary part ---, or in the so-called ``polar'' form ---
+which is in terms of a magnitude and an angle. Each of those two
+representations is more appropriate than the other in certain
+circumstances.
 
 We need:
- - NOT ONLY: ``data-abstraction barriers'' that isolate representation
-   from use;
+ - NOT ONLY: ``data-abstraction barriers'' that isolate /use/ from
+   /representation/, /interface/ from /implementation/,
  - BUT ALSO: abstraction barriers that isolate different
-   represenations for the same data object and allow those different
-   design choices to coexist;
+   representations for the same data object and allow those different
+   design choices to coexist.
  - MOREOVER: we need to able to add a certain representation to a
    system /additively/, that is, without having to redesign or
    reimplement it.
 
-You can think of those additional barriers as /vertica/ barriers (see
+You can think of those additional barriers as /vertical/ barriers (see
 Figure 2.19).
 
-THE ANSWER: generic procedures. (Main technique: type tags. To achieve
-``additiveness'': data-directed programming.)
+#+begin_src 
+     *Figure 2.19:* Data-abstraction barriers in the complex-number
+     system.
+
+                     Programs that use complex numbers
+            +-------------------------------------------------+
+          --| add-complex sub-complex mul-complex div-complex |--
+            +-------------------------------------------------+
+                        Complex arithmetic package
+          ---------------------------+---------------------------
+                    Rectangular      |         Polar
+                  representation     |     representation
+          ---------------------------+---------------------------
+              List structure and primitive machine arithmetic
+
+[Figure from SICP Unofficial Texinfo Format version 2.neilvandyke4 (January 10, 2007)]
+#+end_src
+
+THE ANSWER is *generic procedures*: 
+#+begin_quote
+``procedures that can operate on data that may be represented in more
+than one way''. 
+#+end_quote
+
+We will be able to write generic procedure thanks to the usage of
+/type tags/. To achieve the ability to add representation to a certain
+system additively we will use the tecnnique of /data-directed/
+programming.
 
 *** 2.4.1 Representations for Complex Numbers
 - Selectors and constructors that are our /abstract data/:
@@ -7298,7 +7334,7 @@ in which new types must often be added? Which would be most
 appropriate for a system in which new operations must often be added?
 #+end_quote
 
-**** Generic operations with explicti dispatch
+**** Generic operations with explicit dispatch
 Okay, let's see what happens with *generic operations with explicit
 dispatch*.
 
@@ -7311,9 +7347,9 @@ of a foo and a bar. Richard has to write some analogous code to that
 of Ben and that of Alyssa in 2.4.2. That is, Richard had to provide a
 constructor and some selectors:
 #+begin_src scheme
-  (define (foo-Richard z) ...)
+  (define (foo-part-Richard z) ...)
 
-  (define (bar-Richard z) ...)
+  (define (bar-part-Richard z) ...)
 
   (define (make-from-foo-bar foo bar)
     (attach-tag 'Richard
@@ -7347,17 +7383,17 @@ terms of a magnitude and an angle.):
 Moreover, now Ben and Alyssa should support Richard's representation:
 #+begin_src scheme
   ;; Ben:
-  (define (foo-rectangular z) ...)
+  (define (foo-part-rectangular z) ...)
 
-  (define (bar-rectangular z) ...)
+  (define (bar-part-rectangular z) ...)
 
   (define (make-from-foo-bar-rectangular x y)
     (attach-tag 'rectangular ...))
 
   ;; Alyssa:
-  (define (foo-polar z) ...)
+  (define (foo-part-polar z) ...)
 
-  (define (bar-polar z) ...)
+  (define (bar-part-polar z) ...)
 
   (define (make-from-foo-bar-polar r a)
     (attach-tag 'polar ...))
@@ -7392,7 +7428,7 @@ Now we want to add ~new-operation~ to the system.
 
 What happens?
 
-Assuming ~new-operation~ is defined in terms of the generl
+Assuming ~new-operation~ is defined in terms of the general
 constructors and the generic selectors present in the system, then we
 should just define it:
 
@@ -7400,6 +7436,77 @@ should just define it:
   (define (new-operation z1 z2)
     (...))
 #+end_src
+**** Data-directed style
+***** Adding a new type
+Let's assumed that Ben's and Alyssa's representations are now part of
+data-directed system as described in 2.4.3. Richard comes along and
+wants to add his package to the system. What does Richard have to do?
+
+Well, he has to define a package and interface it with the rest of the
+system. He can do it by calling the following procedure:
+
+#+begin_src scheme
+    (define (install-Richard-package)
+      ;; internal procedures
+      (define (foo-part z) ...)
+      (define (bar-part z) ...)
+      (define (make-from-foo-bar z) ...)
+
+      (define (real-part z) ...)
+      (define (imag-part z) ...)
+      (define (make-from-real-imag x y) ...)
+
+      (define (magnitude z) ...)
+      (define (angle z) ...)
+      (define (make-from-mag-ang r a) ...)
+
+      ;; interface to the rest of the system
+      (define (tag x) (attach-tag 'Richard x))
+      (put 'foo-part '(Richard) foo-part)
+      (put 'bar-part '(Richard) bar-part)
+
+      (put 'real-part '(Richard) real-part)
+      (put 'imag-part '(Richard) imag-part)
+
+      (put 'magnitude '(Richard) magnitude)
+      (put 'angle '(rectangular) angle)
+
+      (put 'make-from-foo-bar 'Richard
+           (lambda (f b) (tag (make-from-foo-bar f b))))
+      (put 'make-from-real-imag 'rectangular
+           (lambda (x y) (tag (make-from-real-imag x y))))
+      (put 'make-from-mag-ang 'rectangular
+           (lambda (r a) (tag (make-from-mag-ang r a))))
+      'done)
+#+end_src
+
+Once Richard's procedures have been installed into the table, we can
+define generic selectors:
+#+begin_src scheme
+  (define (foo-part z) (apply-generic 'foo-part z))
+  (define (bar-part z) (apply-generic 'bar-part z))
+#+end_src
+
+And a generic constructor:
+#+begin_src scheme
+  (define (make-from-foo-bar x y)
+    ((get 'make-from-foo-bar 'Richard) x y))
+#+end_src
+
+Ben's and Alyssa's packages don't need to know about Richard's.
+
+However, what happens if one applies ~foo-part~ (or ~bar-part~) to a
+complex number which hasn't been implemented using Richard
+representation (that is, which hasn't been constructed using
+~make-from-foo-bar~)? The generic procedure ~foo-part~ will call
+~apply-generic~, which won't find any method for that type. If I am
+correct, if we want ~foo-part~ and ~bar-part~ to work with
+representation other than Richard's, the packages of those
+presentations are to be modified so that they include the relevant
+methods.
+***** Adding a new operation
+Same as in ``Generic operations with explicit dispatch''?
+
 
 * 3 Modularity, Objects, and State
 ** 3.4 Concurrency: Time Is of the Essence
