@@ -7178,7 +7178,7 @@ symbols in the alphabet.
 #+end_quote
 
 
-** 2. 4 Multiple Represenations for Abstract Data
+** 2.4 Multiple Represenations for Abstract Data
 /Data Abstraction/ keeps separate the /use/ from the /implementation/,
 the /interface/ from the /representation/.
 
@@ -7205,8 +7205,8 @@ the following barriers:
 - ~add-rat~, ~sub-rat~, etc.;
 - programs that use rational numbers.
 
-Despite the benefits those barriers provide, those barriers are not
-enough. They are not enough, because there might be more than one
+Despite the benefits that those barriers provide, those barriers are
+not enough. They are not enough, because there might be more than one
 useful representation for a certain data object and we might want to
 use all of them in our system. Complex numbers offer a
 more-or-less-toy example. Complex numbers can be represented in the
@@ -7283,7 +7283,7 @@ programming.
 
 - Given that the operations add-complex, sub-complex, mul-complex, and
   div-complex are implemented in terms of abstract data, adopting
-  Ben's representation or Alyssa's would make not difference: those
+  Ben's representation or Alyssa's would make no difference: those
   operations would work in both cases.
 
 *** Exercise 2.74
@@ -7334,13 +7334,105 @@ in which new types must often be added? Which would be most
 appropriate for a system in which new operations must often be added?
 #+end_quote
 
-**** Generic operations with explicit dispatch
+**** Answer 2
+***** Generic operations with explicit dispatch
+****** Adding a new type
+
+Let's imagine Henry wants to add his representation to the complex
+number arithmetic system.
+
+Somebody (the ``manager''...) has to change all generic operators.
+~real-part~, ~imag-part~, ~magnitude~, ~angle~, now need an additonal
+check for Henry's representation. Moreover, Henry should make sure
+that the names of his procedures don't conflict with those used by Ben
+and Alyssa.
+****** Adding a new operation
+Suppose we need a ~get-foo~ operation.
+
+All of those in charge of maintaining representation (Ben, Alyssa, and
+Henry) have to write a method that performs the right operation with
+their representation. And, again, name conflict is to be avoided.
+
+Moreover, somebody (the ``manager''...) has to write a generic
+~get-foo~ operation. In order to do so, he has to know all the names
+of the procedures written by Ben, Alyssa, and Henry.
+***** Data-directed Programming
+****** Adding a new type
+Again, let's imagine that Henry wants to add his representation to the
+complex number arithmetic system we already have.
+
+Herry, in data-directed system, has to ``install'' his packaged, that
+is, he has to put his procedures into the table.
+
+By following the method shown at p. ? he doesn't have to worry about
+name conflict (That method exploits scope. There are other ways as
+well; for example, putting lambdas into the table. The table stores
+objects, not names).
+
+There is now work for the ``manager''. The manager has been
+``automated out of existence'' (ref: ). The generic operations we
+already have will do the right thing thanks to ~apply-generic~ (or its
+simpler version ~operate~ shown in the lecture).
+
+****** Adding a new operation
+Again, suppose we need a ~get-foo~ operation.
+
+Sombody has to write a generic ~get-foo~.
+
+However, unlike with generic operations with explicit dispatch, now we
+don't need to know anything besides the name of the operation we want
+to add.
+
+Each package mantainer will have the responsibility to add their
+version of ~get-foo~ to the table. However, in case one doesn't and we
+try to ~get-foo~ to complext number of their type, the generic
+operation will show a suitable error message.
+
+***** Message passing
+****** Adding a new type
+Again, let's imagine that Henry wants to add his representation to the
+complex number arithmetic system we already have.
+
+Henry just as to add a new constructor. The situation is somewhat
+analogous to the data-directed programming case.
+****** Adding a new operation
+Again, suppose we need a ~get-foo~ operation.
+
+Somebody has to write the generic operation ~get-foo~, like in
+data-directed programming.
+
+Moreove, each ``packgage maintainers'' will have to add their version
+of ~get-foo~ in the ~dispatch~ procedure. In this case as well, if
+somebody forgets to add the procedures, an error message is printed
+when we apply ~get-foo~ on the releavant object.
+
+**** Answer 1
+***** Generic operations with explicit dispatch
+(
+#+begin_quote
+One weakness is that the generic interface procedures (`real-part',
+`imag-part', `magnitude', and `angle') must know about all the
+different representations. For instance, suppose we wanted to
+incorporate a new representation for complex numbers into our
+complex-number system. We would need to identify this new
+representation with a type, and then add a clause to each of the
+generic interface procedures to check for the new type and apply the
+appropriate selector for that representation.
+
+Another weakness of the technique is that even though the individual
+representations can be designed separately, we must guarantee that no
+two procedures in the entire system have the same name. This is why
+Ben and Alyssa had to change the names of their original procedures
+from section *Note 2-4-1.
+#+end_quote
+)
+
 Okay, let's see what happens with *generic operations with explicit
 dispatch*.
 
 Let's start from the particular and then we'll try to generalize.
 
-***** Adding a new type
+****** Adding a new type
 Let's consider the complex number system in 2.4.2. Suppose that
 Richard comes up with a new way to represent complex numbers in terms
 of a foo and a bar. Richard has to write some analogous code to that
@@ -7420,7 +7512,7 @@ implementations are possible.)
            ...))
 #+end_src
 
-***** Adding a new operation
+****** Adding a new operation
 Our system now has now four generic complex numbers operations:
 ~div-complex~, ~sub-complex~, ~add-complex~, and ~mul-complex~.
 
@@ -7436,8 +7528,8 @@ should just define it:
   (define (new-operation z1 z2)
     (...))
 #+end_src
-**** Data-directed style
-***** Adding a new type
+***** Data-directed style
+****** Adding a new type
 Let's assumed that Ben's and Alyssa's representations are now part of
 data-directed system as described in 2.4.3. Richard comes along and
 wants to add his package to the system. What does Richard have to do?
@@ -7493,18 +7585,18 @@ And a generic constructor:
     ((get 'make-from-foo-bar 'Richard) x y))
 #+end_src
 
-Ben's and Alyssa's packages don't need to know about Richard's.
+Ben's and Alyssa's packages don't need to know about Richard's. They
+don't have to change anything.
 
-However, what happens if one applies ~foo-part~ (or ~bar-part~) to a
-complex number which hasn't been implemented using Richard
-representation (that is, which hasn't been constructed using
-~make-from-foo-bar~)? The generic procedure ~foo-part~ will call
-~apply-generic~, which won't find any method for that type. If I am
-correct, if we want ~foo-part~ and ~bar-part~ to work with
-representation other than Richard's, the packages of those
-presentations are to be modified so that they include the relevant
-methods.
-***** Adding a new operation
+(It is true thought that if one applies ~foo-part~ (or ~bar-part~) to
+a complex number which hasn't been implemented using Richard
+representation, then ~apply-generic~ won't find any method for that
+type, and an error will be raised. If we want ~foo-part~ and
+~bar-part~ to work with representation other than Richard's, the
+packages of those presentations are to be modified so that they
+include the relevant methods.)
+
+****** Adding a new operation
 Same as in ``Generic operations with explicit dispatch''?
 
 
