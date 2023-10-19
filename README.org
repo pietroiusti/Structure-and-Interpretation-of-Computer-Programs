@@ -7598,7 +7598,144 @@ include the relevant methods.)
 
 ****** Adding a new operation
 Same as in ``Generic operations with explicit dispatch''?
+** 2.5 Systems with Generic Operations
+*** Exercise 2.77
+*Exercise*:
 
+#+begin_quote
+Louis Reasoner tries to evaluate the expression ~(magnitude z)~ where
+~z~ is the object shown in *Note Figure 2-24. To his surprise, instead of
+the answer 5 he gets an error message from `apply-generic', saying
+there is no method for the operation ~magnitude~ on the types
+~(complex)~. He shows this interaction to Alyssa P. Hacker, who says
+``The problem is that the complex-number selectors were never defined
+for ~complex~ numbers, just for ~polar~ and ~rectangular~ numbers. All
+you have to do to make this work is add the following to the ~complex~
+package:''
+
+#+begin_src scheme
+  (put 'real-part '(complex) real-part)
+  (put 'imag-part '(complex) imag-part)
+  (put 'magnitude '(complex) magnitude)
+  (put 'angle '(complex) angle)
+#+end_src
+
+Describe in detail why this works. As an example, trace through all
+the procedures called in evaluating the expression ~(magnitude z)~
+where ~z~ is the object shown in *Note Figure 2-24. In particular, how many
+times is ~apply-generic~ invoked? What procedure is dispatched to in
+each case?
+#+end_quote
+
+*Answer*:
+
+Here is ~z~:
+#+begin_src
+
+  -->[o|o]-->[o|o]-------->[o|o]
+      |       |             | |
+      v       v             v v
+  'complex  'rectangular    3 4
+
+#+end_src
+
+Louis evaluates ~(magnitude z)~.
+
+Louis is using the procedure defined as follows:
+
+#+begin_src scheme
+  (define (magnitude z)
+    (apply-generic 'magnitude z))
+#+end_src
+
+This means that when calling ~magnitude~, the first thing we do is
+looking in the table for the item specified by the row ~'magnitude~
+and column ~'complex~ (the type of ~z~).
+
+However, nobody has stored such a table item. (At the moment there is
+an element specified by row ~'magnitude~ and column ~'rectangular~,
+and an element specified by row ~'magnitude~ and column ~'polar~.) So,
+Louis's invocation produces an error.
+
+Alyssa's code adds to the table four objects. Those objects are the
+generic procedures defined on page 84, which are themselves designed
+to look for and use an object in the table.
+
+So, now, when Louis calls ~(magnitude z)~, we look for a table item
+which exists. It's the item which has been installed by Alyssa with
+this line:
+#+begin_src scheme
+  (put 'magnitude '(complex) magnitude)
+#+end_src
+
+Given that we find an item in the table, ~apply-generic~ applies it to
+the ~contents~ of ~z~. Now, what's the found table item? And what are
+the contents of ~z~. Let's start from the latter. These are the
+~contents~ of ~z~:
+
+#+begin_src
+    [o|o]------>[o|o]
+     |           | |
+     v           v v
+'rectangular     3 4
+#+end_src
+
+Applying ~magnitude~ to these contents means, again, looking for an
+item in the table. This time we are looking for the item specified the
+row ~'magnitude~ and the colum ~'rectangular~. An item is found and
+applied to the contents.
+
+Table before Alyssa's change:
+|           | rectangular           | polar           |
+|-----------+-----------------------+-----------------|
+| ...       |                       |                 |
+| magnitude | magnitude-rectangular | magnitude-polar |
+| ...       |                       |                 |
+
+
+Table after Alyssa's change:
+|           | complex   | rectangular           | polar           |
+|-----------+-----------+-----------------------+-----------------|
+| ...       |           |                       |                 |
+| magnitude | magnitude | magnitude-rectangular | magnitude-polar |
+| ...       |           |                       |                 |
+
+When evaluating ~(magnitude z)~, after Alyssa's contribution,
+~apply-generic~ is called twice. The first time ~magnitude~ dispatches
+to itself. The second time it dispatches to ~magnitude-rectangular~.
+
+#+begin_src scheme
+  (magnitude z) ;; z:  -->[o|o]-->[o|o]-------->[o|o]
+                ;;         |       |             | |
+                ;;         v       v             v v
+                ;;     'complex  'rectangular    3 4
+  ;;    |
+  ;;    |
+  ;;    V
+  ;;  apply-generic
+  ;;    |
+  ;;    |
+  ;;    V
+  (magnitude z') ;; z': -->[o|o]-------->[o|o]
+                 ;;         |             | |
+                 ;;         v             v v
+                 ;;       'rectangular    3 4
+  ;;    |
+  ;;    |
+  ;;    V
+  ;;  apply-generic
+  ;;    |
+  ;;    |
+  ;;    V
+  (magnitude z'') ;; z'': -->[o|o]
+                  ;;          | |
+                  ;;          v v
+                  ;;          3 4
+
+#+end_src
+
+Basically, Alyssa's line, has the effect of making ~magnitude~
+stripping off ~'complex~ before dispatching to someone else.
 
 * 3 Modularity, Objects, and State
 ** 3.4 Concurrency: Time Is of the Essence
