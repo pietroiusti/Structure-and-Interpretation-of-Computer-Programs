@@ -7701,8 +7701,10 @@ Table after Alyssa's change:
 | ...       |           |                       |                 |
 
 When evaluating ~(magnitude z)~, after Alyssa's contribution,
-~apply-generic~ is called twice. The first time ~magnitude~ dispatches
-to itself. The second time it dispatches to ~magnitude-rectangular~.
+~apply-generic~ is called twice. The first time it dispatches to
+~magnitude~ to itself (in a sense, ~magnitude~, through
+~apply-generic~, is dispatching to itself). The second time it
+dispatches to ~magnitude-rectangular~.
 
 #+begin_src scheme
   (magnitude z) ;; z:  -->[o|o]-->[o|o]-------->[o|o]
@@ -7736,6 +7738,141 @@ to itself. The second time it dispatches to ~magnitude-rectangular~.
 
 Basically, Alyssa's line, has the effect of making ~magnitude~
 stripping off ~'complex~ before dispatching to someone else.
+*** Exercise 2.78
+
+*Exercise*:
+
+#+begin_quote
+The internal procedures in the ~scheme-number~ package are essentially
+nothing more than calls to the primitive procedures ~+~, ~-~, etc. It
+was not possible to use the primitives of the language directly
+because our type-tag system requires that each data object have a type
+attached to it. In fact, however, all Lisp implementations do have a
+type system, which they use internally. Primitive predicates such as
+~symbol?~ and ~number?~ determine whether data objects have particular
+types. Modify the definitions of ~type-tag~, ~contents~, and
+~attach-tag~ from section *Note 2-4-2:: so that our generic system takes
+advantage of Scheme's internal type system. That is to say, the system
+should work as before except that ordinary numbers should be
+represented simply as Scheme numbers rather than as pairs whose ~car~
+is the symbol ~scheme-number~.
+#+end_quote
+
+*Answer*:
+
+#+begin_src scheme
+  (define (type-tag datum)
+    (cond ((number? datum) 'scheme-number)
+          ((pair? datum) (car datum))
+          (else (error "Bad tagged datum -- TYPE-TAG" datum))))
+
+  (define (contents datum)
+    (cond ((number? datum) datum)
+          ((pair? datum) (cdr datum))
+          (else (error "Bad tagged datum -- CONTENTS" datum))))
+
+  (define (attach-tag type-tag contents)
+    (if (number? contents)
+        contents
+        (cons type-tag contents)))
+  ;; alternatively
+  (define (attach-tag type-tag contents)
+    (if (eq? type-tag 'scheme-number)
+        contents
+        (cons type-tag contents)))
+#+end_src
+
+*** Exercise 2.79
+*Exercise*:
+
+#+begin_quote
+Define a generic equality predicate `equ?' that tests the equality of
+two numbers, and install it in the generic arithmetic package. This
+operation should work for ordinary numbers, rational numbers, and
+complex numbers.
+#+end_quote
+
+*Answer*:
+
+I guess, first of all:
+
+#+begin_src scheme
+  (define (equ x y) apply-generic 'equ x y)
+#+end_src
+
+After this, we should put the specific procedures for the types of
+numbers we have:
+
+#+begin_src scheme
+  (put 'equ '(scheme-number scheme-number)
+       (lambda (x y) (= x y)))
+#+end_src
+
+#+begin_src scheme
+  (put 'equ '(rational rational)
+       (lambda (x y) (and (= (car x) (car y))
+                          (= (cdr x) (cdr y)))))
+#+end_src
+(if equ for rational numbers was defined within the
+~install-rational-package~ procedure we could make use of ~number~ and
+~denom~)
+
+#+begin_src scheme
+  (put 'equ '(complex complex)
+       (lambda (x y) (and (= (real-part x) (real-part y))
+                          (= (imag-part x) (imag-part y)))))
+#+end_src
+(~Real-part~ and ~imag-part~, if I'm not wrong, here work correctly
+thanks to the code added by Alyssa P. Hacker in ex. 2.77.)
+
+(Alternatively, we could have used ~magnitude~ and ~angle~, instead of
+~real-part~ and ~imag-part~.)
+
+*** Exercise 2.80
+
+*Exercise*:
+
+#+begin_quote
+Define a generic predicate `=zero?' that tests if its argument is
+zero, and install it in the generic arithmetic package. This operation
+should work for ordinary numbers, rational numbers, and complex
+numbers.
+#+end_quote
+
+*Answer*:
+
+#+begin_src scheme
+  (define (zero? x)
+    (apply-generic zero? x))
+#+end_src
+
+#+begin_src scheme
+  (put 'zero '(scheme-number scheme-number)
+       (lambda (x) (= x 0)))
+#+end_src
+
+#+begin_src scheme
+  (put 'zero '(rational rational)
+       (lambda (x)
+         (and (= (car x) 0)
+              (not (= (cdr x) 0)))))
+  ;; the numerator must be zero and the denominator must be non-zero
+#+end_src
+
+#+begin_src scheme
+  (put 'zero '(complex)
+       (lambda (x)
+         (and (= (real-part x) 0)
+              (= (imag-part x) 0))))
+#+end_src
+
+Alternatively:
+
+#+begin_src scheme
+  (put 'zero '(complex)
+       (lambda (x)
+         (= (angle x) 0)))
+#+end_src
 
 * 3 Modularity, Objects, and State
 ** 3.4 Concurrency: Time Is of the Essence
