@@ -7599,6 +7599,12 @@ include the relevant methods.)
 ****** Adding a new operation
 Same as in ``Generic operations with explicit dispatch''?
 ** 2.5 Systems with Generic Operations
+
+In 2.5.1, Authors show how to define generic operations that can take
+different types of arguments (numbers) by using the same technique
+which has been used to define the generic operations (selectors) in
+the case of complex numbers (in 2.4.3).
+
 *** Exercise 2.77
 *Exercise*:
 
