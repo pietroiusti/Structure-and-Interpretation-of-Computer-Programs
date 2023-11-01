@@ -7934,11 +7934,11 @@ arguments have the same type.
 If we call ~exp~ with two complex numbers, we would call
 
 #+begin_src scheme
-  (apply-generic 'expt CN1 CN2)
+  (apply-generic 'exp CN1 CN2)
 #+end_src
 
 We are not going to find a `proc' because we dont' have an object in
-the table for row ~'expt~ and column ~'(complex complex)~.
+the table for row ~'exp~ and column ~'(complex complex)~.
 
 So we would go inside the second ~if~.
 
@@ -7948,7 +7948,7 @@ by Louis Reasoner.
 Given that the former is truthy, we call
 
 #+begin_src scheme
-  (apply-generic 'expt (t1->t2 CN1) CN2)
+  (apply-generic 'exp (t1->t2 CN1) CN2)
 #+end_src
 
 ~(t1->t2 CN1)~ evaluates to CN1, so we are calling ~apply-generic~
