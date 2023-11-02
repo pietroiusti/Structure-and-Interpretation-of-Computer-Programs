@@ -8056,6 +8056,78 @@ Here is the modified procedure:
                        (list op type-tags)))))))
 #+end_src
 
+*** Exercise 2.82
+#+begin_quote
+Show how to generalize `apply-generic' to handle coercion in the
+general case of multiple arguments. One strategy is to attempt to
+coerce all the arguments to the type of the first argument, then to
+the type of the second argument, and so on. Give an example of a
+situation where this strategy (and likewise the two-argument version
+given above) is not sufficiently general. (Hint: Consider the case
+where there are some suitable mixed-type operations present in the
+table that will not be tried.)
+#+end_quote
+
+Authors are telling us what to try: ``One strategy is to attempt to
+coerce all the arguments to the type of the first argument, then to
+the type of the second argument, and so on.''
+
+So we need to ``loop'' over the arguments and, for each one of them,
+we get the type of the type and try to coerce all the others.
+This ``double loop'' operation probably lends itself to be handled in
+some elegant way using higher-order procedures.
+
+In the following approach, if the first retrival of proc fails, I'm
+going to loop over each argument using procedural iteration. I create
+the list of the functions needed from the coercion table, and create,
+if possible (if I've found all relevant procedures), the list of all
+coerced arguments. We then try to retrieve the relevant proc again. I
+we succeed we can call apply, otherwise we keep iterating.
+
+#+begin_src scheme
+  (define (apply-generic op . args)
+    (let ((type-tags (map type-tag args)))
+      (let ((proc (get op type-tags)))
+        (if proc
+            (apply proc (map contents args))
+            (apply-generic-coerce 0 op . args)))))
+
+  (define (apply-generic-coerce i op . args)
+    (if (>= i (length args))
+        (error "failed to find op")
+        ;; find type of args with index i
+        (let ((type (type-tag (list-ref args i))))
+          ;; build a list of all the functions that are needed from the coercion table
+          ;; (when the type is the same we can just use the identity function.
+          (let ((coercing-funs (map (lambda (arg)
+                                      (if (eq? (type-tag arg) type)
+                                          identity
+                                          (get-coercion (type-tag arg) type)))
+                                    args)))
+            (if (> (length (filter is-falsy coercing-funs) 0)
+                   ;; try with next type
+                   (apply-generic-coerce (+ 1 i) op . args)
+                   (let ((coerced-args (map (lambda (arg)
+                                              ((get-coercion (type-tag arg) type) arg)))))
+                     (let ((proc (get op (map type-tags coerced-args))))
+                       (if proc
+                           ;; found proc!
+                           (apply proc (map contents coerced-args))
+                           ;; try with next type
+                           (apply-generic-coerce (+ 1 i) op . args))))))))))
+#+end_src
+
+
+
+I suspect that the situations in which the procedure is not going to
+work are those situation in which we have to coerce to some arguments
+to some type which is not the type of other arguments.
+
+For example if we have in the table an opration foo which works on
+triangles and we try to apply it to on isosceles triangle and a right
+triangle, trying to coerce the isosceles to right or viceversa will
+not work. We will have instead to coerce both the isosceles and the
+right tringles to tringle.
 * 3 Modularity, Objects, and State
 ** 3.4 Concurrency: Time Is of the Essence
 - We have seen that computational objects with local state are
