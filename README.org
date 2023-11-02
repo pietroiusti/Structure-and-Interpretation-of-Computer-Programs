@@ -6256,9 +6256,9 @@ and selectors ~start-segment~ and ~end-segment~.
   (define (right-split painter n)
     (if (= n 0)
         painter
-        (let ((smaller (right-split painter 
+        (let ((smaller (right-split painter
                                     (- n 1))))
-          (beside painter 
+          (beside painter
                   (below smaller smaller)))))
 
   ;; change at the level of wave: use einstein instead
@@ -6268,18 +6268,18 @@ and selectors ~start-segment~ and ~end-segment~.
     (if (= n 0)
         painter
         (let ((up (right-split painter (- n 1)))
-              (right (up-split painter 
+              (right (up-split painter
                                (- n 1))))
           (let ((top-left (beside up up))
-                (bottom-right (below right 
+                (bottom-right (below right
                                      right))
-                (corner (corner-split painter 
+                (corner (corner-split painter
                                       (- n 1))))
             (beside (below painter top-left)
-                    (below bottom-right 
+                    (below bottom-right
                            corner))))))
 
-  ;; change at the level of square-limit: replace fli-vert with flip-horiz 
+  ;; change at the level of square-limit: replace fli-vert with flip-horiz
   (define (square-limit painter n)
     (let ((quarter (corner-split painter n)))
       (let ((half (beside (flip-horiz quarter)
@@ -7229,7 +7229,7 @@ We need:
 You can think of those additional barriers as /vertical/ barriers (see
 Figure 2.19).
 
-#+begin_src 
+#+begin_src
      *Figure 2.19:* Data-abstraction barriers in the complex-number
      system.
 
@@ -7247,10 +7247,10 @@ Figure 2.19).
 [Figure from SICP Unofficial Texinfo Format version 2.neilvandyke4 (January 10, 2007)]
 #+end_src
 
-THE ANSWER is *generic procedures*: 
+THE ANSWER is *generic procedures*:
 #+begin_quote
 ``procedures that can operate on data that may be represented in more
-than one way''. 
+than one way''.
 #+end_quote
 
 We will be able to write generic procedure thanks to the usage of
