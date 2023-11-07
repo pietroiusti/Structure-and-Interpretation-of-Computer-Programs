@@ -7599,7 +7599,7 @@ include the relevant methods.)
 ****** Adding a new operation
 Same as in ``Generic operations with explicit dispatch''?
 ** 2.5 Systems with Generic Operations
-
+*** 2.5.1 Generic Arithmetic Operations
 In 2.5.1, Authors show how to define generic operations that can take
 different types of arguments (numbers) by using the same technique
 which has been used to define the generic operations (selectors) in
@@ -7879,6 +7879,75 @@ Alternatively:
        (lambda (x)
          (= (angle x) 0)))
 #+end_src
+
+*** 2.5.2 Combining Data of Different Types
+So far we have considered operations on objects of the same type.
+
+For example, the addition of two ordinary numbers or the
+multiplication of two rational numbers.
+
+But this means that the operations we have defined ``treate different
+data types as being completely independent''. We haven't dealt with,
+say the addition of an ordinary number and a rational number, or the
+division of a rational number and a complex number.
+
+How should we introduce ``cross-type'' operations in our system?
+
+#+begin_quote
+One way to handle cross-type operations is to design a different
+procedure for each possible combination of types for which the
+operation is valid. [...] This technique works, but it is cumbersome.
+#+end_quote
+
+When we can, we should be ``by taking advantage of additional
+structure that may be latent in our type system'': often an object of
+a certain data type can be seen as an object of a another data
+type. E.g., the rational number 2/2, can be seen as the ordinary
+number 1. Given so, if we are asked to perform an operation on a
+rational number and an ordinary number, we could try to ``coerce'' the
+rational number into an ordinary number. And if we are successfull in
+doing so, then we can use our good old procedure that works with
+ordinary numbers.
+
+The coercion idea can be implement by designing coercion procedures,
+installing them into a coercion table, and then modifying
+~apply-generic~.
+
+#+begin_src scheme
+  (define (scheme-number->complex n)
+    (make-complex-from-real-imag (contents n) 0))
+
+  (put-coercion 'scheme-number 'complex scheme-number->complex)
+
+  ;; For simplicity, only the case in which there are two arguments is
+  ;; considered
+  (define (apply-generic op . args)
+    (let ((type-tags (map type-tag args)))
+      (let ((proc (get op type-tags)))
+        (if proc
+            (apply proc (map contents args))
+            (if (= (length args) 2)
+                (let ((type1 (car type-tags))
+                      (type2 (cadr type-tags))
+                      (a1 (car args))
+                      (a2 (cadr args)))
+                  (let ((t1->t2 (get-coercion type1 type2))
+                        (t2->t1 (get-coercion type2 type1)))
+                    (cond (t1->t2
+                           (apply-generic op (t1->t2 a1) a2))
+                          (t2->t1
+                           (apply-generic op a1 (t2->t1 a2)))
+                          (else
+                           (error "No method for these types"
+                                  (list op type-tags))))))
+                (error "No method for these types"
+                       (list op type-tags)))))))
+#+end_src
+
+This coercion scheme is useful, but not general enough: there may be
+cases in which it's not possible neither object can be converted into
+the type of the other object, but in which both objects could be
+converted to a third type.
 
 *** Exercise 2.81
 *Exercise*:
