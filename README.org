@@ -7886,10 +7886,10 @@ So far we have considered operations on objects of the same type.
 For example, the addition of two ordinary numbers or the
 multiplication of two rational numbers.
 
-But this means that the operations we have defined ``treate different
-data types as being completely independent''. We haven't dealt with,
-say the addition of an ordinary number and a rational number, or the
-division of a rational number and a complex number.
+But this means that the operations we have defined ``treat the
+different data types as being completely independent.''. We haven't
+dealt with, say the addition of an ordinary number and a rational
+number, or the division of a rational number and a complex number.
 
 How should we introduce ``cross-type'' operations in our system?
 
