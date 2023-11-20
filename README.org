@@ -8006,10 +8006,10 @@ If we call ~exp~ with two complex numbers, we would call
   (apply-generic 'exp CN1 CN2)
 #+end_src
 
-We are not going to find a `proc' because we dont' have an object in
-the table for row ~'exp~ and column ~'(complex complex)~.
+We are not going to find a procedure, because we don't have an object
+in the table for row ~'exp~ and column ~'(complex complex)~.
 
-So we would go inside the second ~if~.
+So we would go inside the second ~if~ block.
 
 Both ~t1->t2~ and ~t2->t1~ would be truthy, thanks to the code added
 by Louis Reasoner.
@@ -8021,8 +8021,8 @@ Given that the former is truthy, we call
 #+end_src
 
 ~(t1->t2 CN1)~ evaluates to CN1, so we are calling ~apply-generic~
-again with its original arguments. So: we are calling ~apply-generic~
-/ad infinitum/ with the same arguments.
+again with its original arguments. So: we would be calling
+~apply-generic~ /ad infinitum/ with the same arguments.
 
 **** b
 Suppose we try to add two complex numbers:
@@ -8198,6 +8198,150 @@ triangle, trying to coerce the isosceles to right or viceversa will
 not work. We will have instead to coerce both the isosceles and the
 right tringles to tringle.
 * 3 Modularity, Objects, and State
+** Exercise 3.1
+*Exercise*:
+
+#+begin_quote
+An /accumulator/ is a procedure that is called repeatedly with a
+single numeric argument and accumulates its arguments into a sum.
+Each time it is called, it returns the currently accumulated sum.
+Write a procedure ~make-accumulator~ that generates accumulators, each
+maintaining an independent sum.  The input to ~make-accumulator~
+should specify the initial value of the sum; for example
+
+#+begin_src scheme
+  (define A (make-accumulator 5))
+
+  (A 10)
+  15
+
+  (A 10)
+  25
+#+end_src
+#+end_quote
+
+*Answer*:
+
+#+begin_src scheme
+  (define (make-accumulator initial)
+    (lambda (val)
+      (begin (set! initial (+ val initial))
+             initial)))
+
+  (define A (make-accumulator 5))
+  (A 10) ;; => 15
+  (A 10) ;; => 25
+
+  (define B (make-accumulator 938))
+  (B 1) ;; => 939
+  (B 2) ;; => 941
+#+end_src
+** Exercise 3.2
+*Exercise*:
+
+#+begin_quote
+In software-testing applications, it is useful to be able to count the
+number of times a given procedure is called during the course of a
+computation.  Write a procedure `make-monitored' that takes as input a
+procedure, ~f~, that itself takes one input.  The result returned by
+~make-monitored~ is a third procedure, say ~mf~, that keeps track of
+the number of times it has been called by maintaining an internal
+counter.  If the input to ~mf~ is the special symbol
+~how-many-calls?~, then ~mf~ returns the value of the counter.  If the
+input is the special symbol ~reset-count~, then ~mf~ resets the
+counter to zero.  For any other input, ~mf~ returns the result of
+calling ~f~ on that input and increments the counter.  For instance,
+we could make a monitored version of the ~sqrt~ procedure:
+
+#+begin_src scheme
+  (define s (make-monitored sqrt))
+
+  (s 100)
+  10
+
+  (s 'how-many-calls?)
+  1
+#+end_src
+#+end_quote
+
+*Answer*:
+
+#+begin_src scheme
+  (define (make-monitored f)
+    (let ((counter 0))
+      (lambda (x)
+        (cond ((eq? x 'how-many-calls?) counter)
+              ((eq? x 'reset-count) (set! counter 0))
+              (else (begin (set! counter (+ counter 1))
+                           (f x)))))))
+
+  (define s (make-monitored sqrt))
+
+  (s 100) ;; => 10
+
+  (s 'how-many-calls?) ;; => 1
+#+end_src
+** Exercise 3.3
+*Exercise*:
+
+#+begin_quote
+Modify the ~make-account~ procedure so that it creates
+password-protected accounts.  That is, ~make-account~ should take a
+symbol as an additional argument, as in
+
+#+begin_src scheme
+  (define acc (make-account 100 'secret-password))
+#+end_src
+
+The resulting account object should process a request only if it
+is accompanied by the password with which the account was created,
+and should otherwise return a complaint:
+
+#+begin_src scheme
+  ((acc 'secret-password 'withdraw) 40)
+  60
+
+  ((acc 'some-other-password 'deposit) 50)
+  "Incorrect password"
+#+end_src
+#+end_quote
+
+*Answer*:
+
+#+begin_src scheme
+  (define (make-account balance pwd)
+    (define (withdraw amount)
+      (if (>= balance amount)
+          (begin (set! balance (- balance amount))
+                 balance)
+          "Insufficient funds"))
+    (define (deposit amount)
+      (set! balance (+ balance amount))
+      balance)
+    (define (dispatch p m)
+      (cond ((not (eq? p pwd)) (lambda (a) "Incorrect password"))
+            ((eq? m 'withdraw) withdraw)
+            ((eq? m 'deposit) deposit)
+            (else (error "Unknown request -- MAKE-ACCOUNT"
+                         m))))
+    dispatch)
+
+  (define acc (make-account 100 'foo))
+
+  ((acc 'foo 'withdraw) 40) ;; => 60
+
+  ((acc 'bar 'withdraw) 40) ;; => "Incorrect password"
+#+end_src
+** Exercise 3.4
+*Exercise*:
+
+#+begin_quote
+Modify the ~make-account~ procedure of *Note Exercise 3-3 by adding
+another local state variable so that, if an account is accessed more
+than seven consecutive times with an incorrect password, it invokes
+the procedure ~call-the-cops~.
+#+end_quote
+
 ** 3.4 Concurrency: Time Is of the Essence
 - We have seen that computational objects with local state are
   powerful tools for modeling.
