@@ -8336,11 +8336,56 @@ and should otherwise return a complaint:
 *Exercise*:
 
 #+begin_quote
-Modify the ~make-account~ procedure of *Note Exercise 3-3 by adding
-another local state variable so that, if an account is accessed more
-than seven consecutive times with an incorrect password, it invokes
-the procedure ~call-the-cops~.
+Modify the ~make-account~ procedure of Exercise 3-3 by adding another
+local state variable so that, if an account is accessed more than
+seven consecutive times with an incorrect password, it invokes the
+procedure ~call-the-cops~.
 #+end_quote
+
+*Answer*:
+
+#+begin_src scheme
+(define (call-the-cops)
+  "Calling the cops!")
+
+(define (make-account balance pwd)
+  (define (withdraw amount)
+    (if (>= balance amount)
+        (begin (set! balance (- balance amount))
+               balance)
+        "Insufficient funds"))
+  (define (deposit amount)
+    (set! balance (+ balance amount))
+    balance)
+  (let ((counter 0))
+    (define (dispatch p m)
+      (if (not (eq? p pwd))
+          (begin (set! counter (+ counter 1))
+                 (cond ((> counter 7)
+                        (call-the-cops)
+                        (lambda (a) "We called the cops"))
+                       (else (lambda (a) "Incorrect password"))))
+          (begin (set! counter 0)
+                 (cond ((eq? m 'withdraw) withdraw)
+                       ((eq? m 'deposit) deposit)
+                       (else (error "Unknown request -- MAKE-ACCOUNT"
+                                    m))))))
+    dispatch))
+
+(define acc (make-account 100 'foo))
+((acc 'foo 'withdraw) 59) ;; => 41
+((acc 'fo 'withdraw) 59) ;; => "Incorrect password"
+((acc 'fo 'withdraw) 59) ;; => "Incorrect password"
+((acc 'fo 'withdraw) 59) ;; => "Incorrect password"
+((acc 'fo 'withdraw) 59) ;; => "Incorrect password"
+((acc 'fo 'withdraw) 59) ;; => "Incorrect password"
+((acc 'fo 'withdraw) 59) ;; => "Incorrect password"
+((acc 'fo 'withdraw) 59) ;; => "Incorrect password"
+((acc 'fo 'withdraw) 59) ;; => "We called the cops"
+((acc 'fo 'withdraw) 59) ;; => "We called the cops"
+((acc 'fo 'withdraw) 59) ;; => "We called the cops"
+((acc 'foo 'withdraw) 40) ;; => 1
+#+end_src
 
 ** 3.4 Concurrency: Time Is of the Essence
 - We have seen that computational objects with local state are
