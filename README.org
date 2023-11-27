@@ -8432,6 +8432,60 @@ numbers.
   (rand 'generate) ;; => 19
 #+end_src
 
+** Exercise 3.7
+*Exercise*:
+
+#+begin_quote
+Consider the bank account objects created by ~make-account~, with the
+password modification described in *NoteExercise 3-3.  Suppose that our
+banking system requires the ability to make joint accounts.  Define a
+procedure ~make-joint~ that accomplishes this.  ~Make-joint~ should
+take three arguments.  The first is a password-protected account.  The
+second argument must match the password with which the account was
+defined in order for the ~make-joint~ operation to proceed.  The third
+argument is a new password.  ~Make-joint~ is to create an additional
+access to the original account using the new password.  For example,
+if ~peter-acc~ is a bank account with password ~open-sesame~, then
+
+#+begin_src scheme
+  (define paul-acc
+    (make-joint peter-acc 'open-sesame 'rosebud))
+#+end_src
+
+will allow one to make transactions on ~peter-acc~ using the name
+~paul-acc~ and the password ~rosebud~.  You may wish to modify your
+solution to *Note Exercise 3-3 to accommodate this new feature.
+#+end_quote
+
+*Answer*:
+
+#+begin_src scheme
+  ;; So:
+  ;;(make-joint peter-acc 'open-sesame 'rosebud)
+  ;;             |
+  ;;        evaluates to
+  ;;             |
+  ;;             V
+  ;;          joint-acc
+  ;;
+  ;;          such that
+  ;;
+  ;;       (joint-acc 'rosebud 'withdraw)
+  ;;
+  ;; will perform the same operation performed by
+  ;;
+  ;;       (peter-acc 'open-sesame 'withdraw)
+
+
+  ;; So, this should work:
+  (define (make-joint orig-acc 'orig-pwd 'pwd)
+    (define (wrapper p m)
+      (if (eq? p pwd)
+          (orig-acc 'orig-pwd m)
+          (lambda (a) "wrong password")))
+    wrapper)
+#+end_src
+
 ** 3.4 Concurrency: Time Is of the Essence
 - We have seen that computational objects with local state are
   powerful tools for modeling.
