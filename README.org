@@ -8486,6 +8486,38 @@ solution to *Note Exercise 3-3 to accommodate this new feature.
     wrapper)
 #+end_src
 
+** Exercise 3.8
+*Exercise*:
+
+#+begin_quote
+When we defined the evaluation model in section *Note 1-1-3, we said
+that the first step in evaluating an expression is to evaluate its
+subexpressions.  But we never specified the order in which the
+subexpressions should be evaluated (e.g., left to right or right to
+left).  When we introduce assignment, the order in which the arguments
+to a procedure are evaluated can make a difference to the result.
+Define a simple procedure ~f~ such that evaluating ~(+ (f 0) (f 1))~
+will return 0 if the arguments to ~+~ are evaluated from left to right
+but will return 1 if the arguments are evaluated from right to left.
+#+end_quote
+
+*Answer*:
+
+#+begin_src scheme
+  (define f
+    (let ((to-return 0))
+      (lambda (x)
+        (define tmp to-return)
+        (set! to-return x)
+        tmp)))
+#+end_src
+
+Here I'm using ~let~ to establish an environment with a local variable
+~to-return~, bound to the initial value 0. Each time ~f~ is applied to
+a value foo, ~f~ is evaluates to the value currently stored in
+~to-return~ and updates the value stored in ~to-return~, by setting it
+to foo.
+
 ** 3.4 Concurrency: Time Is of the Essence
 - We have seen that computational objects with local state are
   powerful tools for modeling.
