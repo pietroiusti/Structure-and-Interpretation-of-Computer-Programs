@@ -8518,6 +8518,76 @@ a value foo, ~f~ is evaluates to the value currently stored in
 ~to-return~ and updates the value stored in ~to-return~, by setting it
 to foo.
 
+** Exercise 3.9
+*Exercise*:
+
+#+begin_quote
+In section *Note 1-2-1 we used the substitution model to analyze two
+procedures for computing factorials, a recursive version
+
+#+begin_src scheme
+  (define (factorial n)
+    (if (= n 1)
+        1
+        (* n (factorial (- n 1)))))
+#+end_src
+
+and an iterative version
+
+#+begin_src scheme
+  (define (factorial n)
+    (fact-iter 1 1 n))
+
+  (define (fact-iter product counter max-count)
+    (if (> counter max-count)
+        product
+        (fact-iter (* counter product)
+                   (+ counter 1)
+                   max-count)))
+#+end_src
+
+Show the environment structures created by evaluating ~(factorial 6)~
+using each version of the `factorial' procedure.
+#+end_quote
+
+*Answer*:
+
+Recursive version:
+#+begin_src
+                    +------------------------------------------------------------------------------------+
+          global -->|                                                                                    |
+          env       +------------------------------------------------------------------------------------+
+                      ^              ^                ^               ^               ^               ^
+    (factorial 6)     |              |                |               |               |               |
+                 +------+       +------+       +------+        +------+        +------+        +------+
+            E1 ->| n: 6 |  E2 ->| n: 5 |  E3 ->| n: 4 |  E4 -->| n: 3 |   E5 ->| n: 2 |  E6 -->| n: 1 |
+                 |      |       |      |       |      |        |      |        |      |        |      |
+                 +------+       +------+       +------+        +------+        +------+        +------+
+   (if (= n 1)
+       1                           same           same           same            same             same
+       (* n factorial (- n 1)))
+#+end_src
+
+Iterative version:
+
+#+begin_src
+                    +----------------------------------------------------------------------------------------------------------------------------------------------------------------+
+          global -->|                                                                                                                                                                |
+          env       +----------------------------------------------------------------------------------------------------------------------------------------------------------------+
+                      ^              ^                                  ^                     ^                     ^                     ^                      ^                      ^
+    (factorial 6)     |              |                                  |                     |                     |                     |                      |                      |
+                 +------+       +-------------+                    +-------------+       +-------------+       +-------------+       +--------------+       +--------------+       +--------------+
+            E1 ->| n: 6 |  E2 ->| product: 1  |               E3 ->| product: 1  |  E4 ->| product: 2  |  E5 ->| product:  6 |  E5 ->| product:  24 |  E5 ->| product: 120 |  E5 ->| product: 720 |
+                 |      |       | counter: 1  |                    | counter: 2  |       | counter: 3  |       | counter:  4 |       | counter:  5  |       | counter:  6  |       | counter:  7  |
+                 |      |       | max-count: 6|                    | max-count: 6|       | max-count: 6|       | max-count: 6|       | max-count: 6 |       | max-count: 6 |       | max-count: 6 |
+                 +------+       +-------------+                    +-------------+       +-------------+       +-------------+       +--------------+       +--------------+       +--------------+
+        (fact-iter 1 1 n)       (if (> counter max-count)                same                  same                  same                  same                  same                  same
+                                    product
+                                    (fact-iter (* counter product)
+                                               (+ counter 1)
+                                               max-count))
+#+end_src
+
 ** 3.4 Concurrency: Time Is of the Essence
 - We have seen that computational objects with local state are
   powerful tools for modeling.
