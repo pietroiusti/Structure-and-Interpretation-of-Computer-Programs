@@ -8588,6 +8588,111 @@ Iterative version:
                                                max-count))
 #+end_src
 
+** Exercise 3.10
+*Exercise*:
+
+#+begin_quote
+In the ~make-withdraw~ procedure, the local variable
+~balance~ is created as a parameter of ~make-withdraw~.  We could also
+create the local state variable explicitly, using ~let~, as follows:
+
+#+begin_src scheme
+  (define (make-withdraw initial-amount)
+    (let ((balance initial-amount))
+      (lambda (amount)
+        (if (>= balance amount)
+            (begin (set! balance (- balance amount))
+                   balance)
+            "Insufficient funds"))))
+#+end_src
+
+Recall from section *Note 1-3-2 that ~let~ is simply syntactic sugar for
+a procedure call:
+
+#+begin_src
+(let ((<VAR> <EXP>)) <BODY>)
+#+end_src
+
+is interpreted as an alternate syntax for
+
+#+begin_src
+((lambda (<VAR>) <BODY>) <EXP>)
+#+end_src
+
+Use the environment model to analyze this alternate version of
+~make-withdraw~, drawing figures like the ones above to illustrate
+the interactions
+
+#+begin_src scheme
+  (define W1 (make-withdraw 100))
+
+  (W1 50)
+
+  (define W2 (make-withdraw 100))
+#+end_src
+
+Show that the two versions of ~make-withdraw~ create objects with the
+same behavior.  How do the environment structures differ for the two
+versions?
+#+end_quote
+
+*Answer*:
+
+#+begin_src
+       global env
+       +---------------------------------------------------------------------------------------------------------+
+       | make-withdraw:---+                   w1:---+                                  w2:---+                   |
+       |                  |                         |                                        |                   |
+       |                  |                         |                                        |                   |
+       |                  |            +------------+                             +----------+                   |
+       |                  |            |                                          |                              |
+       |                  |            |                                          |                              |
+       +------------------+------------+------------------------------------------+------------------------------+
+                          |   ↑        |                                          |
+         +----------------+   |        |       +----------------------+           |       +----------------------+
+         |                    |        |       | initial-amout: 100   |           |       | initial-amout: 100   |
+         ↓                    |        |       |                      |           |       |                      |
+       +-+-+---+              |        |       |                      |           |       |                      |
+       |   |   +--------------+        |       +----------------------+           |       +----------------------+
+       +-+-+---+                       |                  ↑      ↑                |                  ↑      ↑
+         ↓                             |                  |      |                |                  |      |
+         λ                             |                  |      |                |                  |      |
+                                       |       +---+---+  |      |                |       +---+---+  |      |
+                                       |       |   |   +--+      |                |       |   |   +--+      |
+                                       |       +-+-+---+         |                |       +-+-+---+         |
+                                       |         ↓               |                |         |               |
+                                       |         λ ←-------------+----------------+---------+               |
+                                       |                         |                |                         |
+                                       |                         |                |                         |
+                                       |                         |                |                         |
+                                       |                         |                |                         |
+                                       |                         |                |                         |
+                                       |       +-----------------+-----+          |       +-----------------+-----+
+                                       |       | balance: 100          |          |       | balance: 100          |
+                                       |       |                       |          |       |                       |
+                                       |       |                       |          |       |                       |
+                                       |       +-----------------------+          |       +-----------------------+
+                                       |                  ↑      ↑                |                  ↑
+                                       |                  |      |                |                  |
+                                       |                  |      |                |                  |
+                                       |       +---+---+  |      |                |       +---+---+  |
+                                       +------→|   |   +--+      |                +------→|   |   +--+
+                                               +-+-+---+         |                        +-+-+---+
+                                                 ↓               |                          |
+                                                 λ←--------------+--------------------------+
+                                                                 |
+                                                                 |
+                                                                 |
+                                                                 |
+                                                                 |
+                                                                 |
+                                               +-----------------+------+
+                                               | amount: 50             |
+                                               |                        |
+                                               |                        |
+                                               +------------------------+
+#+end_src
+
 ** 3.4 Concurrency: Time Is of the Essence
 - We have seen that computational objects with local state are
   powerful tools for modeling.
