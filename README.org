@@ -8904,6 +8904,107 @@ of an account).
 ~acc~ and ~acc2~ share the text of the procedure objects ~widthdraw~,
 ~deposit~, and ~dispatch~.
 
+** Exercise 3.12
+#+begin_quote
+*Exercise:* The following procedure for appending lists was
+introduced in section 2-2-1:
+
+#+begin_src scheme
+  (define (append x y)
+    (if (null? x)
+	y
+	(cons (car x) (append (cdr x) y))))
+#+end_src
+
+~Append~ forms a new list by successively ~cons~-ing the elements of
+~x~ onto ~y~.  The procedure ~append!~ is similar to ~append~, but it
+is a mutator rather than a constructor.  It appends the lists by
+splicing them together, modifying the final pair of ~x~ so that its
+~cdr~ is now ~y~.  (It is an error to call ~append!~ with an empty
+~x~.)
+
+#+begin_src scheme
+  (define (append! x y)
+    (set-cdr! (last-pair x) y)
+    x)
+#+end_src
+
+Here ~last-pair~ is a procedure that returns the last pair in its
+argument:
+
+#+begin_src scheme
+(define (last-pair x)
+  (if (null? (cdr x))
+      x
+      (last-pair (cdr x))))
+#+end_src
+
+Consider the interaction
+
+#+begin_src scheme
+  (define x (list 'a 'b))
+
+  (define y (list 'c 'd))
+
+  (define z (append x y))
+
+  z
+  (a b c d)
+
+  (cdr x)
+  <RESPONSE>
+
+  (define w (append! x y))
+
+  w
+  (a b c d)
+
+  (cdr x)
+  <RESPONSE>
+#+end_src
+
+What are the missing <RESPONSE>s?  Draw box-and-pointer diagrams to
+explain your answer.
+#+end_quote
+
+*Answer*:
+
+First response: '(b)
+
+#+begin_src
+Box-and-pointer diagram representing the situation after evaluating (define z (append x y)):
+
+x-->[·|·]-->[·|/]
+     |       |
+     v       v
+     a       b
+     ^       ^
+     |       |
+z-->[·|·]-->[·|·]
+               |
+               v
+          y-->[·|·]-->[·|/]
+               |       |
+               v       v
+               c       d
+#+end_src
+
+
+Second response: '(b c d)
+
+#+begin_src
+Box-and-pointer diagram representing the situation after evaluating (define w (append! x y))
+
+w-->x-->[·|·]-->[·|·|]
+         |       | |
+         v       v |
+         a       b |
+                   v
+              y-->[·|·]-->[·|/]
+                   |       |
+                   v       v
+                   c       d
+#+end_src
 ** 3.4 Concurrency: Time Is of the Essence
 - We have seen that computational objects with local state are
   powerful tools for modeling.
