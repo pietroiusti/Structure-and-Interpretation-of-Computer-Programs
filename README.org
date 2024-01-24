@@ -9005,6 +9005,45 @@ w-->x-->[·|·]-->[·|·|]
                    v       v
                    c       d
 #+end_src
+** Exercise 3.13
+*Exercise*:
+
+Consider the following ~make-cycle~ procedure, which uses the
+~last-pair~ procedure defined in Exercise 3-12.
+
+#+begin_src scheme
+  (define (make-cycle x)
+    (set-cdr! (last-pair x) x)
+    x)
+#+end_src
+
+Draw a box-and-pointer diagram that shows the structure `z'
+created by
+
+(define z (make-cycle (list 'a 'b 'c)))
+
+What happens if we try to compute `(last-pair z)'?
+
+*Answer*:
+
+Diagram:
+#+begin_src
+ -----> z-->[·|·]-->[·|·]-->[·|·]--
+ |                                 \
+ ----\                              |
+      |                             /
+      ---\                  -------/
+          \--      --------/
+             \----/
+#+end_src
+
+Evaluating ~(last-pair z)~ should initiate an infinite evaluation
+because the condition in ~last-pair~ will never be false.
+
+If I try to evaluate ~(last-pair z)~ in DrRacket, nothing happens.
+
+If I evaluate the corresponding expression in Emacs, an
+~excessive-lisp-nesting~ error is displayed.
 ** 3.4 Concurrency: Time Is of the Essence
 - We have seen that computational objects with local state are
   powerful tools for modeling.
