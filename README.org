@@ -9044,6 +9044,56 @@ If I try to evaluate ~(last-pair z)~ in DrRacket, nothing happens.
 
 If I evaluate the corresponding expression in Emacs, an
 ~excessive-lisp-nesting~ error is displayed.
+
+** Exercise 3.14
+*Exercise*:
+
+The following procedure is quite useful, although obscure:
+
+#+begin_src scheme
+  (define (mystery x)
+    (define (loop x y)
+      (if (null? x)
+	  y
+	  (let ((temp (cdr x)))
+	    (set-cdr! x y)
+	    (loop temp x))))
+    (loop x '()))
+#+end_src
+
+~Loop~ uses the "temporary" variable ~temp~ to hold the old value of
+the ~cdr~ of ~x~, since the ~set-cdr!~ on the next line destroys the
+~cdr~.  Explain what ~mystery~ does in general.  Suppose ~v~ is
+defined by ~(define v (list a 'b 'c 'd))~. Draw the box-and-pointer
+diagram that represents the list to which ~v~ is bound.  Suppose that
+we now evaluate ~(define w (mystery v))~. Draw box-and-pointer
+diagrams that show the structures ~v~ and ~w~ after evaluating this
+expression.  What would be printed as the values of ~v~ and ~w~?
+
+*Answer*:
+
+~Mystery~ reverses a list.
+
+Diagram showing what ~v~ is bound to:
+#+begin_src
+v-->[·|·]-->[·|·]-->[·|·]-->[·|/]
+     |       |       |       |
+     v       v       v       v
+     a       b       c       d
+#+end_src
+
+Diagram showing the structure of ~v~ and ~w~ after evaluating ~(define
+w (mystery v))~:
+#+begin_src
+                               v
+                               |
+                               ↓
+  w-->[·|·]-->[·|·]-->[·|·]-->[·|/]
+       |       |       |       |
+       v       v       v       v
+       d       c       b       a
+#+end_src
+
 ** 3.4 Concurrency: Time Is of the Essence
 - We have seen that computational objects with local state are
   powerful tools for modeling.
