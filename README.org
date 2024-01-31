@@ -9093,7 +9093,80 @@ w (mystery v))~:
        v       v       v       v
        d       c       b       a
 #+end_src
+** Exercise 3.15
+*Exercise*:
 
+#+begin_quote
+Draw box-and-pointer diagrams to explain the effect of ~set-to-wow!~
+on the structures ~z1~ and ~z2~ above.
+#+end_quote
+
+*Answer*:
+
+#+begin_src
+z1 before:
+
+        +---+---+
+  z1 -->| * | * |
+        +-|-+-|-+
+          V   V
+        +---+---+     +---+---+
+   x -->| * | *-+---->| * | / |
+        +-|-+---+     +-|-+---+
+          V             V
+        +---+         +---+
+        | a |         | b |
+        +---+         +---+
+
+z1 after:
+
+        +---+---+
+  z1 -->| * | * |
+        +-|-+-|-+
+          V   V
+        +---+---+     +---+---+
+   x -->| * | *-+---->| * | / |
+        +-|-+---+     +-|-+---+
+          V             V
+        +---+         +---+
+        |wow|         | b |
+        +---+         +---+
+#+end_src
+
+#+begin_src
+z2 before:
+
+        +---+---+     +---+---+     +---+---+
+  z2 -->| * | *-+---->| * | *-+---->| * | / |
+        +-|-+---+     +-|-+---+     +-|-+---+
+          |             V             V
+          |           +---+         +---+
+          |           | a |         | b |
+          |           +---+         +---+
+          |             ^             ^
+          |             |             |
+          |           +-|-+---+     +-|-+---+
+          +---------->| * | *-+---->| * | / |
+                      +---+---+     +---+---+
+z2 after:
+
+        +---+---+     +---+---+     +---+---+
+  z2 -->| * | *-+---->| * | *-+---->| * | / |
+        +-|-+---+     +-|-+---+     +-|-+---+
+          |             V             V
+          |           +---+         +---+
+          |           | a |         | b |
+          |           +---+         +---+
+          |                           ^
+          |                           |
+          |           +---+---+     +-|-+---+
+          +---------->| * | *-+---->| * | / |
+                      +-|-+---+     +---+---+
+                        V
+                      +---+
+                      |wow|
+                      +---+
+#+end_src
 ** 3.4 Concurrency: Time Is of the Essence
 - We have seen that computational objects with local state are
   powerful tools for modeling.
