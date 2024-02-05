@@ -9167,6 +9167,94 @@ z2 after:
                       |wow|
                       +---+
 #+end_src
+** IN PROGRESS Exercise 3.16
+*Exercise*:
+
+Ben Bitdiddle decides to write a procedure to count the number of
+pairs in any list structure.  "It's easy," he reasons.  "The number of
+pairs in any structure is the number in the ~car~ plus the number in
+the ~cdr~ plus one more to count the current pair."  So Ben writes the
+following procedure:
+
+#+begin_src emacs-lisp
+  (define (count-pairs x)
+          (if (not (pair? x))
+              0
+            (+ (count-pairs (car x))
+               (count-pairs (cdr x))
+               1)))
+#+end_src
+
+Show that this procedure is not correct.  In particular, draw
+box-and-pointer diagrams representing list structures made up of
+exactly three pairs for which Ben's procedure would return 3;
+return 4; return 7; never return at all.
+
+*Answer*:
+
+List structure for which Ben's procedure would return 3:
+#+begin_src scheme
+  (list 1 2 3)
+#+end_src
+
+List structure for which Ben's procedure would return 4:
+#+begin_src scheme
+  (define x (list 2))
+  (define y (cons x x))
+  (define z (cons 1 y))
+#+end_src
+
+List structure for which Ben's procedure would return 7:
+#+begin_src scheme
+  (define x (list 2))
+  (define y (cons x x))
+  (define z (cons y y))
+#+end_src
+
+List structure for which Ben's procedure would never return:
+#+begin_src scheme
+  ;; cf. ex. 3.13
+  (define (last-pair x)
+    (if (null? (cdr x))
+        x
+        (last-pair (cdr x))))
+
+  (define (make-cycle x)
+    (set-cdr! (last-pair x) x)
+    x)
+
+  (define x (list 1 2 3))
+
+  (make-cycle x)
+  ;; trying to count the pairs of x would never stop
+#+end_src
+** Exercise 3.17
+*Exercise*:
+
+#+begin_quote
+Devise a correct version of the ~count-pairs~ procedure of Exercise
+3-16 that returns the number of distinct pairs in any structure.
+(Hint: Traverse the structure, maintaining an auxiliary data structure
+that is used to keep track of which pairs have already been counted.)
+#+end_quote
+
+#+begin_src scheme
+  ;; list in which we store the references of those pairs we have
+  ;; already taken into account
+  (define checked '())
+
+  (define (gp/count-pairs x)
+    (if (not (pair? x))
+        0
+        (if (not (find x checked))
+            (begin
+              (set! checked (cons x checked))
+              (+ (gp/count-pairs (car x))
+                 (gp/count-pairs (cdr x))
+                 1))
+            0)))
+#+end_src
+
 ** 3.4 Concurrency: Time Is of the Essence
 - We have seen that computational objects with local state are
   powerful tools for modeling.
