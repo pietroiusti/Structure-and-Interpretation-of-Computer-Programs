@@ -9254,6 +9254,41 @@ that is used to keep track of which pairs have already been counted.)
                  1))
             0)))
 #+end_src
+** Exercise 3.18
+*Exercise*:
+
+#+begin_quote
+Write a procedure that examines a list and determines whether it
+contains a cycle, that is, whether a program that tried to find the
+end of the list by taking successive ~cdr~'s would go into an infinite
+loop. Exercise 3-13 constructed such lists.
+#+end_quote
+
+*Answer*:
+
+#+begin_src scheme
+  (define (last-pair x)
+    (if (null? (cdr x))
+        x
+        (last-pair (cdr x))))
+
+  (define (make-cycle x)
+    (set-cdr! (last-pair x) x)
+    x)
+
+  (define z (make-cycle (list 1 2 3)))
+
+  (define (is-cycle x)
+    (let ((start x))
+      (define (traverse y)
+        (cond ((null? y) #f)
+              ((eq? (cdr y) start) #t)
+              (else (traverse (cdr y)))))
+      (traverse x)))
+
+  (is-cycle '(1 2 3)) ;; =>  #f
+  (is-cycle z) ;; => t
+#+end_src
 
 ** 3.4 Concurrency: Time Is of the Essence
 - We have seen that computational objects with local state are
