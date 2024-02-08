@@ -9239,6 +9239,12 @@ that is used to keep track of which pairs have already been counted.)
 #+end_quote
 
 #+begin_src scheme
+  ;; return #t if el is in seq, false otherwise
+  (define (find el seq)
+    (cond ((null? seq) #f)
+          ((eq? (car seq) el) #t)
+          (else (find el (cdr seq)))))
+
   ;; list in which we store the references of those pairs we have
   ;; already taken into account
   (define checked '())
@@ -9279,15 +9285,25 @@ loop. Exercise 3-13 constructed such lists.
   (define z (make-cycle (list 1 2 3)))
 
   (define (is-cycle x)
-    (let ((start x))
+    (let ((checked '()))
       (define (traverse y)
         (cond ((null? y) #f)
-              ((eq? (cdr y) start) #t)
-              (else (traverse (cdr y)))))
+              ((includes? checked (cdr y)) #t)
+              (else
+               (set! checked (cons y checked))
+               (traverse (cdr y)))))
       (traverse x)))
 
   (is-cycle '(1 2 3)) ;; =>  #f
-  (is-cycle z) ;; => t
+  (is-cycle z) ;; => #t
+
+  (define (make-cycle2 x)
+    (set-cdr! (last-pair x) x)
+    (cdr x))
+  (define foo '(1 2 3 4 5))
+  (is-cycle2 foo) ;; => #f
+  (make-cycle2 foo)
+  (is-cycle2 foo) ;; => #t
 #+end_src
 
 ** 3.4 Concurrency: Time Is of the Essence
