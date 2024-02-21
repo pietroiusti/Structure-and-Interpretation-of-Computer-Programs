@@ -9040,8 +9040,6 @@ Diagram:
 Evaluating ~(last-pair z)~ should initiate an infinite evaluation
 because the condition in ~last-pair~ will never be false.
 
-If I try to evaluate ~(last-pair z)~ in DrRacket, nothing happens.
-
 If I evaluate the corresponding expression in Emacs, an
 ~excessive-lisp-nesting~ error is displayed.
 
@@ -9167,7 +9165,7 @@ z2 after:
                       |wow|
                       +---+
 #+end_src
-** IN PROGRESS Exercise 3.16
+** Exercise 3.16
 *Exercise*:
 
 Ben Bitdiddle decides to write a procedure to count the number of
@@ -9304,6 +9302,73 @@ loop. Exercise 3-13 constructed such lists.
   (is-cycle2 foo) ;; => #f
   (make-cycle2 foo)
   (is-cycle2 foo) ;; => #t
+#+end_src
+** Exercise 3.21
+*Exercise*:
+
+#+begin_quote
+Ben Bitdiddle decides to test the queue implementation described
+above.  He types in the procedures to the Lisp interpreter and
+proceeds to try them out:
+
+#+begin_src scheme
+(define q1 (make-queue))
+
+(insert-queue! q1 'a)
+((a) a)
+
+(insert-queue! q1 'b)
+((a b) b)
+
+(delete-queue! q1)
+((b) b)
+
+(delete-queue! q1)
+(() b)
+#+end_src
+
+"It's all wrong!" he complains.  "The interpreter's response shows
+that the last item is inserted into the queue twice.  And when I
+delete both items, the second ~b~ is still there, so the queue isn't
+empty, even though it's supposed to be."  Eva Lu Ator suggests that
+Ben has misunderstood what is happening.  "It's not that the items are
+going into the queue twice," she explains.  "It's just that the
+standard Lisp printer doesn't know how to make sense of the queue
+representation.  If you want to see the queue printed correctly,
+you'll have to define your own print procedure for queues." Explain
+what Eva Lu is talking about.  In particular, show why Ben's examples
+produce the printed results that they do.  Define a procedure
+`print-queue' that takes a queue as input and prints the sequence of
+items in the queue.
+#+end_quote
+
+*Answer*:
+
+The interpreter is printing the structures /qua/ lists, not /qua/
+queues. Such lists represent queues only because we have established a
+convention according to which a queue is represented by a pair whose
+~car~ points to a simple list of elements and whose ~cdr~ points to the
+last element of the same list the ~car~ points to. The interpreters just
+prints that pair as if it was a normal pair.
+
+The following creates a list whose ~car~ is a list which contains ~'a~
+only and whose ~cdr~ is that list too.
+
+#+begin_src scheme
+(define q1 (make-queue))
+(insert-queue! q1 'a)
+#+end_src
+
+So ~((a) a)~ is exactly what we would expect the interpreter to
+print. /Mutatis mutandis/ for structures created by ~(insert-queue! q1
+'b)~, ~(delete-queue! q1)~, and ~(delete-queue! q1)~.
+
+To print the queue we can simply print the ``ordinary list'' the front
+pointer is pointing at:
+
+#+begin_src scheme
+  (define (print-queue queue)
+    (display (front-ptr queue)))
 #+end_src
 
 ** 3.4 Concurrency: Time Is of the Essence
