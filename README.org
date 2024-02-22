@@ -9370,7 +9370,71 @@ pointer is pointing at:
   (define (print-queue queue)
     (display (front-ptr queue)))
 #+end_src
+** Exercise 3.22
+*Exercise*:
 
+#+begin_quote
+Instead of representing a queue as a pair of pointers, we can build a
+queue as a procedure with local state.  The local state will consist
+of pointers to the beginning and the end of an ordinary list.  Thus,
+the `make-queue' procedure will have the form
+
+#+begin_src scheme
+  (define (make-queue)
+    (let ((front-ptr ... )
+          (rear-ptr ... ))
+      <DEFINITIONS OF INTERNAL PROCEDURES>
+      (define (dispatch m) ...)
+      dispatch))
+#+end_src
+
+Complete the definition of ~make-queue~ and provide implementations of
+the queue operations using this representation.
+#+end_quote
+
+*Answer*:
+#+begin_src scheme
+  (define (make-queue)
+    (let ((front-ptr nil)
+          (rear-ptr nil))
+      (define (dispatch m)
+        (cond ((eq? m 'empty-queue?) (null? front-ptr))
+              ((eq? m 'front-queue)
+               (cond ((null? front-ptr)
+                      (error "FRONT called with an empty queue"))
+                     (else (car front-ptr))))
+              ((eq? m 'insert-queue) (lambda (item)
+                                       (let ((new-pair (cons item '())))
+                                         (cond ((null? front-ptr)
+                                                (set! front-ptr new-pair)
+                                                (set! rear-ptr new-pair)
+                                                front-ptr)
+                                               (else
+                                                (set-cdr! rear-ptr new-pair)
+                                                (set! rear-ptr new-pair)
+                                                front-ptr)))))
+              ((eq? m 'delete-queue)
+               (cond ((null? front-ptr)
+                      (error "DELETE! called with an empty queue"))
+                     (else
+                      (set! front-ptr (cdr front-ptr))
+                      front-ptr)))
+              (else (error "unknown request sorry (at least for now)"))))
+      dispatch))
+
+  (define queue (make-queue))
+  (queue 'empty-queue?) ;; => #t
+  ((queue 'insert-queue) 'hello) ;; => (hello)
+  (queue 'empty-queue?) ;; => #f
+  (queue 'front-queue) ;; => hello
+  ((queue 'insert-queue) 'world) ;; => (hello world)
+  (queue 'empty-queue?) ;; => #f
+  (queue 'front-queue) ;; => hello
+  (queue 'delete-queue) ;; => (world)
+  (queue 'front-queue) ;; => world
+  (queue 'delete-queue) ;; ()
+  (queue 'empty-queue?) ;; #t
+#+end_src
 ** 3.4 Concurrency: Time Is of the Essence
 - We have seen that computational objects with local state are
   powerful tools for modeling.
