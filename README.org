@@ -9435,6 +9435,58 @@ the queue operations using this representation.
   (queue 'delete-queue) ;; ()
   (queue 'empty-queue?) ;; #t
 #+end_src
+
+In Elisp:
+#+begin_src emacs-lisp
+  ;; -*- lexical-binding: t -*-
+
+  (defun make-queue ()
+    (let ((front-ptr nil)
+          (rear-ptr nil))
+      (lambda (m)
+        (cond ((eq m 'empty-queue) (null front-ptr))
+              ((eq m 'front-queue)
+               (cond ((null front-ptr)
+                      (error "FRONT called with an empty queue"))
+                     (t (car front-ptr))))
+              ((eq m 'insert-queue) (lambda (item)
+                                      (let ((new-pair (cons item '())))
+                                        (cond ((null front-ptr)
+                                               (setq front-ptr new-pair)
+                                               (setq rear-ptr new-pair)
+                                               front-ptr)
+                                              (t
+                                               (setcdr rear-ptr new-pair)
+                                               (setq rear-ptr new-pair)
+                                               front-ptr)))))
+              ((eq m 'delete-queue)
+               (cond ((null front-ptr)
+                      (error "DELETE! called with an empty queue"))
+                     (t
+                      (setq front-ptr (cdr front-ptr))
+                      front-ptr)))
+              (t (error "unknown request sorry (at least for now)"))))))
+
+  (let ((queue (make-queue)))
+    (message "Queue initially empty: %s" (funcall queue 'empty-queue)) ;; => t
+
+    (funcall (funcall queue 'insert-queue) 'hello) ;; => (hello)
+
+    (message "Queue empty after insertion: %s" (funcall queue 'empty-queue)) ;; => nil
+
+    (message "Front of queue: %s" (funcall queue 'front-queue)) ;; => hello
+
+    (funcall (funcall queue 'insert-queue) 'world) ;; => (hello world)
+
+    (funcall queue 'delete-queue) ;; => (world)
+
+    (message "Front of queue after deletion: %s" (funcall queue 'front-queue)) ;; => world
+
+    (funcall queue 'delete-queue) ;; => nil
+
+    (message "Queue empty after all deletions: %s" (funcall queue 'empty-queue)) ;; => t
+    )
+#+end_src
 ** Exercise 3.24
 *Exercise*:
 
