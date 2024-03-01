@@ -9487,6 +9487,59 @@ In Elisp:
     (message "Queue empty after all deletions: %s" (funcall queue 'empty-queue)) ;; => t
     )
 #+end_src
+
+** Exercise 3.23
+*Exercise*:
+
+#+begin_quote
+A "deque" ("double-ended queue") is a sequence in which items can be
+inserted and deleted at either the front or the rear.  Operations on
+deques are the constructor ~make-deque~, the predicate ~empty-deque?~,
+selectors ~front-deque~ and ~rear-deque~, and mutators
+~front-insert-deque!~, ~rear-insert-deque!~, ~front-delete-deque!~,
+and ~rear-delete-deque!~.  Show how to represent deques using pairs,
+and give implementations of the operations.(2) All operations should
+be accomplished in [theta](1) steps.
+#+end_quote
+
+*Answer*:
+
+#+begin_src scheme
+  (define (make-deque)
+    (let ((front-ptr nil)
+          (rear-ptr nil))
+      (define (dispatch m)
+        (cond ((eq? m 'empty-deque?) (null? front-ptr))
+              ((eq? m 'front-deque)
+               (cond ((null? front-ptr)
+                      (error "FRONT called with an empty deque"))
+                     (else (cdar front-ptr))))
+              ((eq? m 'rear-deque)
+                (cond ((null? rear-ptr)
+                      (error "REAR called with an empty deque"))
+                     (else (cdar rear-ptr))))
+              ((eq? m 'front-insert-deque!) (lambda (item)
+                                              (let ((new-pair (cons nil item)))
+                                                (let ((new-compound-el (cons new-pair front-ptr)))
+                                                  (cond ((null? front-ptr)
+                                                         (set! front-ptr new-compound-el)
+                                                         (set! rear-ptr new-compound-el))
+                                                        (else
+                                                         (set-car! (car front-ptr) new-compound-el)
+                                                         (set! front-ptr new-compound-el)))))))
+              ((eq? m 'rear-insert-deque!)
+               "todo")
+              ((eq? m 'front-delete-deque!)
+               "todo")
+              ((eq? m 'rear-delete-deque!)
+               "todo")))
+      dispatch))
+
+  (define my-deque (make-deque))
+  ((my-deque 'front-insert-deque!) 'hello)
+  (my-deque 'front-deque) ;; => hello
+#+end_src
+
 ** Exercise 3.24
 *Exercise*:
 
