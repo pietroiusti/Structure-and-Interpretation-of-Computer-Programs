@@ -9504,6 +9504,33 @@ be accomplished in [theta](1) steps.
 
 *Answer*:
 
+Here is the way the structure of my deque's implementation looks like:
+#+begin_src
+                 +---+---+
+        deque -->| * | *-+---------------------------+
+                 +-|-+---+                           |
+                   |                                 |
+                   | front-ptr                       | rear-ptr
+                   V                                 V
+               +---+---+        +---+---+        +---+---+
+               | * | *-+------->| * | *-+------->| * | / |
+               +-|-+---+        +-|-+---+        +-|-+---+
+                 |   ^______      |   ^______      |
+                 V          \     V          \     V
+               +---+---+     \  +---+---+     \  +---+---+
+               | \ | * +      \-|-* | * |      \-|-* | * |
+               +---+-|-+        +---+-|-+        +---+-|-+
+                     V                V                V
+                    'a               'b               'c
+#+end_src
+
+Basically, instead of having a list of values, like in the queue's
+cases, we have a list of pairs, each of which holds a pointer to the
+previous pair and a value. This is one way in which we can use pairs
+to build a so-called doubly-linked lists.
+
+Here is the scheme:
+
 #+begin_src scheme
   (define (make-deque)
     (let ((front-ptr nil)
@@ -9515,29 +9542,70 @@ be accomplished in [theta](1) steps.
                       (error "FRONT called with an empty deque"))
                      (else (cdar front-ptr))))
               ((eq? m 'rear-deque)
-                (cond ((null? rear-ptr)
+               (cond ((null? rear-ptr)
                       (error "REAR called with an empty deque"))
                      (else (cdar rear-ptr))))
               ((eq? m 'front-insert-deque!) (lambda (item)
-                                              (let ((new-pair (cons nil item)))
-                                                (let ((new-compound-el (cons new-pair front-ptr)))
+                                              (let ((prev-and-value-pair (cons nil item)))
+                                                (let ((new-pair (cons prev-and-value-pair front-ptr)))
                                                   (cond ((null? front-ptr)
-                                                         (set! front-ptr new-compound-el)
-                                                         (set! rear-ptr new-compound-el))
+                                                         (set! front-ptr new-pair)
+                                                         (set! rear-ptr new-pair))
                                                         (else
-                                                         (set-car! (car front-ptr) new-compound-el)
-                                                         (set! front-ptr new-compound-el)))))))
-              ((eq? m 'rear-insert-deque!)
-               "todo")
+                                                         (set-car! (car front-ptr) new-pair)
+                                                         (set! front-ptr new-pair)))))))
+              ((eq? m 'rear-insert-deque!) (lambda (item)
+                                             (let ((prev-and-value-pair (cons rear-ptr item)))
+                                               (let ((new-pair (cons prev-and-value-pair nil)))
+                                                 (cond ((null? rear-ptr)
+                                                        (set! front-ptr new-pair)
+                                                        (set! rear-ptr new-pair))
+                                                       (else
+                                                        (set-cdr! rear-ptr new-pair)
+                                                        (set! rear-ptr new-pair)))))))
               ((eq? m 'front-delete-deque!)
-               "todo")
+               (cond ((null? front-ptr)
+                      (error "DELETE! called with an empty deque"))
+                     ((eq? front-ptr rear-ptr) ;; if so there is only one el
+                      (set! front-ptr nil)
+                      (set! rear-ptr nil)
+                      front-ptr)
+                     (else
+                      (set! front-ptr (cdr front-ptr))
+                      (and front-ptr
+                           (cdar front-ptr)))))
               ((eq? m 'rear-delete-deque!)
-               "todo")))
+               (cond ((null? rear-ptr)
+                      (error "DELETE! called with an empty deque"))
+                     ((eq? front-ptr rear-ptr)  ;; if so there is only one el
+                      (set! front-ptr nil)
+                      (set! rear-ptr nil)
+                      rear-ptr)
+                     (else
+                      (set! rear-ptr (caar rear-ptr))
+                      (and rear-ptr (cdar rear-ptr)))))))
       dispatch))
 
   (define my-deque (make-deque))
+
   ((my-deque 'front-insert-deque!) 'hello)
+
   (my-deque 'front-deque) ;; => hello
+  (my-deque 'rear-deque) ;; => hello
+
+  ((my-deque 'rear-insert-deque!) 'world)
+
+  (my-deque 'front-deque) ;; => hello
+  (my-deque 'rear-deque) ;; => world
+
+  (my-deque 'front-delete-deque!) ;; => world
+
+  (my-deque 'front-deque) ;; => world
+  (my-deque 'rear-deque) ;; => world
+
+  (my-deque 'rear-delete-deque!) ;; => ()
+
+  (my-deque 'front-deque) ;; error: FRONT called with an empty deque
 #+end_src
 
 ** Exercise 3.24
