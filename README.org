@@ -9338,7 +9338,7 @@ representation.  If you want to see the queue printed correctly,
 you'll have to define your own print procedure for queues." Explain
 what Eva Lu is talking about.  In particular, show why Ben's examples
 produce the printed results that they do.  Define a procedure
-`print-queue' that takes a queue as input and prints the sequence of
+~print-queue~ that takes a queue as input and prints the sequence of
 items in the queue.
 #+end_quote
 
@@ -9347,9 +9347,9 @@ items in the queue.
 The interpreter is printing the structures /qua/ lists, not /qua/
 queues. Such lists represent queues only because we have established a
 convention according to which a queue is represented by a pair whose
-~car~ points to a simple list of elements and whose ~cdr~ points to the
-last element of the same list the ~car~ points to. The interpreters just
-prints that pair as if it was a normal pair.
+~car~ points to a simple list of elements and whose ~cdr~ points to
+the last element of the same list the ~car~ points to. The interpreter
+just prints that pair as if it was a normal pair.
 
 The following creates a list whose ~car~ is a list which contains ~'a~
 only and whose ~cdr~ is that list too.
@@ -9524,10 +9524,11 @@ Here is the way the structure of my deque's implementation looks like:
                     'a               'b               'c
 #+end_src
 
-Basically, instead of having a list of values, like in the queue's
-cases, we have a list of pairs, each of which holds a pointer to the
-previous pair and a value. This is one way in which we can use pairs
-to build a so-called doubly-linked lists.
+Basically, instead of having a head-and-tail pointer for a list of
+values, like in the queue's case, we have a head-and-tail pointer for
+a list of pairs, each of which holds (in the ~car~) a pointer to the
+previous pair and (in the ~cdr~) a value. This is one way in which we
+can use pairs to build a so-called doubly-linked lists.
 
 Here is the scheme:
 
@@ -9660,6 +9661,82 @@ appropriate ~lookup~ and ~insert!~ procedures for a local table.
               (else (error "Unknown operation -- TABLE" m))))
       dispatch))
 #+end_src
+
+** Exercise 3.25
+*Exercise*:
+#+begin_quote
+Generalizing one- and two-dimensional tables, show how to implement a
+table in which values are stored under an arbitrary number of keys and
+different values may be stored under different numbers of keys.  The
+~lookup~ and ~insert!~ procedures should take as input a list of keys
+used to access the table.
+#+end_quote
+
+*Answer*:
+#+begin_src scheme
+  (define (gp-make-table)
+    (list '*table*))
+
+  ;; try to find record
+  ;;
+  ;; return pair
+  ;;
+  ;; if cdr of return value is nil, then record has been found, and the
+  ;; car is the record
+  ;;
+  ;; if cdr of return value is not nil, then record has not been found;
+  ;; car is the last key found, cdr is the list of keys to be added
+  (define (find-rec t keys)
+    (cond ((null? keys)
+           (cons t keys))
+          ((not (pair? (cdr t)))
+           (cons t keys))
+          (else (let ((found (assoc (car keys) (cdr t))))
+                  (cond (found
+                         (find-rec found (cdr keys)))
+                        (else (cons t keys)))))))
+
+  (define (to-insert keys val)
+    (if (= (length keys) 1)
+        (cons (car keys) val)
+        (list (car keys)
+              (to-insert (cdr keys) val))))
+
+  (define (lookup t keys)
+    (let ((found (car (find-rec t keys)))
+          (rest-of-keys (cdr (find-rec t keys))))
+      (if (null? rest-of-keys)
+          (cdr found)
+          false)))
+
+  (define (insert t keys val)
+    (let ((found (car (find-rec t keys)))
+          (rest-of-keys (cdr (find-rec t keys))))
+      (cond ((null? rest-of-keys)
+             (set-cdr! found val))
+            ((= (length rest-of-keys) 1)
+             (set-cdr! found
+                       (cons
+                        (cons (car rest-of-keys) val)
+                        (cdr found))))
+            (else
+             "adding subtable"
+             (set-cdr! found
+                       (cons
+                        (to-insert rest-of-keys val)
+                        (cdr found)))))))
+
+  (define t (gp-make-table))
+  (insert t '(letters a) 97)
+  t ;; => (*table* (letters (a . 97)))
+  (insert t '(letters b) 98)
+  t ;; => (*table* (letters (b . 98) (a . 97)))
+  (insert t '(continents europe cities barcelona population)  1620343)
+  t ;; => (*table* (continents (europe (cities (barcelona (population . 1620343))))) (letters (b . 98) (a . 97)))
+  (lookup t '(continents europe cities barcelona population)) ;; => 1620343
+  (lookup t '(letters b)) ;; => 98
+#+end_src
+
 ** 3.4 Concurrency: Time Is of the Essence
 - We have seen that computational objects with local state are
   powerful tools for modeling.
