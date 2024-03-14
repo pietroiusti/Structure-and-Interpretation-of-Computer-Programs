@@ -9737,6 +9737,282 @@ used to access the table.
   (lookup t '(letters b)) ;; => 98
 #+end_src
 
+** Exercise 3.26
+*Exercise*:
+
+#+begin_quote
+To search a table as implemented above, one needs to scan through the
+list of records.  This is basically the unordered list representation
+of 2-3-3.  For large tables, it may be more efficient to structure the
+table in a different manner.  Describe a table implementation where
+the (key, value) records are organized using a binary tree, assuming
+that keys can be ordered in some way (e.g., numerically or
+alphabetically).  (Compare Exercise 2-66 of Chapter 2.)
+#+end_quote
+
+Exercise 2.66 asked for a set of records structured as a binary
+tree. In terms of its interface, the solution I've given already
+satisfies the requirements for a one dimensional table. You feed a key
+to the lookup function, you get the record, if any.
+
+In order to make a multi-dimensional table, we could simply allow the
+values of the tree (table) to be trees (subtables) themselves.
+
+For example, here is a tree I've used in responding exercise 2.66:
+
+#+begin_src scheme
+(list->tree '( (1 "el with key 1") (2 "el with key 2") (3 "etc") (4 "foo") (6 "bar") (7 "baz")))
+#+end_src
+
+That tree has this structure[fn::To draw the structure I'm using [[https://github.com/pietroiusti/draw-tree][draw-tree]]]:
+
+#+begin_src
+"
+[o|o]---[o|o]---[o|o]---[o|o]---[o|o]---[o|/]
+ |       |       |       |       |       |
+ |       |       |       |       |      [o|o]---[o|/]
+ |       |       |       |       |       |       |
+ |       |       |       |       |       7      "baz"
+ |       |       |       |       |
+ |       |       |       |      [o|o]---[o|/]
+ |       |       |       |       |       |
+ |       |       |       |       6      "bar"
+ |       |       |       |
+ |       |       |      [o|o]---[o|/]
+ |       |       |       |       |
+ |       |       |       4      "foo"
+ |       |       |
+ |       |      [o|o]---[o|/]
+ |       |       |       |
+ |       |       3      "etc"
+ |       |
+ |      [o|o]---[o|/]
+ |       |       |
+ |       2      "el wit..."
+ |
+[o|o]---[o|/]
+ |       |
+ 1      "el wit..."
+"
+#+end_src
+
+Given the function ~lookup~, that tree can be used as a one
+dimensional table:
+
+#+begin_src scheme
+  (define (lookup given-key set)
+    (cond ((null? set) false)
+          ((= given-key (key (entry set)))
+           (cadr (entry set)))
+          ((< given-key (key (entry set)))
+           (lookup given-key (left-branch set)))
+          (else (lookup given-key (right-branch set)))))
+
+  (lookup 1 (tree)) ;; => "table el 1"
+#+end_src
+
+If we add an entries whose value is a tree itself, then we can see
+that we can use this structure as multi-dimensional table.  Here, for
+example, I build a tree with a key 999 whose value is a tree itself.
+Then I retrieve the value under the keys 1 and 999:
+
+#+begin_src scheme
+  (define tree (list->tree '( (1 "table el 1") (2 "table el 2") (3 "table el 3")
+                              (4 "table el 4") (6 "table el 6") (7 "table el 7")
+                              (999 ((1 "subtable el 1") () ((2 "subtable el 2") () ()))))))
+
+  ;; structure of the tree:
+  ;; [o|o]---[o|o]---[o|/]
+  ;;  |       |       |
+  ;;  |       |      [o|o]---[o|o]---[o|/]
+  ;;  |       |       |       |       |
+  ;;  |       |       |       |      [o|o]---[o|o]---[o|/]
+  ;;  |       |       |       |       |       |       |
+  ;;  |       |       |       |       |       ()      ()
+  ;;  |       |       |       |       |
+  ;;  |       |       |       |      [o|o]---[o|/]
+  ;;  |       |       |       |       |       |
+  ;;  |       |       |       |      999     [o|o]---[o|o]---[o|/]
+  ;;  |       |       |       |               |       |       |
+  ;;  |       |       |       |               |       ()     [o|o]---[o|o]---[o|/]
+  ;;  |       |       |       |               |               |       |       |
+  ;;  |       |       |       |               |               |       ()      ()
+  ;;  |       |       |       |               |               |
+  ;;  |       |       |       |               |              [o|o]---[o|/]
+  ;;  |       |       |       |               |               |       |
+  ;;  |       |       |       |               |               2      "subta..."
+  ;;  |       |       |       |               |
+  ;;  |       |       |       |              [o|o]---[o|/]
+  ;;  |       |       |       |               |       |
+  ;;  |       |       |       |               1      "subtab..."
+  ;;  |       |       |       |
+  ;;  |       |       |      [o|o]---[o|o]---[o|/]
+  ;;  |       |       |       |       |       |
+  ;;  |       |       |       |       ()      ()
+  ;;  |       |       |       |
+  ;;  |       |       |      [o|o]---[o|/]
+  ;;  |       |       |       |       |
+  ;;  |       |       |       6      "table..."
+  ;;  |       |       |
+  ;;  |       |      [o|o]---[o|/]
+  ;;  |       |       |       |
+  ;;  |       |       7      "table..."
+  ;;  |       |
+  ;;  |      [o|o]---[o|o]---[o|/]
+  ;;  |       |       |       |
+  ;;  |       |       |      [o|o]---[o|o]---[o|/]
+  ;;  |       |       |       |       |       |
+  ;;  |       |       |       |       ()      ()
+  ;;  |       |       |       |
+  ;;  |       |       |      [o|o]---[o|/]
+  ;;  |       |       |       |       |
+  ;;  |       |       |       3      "table..."
+  ;;  |       |       |
+  ;;  |       |      [o|o]---[o|o]---[o|/]
+  ;;  |       |       |       |       |
+  ;;  |       |       |       ()      ()
+  ;;  |       |       |
+  ;;  |       |      [o|o]---[o|/]
+  ;;  |       |       |       |
+  ;;  |       |       1      "table..."
+  ;;  |       |
+  ;;  |      [o|o]---[o|/]
+  ;;  |       |       |
+  ;;  |       2      "table..."
+  ;;  |
+  ;; [o|o]---[o|/]
+  ;;  |       |
+  ;;  4      "table..."
+
+  (lookup 1 tree) ;; => "table el 1"
+
+  (lookup 999 tree) ;; => ((1 "subtable el 1") () ((2 "subtable el 2") () ()))
+
+  (lookup 1 (lookup 999 tree)) ;; => "subtable el 1"
+#+end_src
+
+** Exercise 3.27
+
+*Answer*:
+
+This exercise was somehow particularly confusing. Looking at
+https://github.com/kana/sicp/blob/master/ex-3.27.md helped a
+lot. After having looked at kana's solution and (beautiful diagram) I
+tried to redo it on my own until I got it.
+
+#+begin_src
+  Before evaluating (memo-fib 3).
+
+              +------------------------------------------------------------------------------------------------------+
+ global env.->| memo-fib                                                                                    memoize  |
+              |   |                                                                                           |      |
+              +---+-------------------------+-----------------------------------------------------------------+------+
+                  |    ^                    ^                                                                 |   ^
+         +---------    |                    |                                                                 |   |
+         |    +--------+-------+      +---+-+-+                                                               V   |
+         |    | f: o-----------+----->| o | o |                                                             +---+-+-+
+         |    |                |      +-+-+---+                                                             | o | o |
+         |    |                |        |                                                                   +-+-+---+
+         |    |                |        |                                                                     |
+         |    +--------+-------+        V                                                                     |
+         |             ^              p: n                                                                    V
+         |             |              b: (cond ...)                                                         p: f
+         |             |                                                                                    b: (let ...)
+         |             |
+         |    +--------+-------+
+         |    | table: {...}   |
+         |    |                |
+         |    |                |
+         |    |                |
+         |    |                |
+         |    +----------------+
+         |           ^
+         |           |
+         +------+    |
+                v    |
+              +---+--+-+
+              | o |  | |
+              +-+-+----+
+                |
+                |
+                V
+             p: x
+             b: (let ...)
+#+end_src
+
+~memoize~ is bound in the global env to a pair whose cdr is a pointer
+to the global env and whose car points to param ~f~ and body
+~(let...)~.
+
+~memo-fib~ is bound in the global env to the value returned by the
+application of memoize to a lambda expression. That value is a lambda,
+therefore a procedure object, therefore a pair.
+
+Applying ~memoize~ entails
+- 1) the creation of a frame which points to the global environment
+  --- the environment the ~memoize~ pairs points to --- and in which
+  ~f~ is bound to a procedure object --- corresponding to the lambda
+  expression passed to ~memoize~ --- which is a pair whose cdr points
+  to the global env. and whose care points to param ~n~ and body
+  ~(cond ...)~.
+- 2) the evaluation of the body of ~memoize~ within the
+  frame/enviroment describe in 1).
+
+The evaluation of the body of ~memoize~ creates a frame in which
+~table~ is bound to the value return by ~make-table~, and evaluates a
+lambda expression within it, which produces a pair whose cdr points to
+the frame in which ~table~ is defined and whose car points to param
+~x~ and body ~(let...)~.
+
+#+begin_src
+Evaluating (memo-fib 3).
+
+              +------------------------------------------------------------------------------------------------------+
+ global env.->| memo-fib                                                                                    memoize  |
+              |   |                                                                                           |      |
+              +---+-------------------------+-----------------------------------------------------------------+------+
+                  |    ^                    ^         ^               ^             ^             ^           |   ^
+         +---------    |                    |         |               |             |             |           |   |
+         |    +--------+-------+      +---+-+-+       |               |             |             |           V   |
+         |    | f: o-----------+----->| o | o |       |               |             |             |         +---+-+-+
+         |    |                |      +-+-+---+       |               |             |             |         | o | o |
+         |    |                |        |             |               |             |             |         +-+-+---+
+         |    |                |        |             |               |             |             |           |
+         |    +--------+-------+        V             |               |             |             |           |
+         |             ^              p: n            |               |             |             |           V
+         |             |              b: (cond ...)   |               |             |             |         p: f
+         |             |                              |               |             |             |         b: (let ...)
+         |             |                       +------+-----+ +-------+----+ +------+-----+ +-----+------+
+         |    +--------+-------+               | n: 3       | | n: 2       | | n: 1       | | n: 0       |
+         |    | table: {...}   |               |            | |            | |            | |            |
+         |    |                |               |            | |            | |            | |            |
+         |    |                |               |            | |            | |            | |            |
+         |    |                |<----+         +------------+ +------------+ +------------+ +------------+
+         |    |                |<--+ |
+         |    +----------------+   | |
+         |           ^    ^ ^ ^    | +--------------------------------------------------------------+
+         |           |    | | |    +-------------------------------------------------+              |
+         +------+    |    | | +---------------------------------------+              |              |
+                v    |    | +--------------------------+              |              |              |
+              +---+--+-+  +-------------+              |              |              |              |
+              | o |  o |                |              |              |              |              |
+              +-+-+----+         +------+-----+ +------+-----+ +------+-----+ +------+-----+ +------+-----+
+                |                | x: 3       | | x: 2       | | x: 1       | | x: 0       | | x: 1       |
+                |                |            | |            | |            | |            | |            |
+                V                |            | |            | |            | |            | |            |
+             p: x                |            | |            | |            | |            | |            |
+             b: (let ...)        +------------+ +------------+ +------------+ +------------+ +------------+
+#+end_src
+
+~memo-fib~ computes the nth Fibonacci number in a number of steps
+proportional to ~n~, because ~memo-fib~ never makes the same
+computation more than once.
+
+The scheme would not work if we had simply defined ~memo-fib~ to be
+~(memoize fib)~, because, in that case, the call ~(memo-fib 3)~ would
+end up calling ~(fib 3)~ which would continue in the old non-memoized
+way.
+
 ** 3.4 Concurrency: Time Is of the Essence
 - We have seen that computational objects with local state are
   powerful tools for modeling.
