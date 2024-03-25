@@ -9812,9 +9812,9 @@ dimensional table:
 #+end_src
 
 If we add an entries whose value is a tree itself, then we can see
-that we can use this structure as multi-dimensional table.  Here, for
-example, I build a tree with a key 999 whose value is a tree itself.
-Then I retrieve the value under the keys 1 and 999:
+that we can use this structure as a multi-dimensional table.  Here,
+for example, I build a tree with a key 999 whose value is a tree
+itself.  Then I retrieve the value under the keys 1 and 999:
 
 #+begin_src scheme
   (define tree (list->tree '( (1 "table el 1") (2 "table el 2") (3 "table el 3")
@@ -10033,3 +10033,131 @@ has a value always has the same value.
 Building models in terms of computational objects with local state
 forces us to confront time as an essential concept in programming.
 #+end_quote
+
+#+begin_quote
+We can go further in structuring computational models to match our
+perception of the physical world.  Objects in the world do not change
+one at a time in sequence.  Rather we perceive them as acting
+"concurrently" --- all at once.
+#+end_quote
+*** 3.4.1 The Nature of Time in Concurrent Systems
+
+- exaple of how we can mess up: ...
+
+-
+  #+begin_quote
+  The general phenomenon illustrated here is that several processes
+  may share a common state variable.  What makes this complicated is
+  that more than one process may be trying to manipulate the shared
+  state at the same time.  For the bank account example, during each
+  transaction, each customer should be able to act as if the other
+  customers did not exist.  When a customer changes the balance in a
+  way that depends on the balance, he must be able to assume that,
+  just before the moment of change, the balance is still what he
+  thought it was.
+  #+end_quote
+*** Exercise 3.38
+#+begin_quote
+Suppose that Peter, Paul, and Mary share a joint ank account that
+initially contains $100.  Concurrently, Peter eposits $10, Paul
+withdraws $20, and Mary withdraws half the oney in the account, by
+executing the following commands:
+
+    Peter: (set! balance (+ balance 10))
+    Paul:  (set! balance (- balance 20))
+    Mary:  (set! balance (- balance (/ balance 2)))
+
+ a. List all the different possible values for `balance' after these
+    three transactions have been completed, assuming that the banking
+    system forces the three processes to run sequentially in some
+    order.
+
+ b. What are some other values that could be produced if the system
+    allows the processes to be interleaved?  Draw timing diagrams like
+    the one in *Note Figure 3-29 to explain how these values can occur.
+
+#+end_quote
+
+*Answer*:
+
+**** a
+| peter | peter |  mary |  paul |  paul |  mary |
+|  paul |  mary | peter | peter |  mary |  paul |
+|  mary |  paul |  paul |  mary | peter | peter |
+|-------+-------+-------+-------+-------+-------|
+|   110 |   110 |    50 |    80 |    80 |    50 |
+|    90 |    55 |    30 |    90 |    40 |    30 |
+|    45 |    35 |    40 |    45 |    50 |    40 |
+
+**** b
+Here is an example of how we could end up with 110 in the bank:
+#+begin_src
+                Peter            Paul            Bank            Mary
+
+                 +----------------+--------------100--------------+
+                 |                |                               |
+                 |                V                               |
+                 |           Access val: 100                      |
+                 |                |                               |
+                 |                |                               V
+                 |                |                        Access val: 100
+                 |                |                               |
+                 V                |                               |
+        Access val: 100           |                               |
+                 |                |                               |
+                 |                V                               |
+                 |            New val: 80                         |
+                 |                |                               V
+                 |                |                          New val: 50
+                 V                |                               |
+           New val: 110           |                               |
+                 |                V                               |
+                 |            Set 80 ----------->80               |
+                 |                                                |
+                 |                                                |
+                 |                                                V
+                 |                               50<----------Set 50
+                 |
+                 V
+              Set 110--------------------------->110
+#+end_src
+
+
+
+*** Exercise 3.39
+*Exercise*:
+
+#+begin_quote
+Which of the five possibilities in the parallel
+execution shown above remain if we instead serialize execution as
+follows:
+
+#+begin_src scheme
+  (define x 10)
+
+  (define s (make-serializer))
+
+  (parallel-execute (lambda () (set! x ((s (lambda () (* x x))))))
+                    (s (lambda () (set! x (+ x 1)))))
+#+end_src
+#+end_quote
+
+*Answer*:
+
+I believe there are three possibilities:
+
+- first:
+  1. execution of ~(* x x)~. A ~100~ value is created but not
+     assigned;
+  2. execution of ~(set! x (+ x 1))~. ~x~ is now ~11~;
+  3. execution of ~(set! x 100)~. x is now ~100~;
+- second:
+  1. execution of ~(* x x)~. A ~100~ value is created but not
+     assigned;
+  2. execution of ~(set! x 100)~. x is now ~100~;
+  3. execution of ~(set! x (+ x 1))~. ~x~ is now ~101~;
+- third:
+  1. execution of ~(set! x (+ x 1))~. ~x~ is now ~11~;
+  2. execution of ~(* x x)~. A ~121~ value is created but not
+     assigned;
+  3. execution of ~(set! x 121)~. x is now ~121~;
