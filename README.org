@@ -10161,3 +10161,165 @@ I believe there are three possibilities:
   2. execution of ~(* x x)~. A ~121~ value is created but not
      assigned;
   3. execution of ~(set! x 121)~. x is now ~121~;
+
+*** Exercise 3.40
+*Exercise*:
+
+#+begin_quote
+Give all possible values of `x' that can result from executing
+
+#+begin_src scheme
+  (define x 10)
+
+  (parallel-execute (lambda () (set! x (* x x)))
+                    (lambda () (set! x (* x x x))))
+#+end_src
+
+Which of these possibilities remain if we instead use serialized
+procedures:
+
+#+begin_src scheme
+  (define x 10)
+
+  (define s (make-serializer))
+
+  (parallel-execute (s (lambda () (set! x (* x x))))
+                    (s (lambda () (set! x (* x x x)))))
+#+end_src
+#+end_quote
+
+*Answer*:
+
+- The first λ involves three events:
+  - two accesses of the variable ~x~; let's called them `1a' and `1b';
+  - one ~set!~; let's call it `1s'.
+- The second λ involves four events:
+  - three accesses of the variable ~x~; let's called them `2a', `2b',
+    and `2c';
+  - one ~set!~; let's call it `1s'.
+
+- If we serialize, then there are only two possible sequences.
+
+- Here is one:
+  - 1a; (x is accessed as 10)
+  - 1b; (x is accessed as 10)
+  - 1s; (x = 10 * 10 = 100);
+  - 2a; (x is accessed as 100)
+  - 2b; (x is accessed as 100)
+  - 2c; (x is accessed as 100)
+  - 2s; (x = 100 * 100 * 100 = 1000000)
+
+- Here is the other:
+  - 2a; (x is accesses as 10)
+  - 2b; (x is accesses as 10)
+  - 2c; (x is accesses as 10)
+  - 2s; (x = 10 * 10 * 10 = 1000)
+  - 1a; (x is accesses as 1000)
+  - 1b; (x is accesses as 1000)
+  - 1s; (x = 1000 * 1000 = 1000000)
+
+- If we don't serialize, then, besides the two sequences above, other
+  sequences are possible.
+
+- Here is one:
+  - 1a; (x is accessed as 10)
+  - 2a; (x is accessed as 10)
+  - 1b; (x is accessed as 10)
+  - 1s; (x = 10 * 10 = 100)
+  - 2b; (x is accessed as 100)
+  - 2c; (x is accessed as 100)
+  - 2s; (x = 10 * 100 * 100 = 100000)
+
+*** Exercise 3.41
+*Exercise*
+
+#+begin_quote
+Ben Bitdiddle worries that it would be better to implement the bank
+account as follows (where the commented line has been changed):
+
+#+begin_src scheme
+  (define (make-account balance)
+    (define (withdraw amount)
+      (if (>= balance amount)
+          (begin (set! balance (- balance amount))
+                 balance)
+          "Insufficient funds"))
+    (define (deposit amount)
+      (set! balance (+ balance amount))
+      balance)
+    ;; continued on next page
+
+    (let ((protected (make-serializer)))
+      (define (dispatch m)
+        (cond ((eq? m 'withdraw) (protected withdraw))
+              ((eq? m 'deposit) (protected deposit))
+              ((eq? m 'balance)
+               ((protected (lambda () balance)))) ; serialized
+              (else (error "Unknown request -- MAKE-ACCOUNT"
+                           m))))
+      dispatch))
+#+end_src
+
+because allowing unserialized access to the bank balance can result in
+anomalous behavior.  Do you agree?  Is there any scenario that
+demonstrates Ben's concern?
+#+end_quote
+
+*Answer*:
+
+The only reason I can think of why one might want to adopt Ben
+Bitdiddle's implementation is the following.
+
+Without BB's serialization, if one attempts to access the balance,
+while somebody else is depositing/withdrawing, then one could get a
+value which is would to change immediately after. With BB's
+serialization, this would not happen. (The analogous ``problem'' of
+somebody depositing/withdrawing when someone else is accessing would
+remained. The person accessing the value would get a value which is
+going to change immediately after the access.)
+
+However, it's far-fetched to consider that as an anomaly. As far as I
+can see, unserialized access to the bank balance is safe.
+
+*** Exercise 3.42
+*Exercise*:
+
+#+begin_quote
+Ben Bitdiddle suggests that it's a waste of time to create a new
+serialized procedure in response to every `withdraw' and `deposit'
+message.  He says that `make-account' could be changed so that the
+calls to `protected' are done outside the `dispatch' procedure.  That
+is, an account would return the same serialized procedure (which was
+created at the same time as the account) each time it is asked for a
+withdrawal procedure.
+
+#+begin_src scheme
+  (define (make-account balance)
+    (define (withdraw amount)
+      (if (>= balance amount)
+          (begin (set! balance (- balance amount))
+                 balance)
+          "Insufficient funds"))
+    (define (deposit amount)
+      (set! balance (+ balance amount))
+      balance)
+    (let ((protected (make-serializer)))
+      (let ((protected-withdraw (protected withdraw))
+            (protected-deposit (protected deposit)))
+        (define (dispatch m)
+          (cond ((eq? m 'withdraw) protected-withdraw)
+                ((eq? m 'deposit) protected-deposit)
+                ((eq? m 'balance) balance)
+                (else (error "Unknown request -- MAKE-ACCOUNT"
+                             m))))
+        dispatch)))
+#+end_src
+
+Is this a safe change to make?  In particular, is there any difference
+in what concurrency is allowed by these two versions of
+`make-account'?
+#+end_quote
+
+The change seems safe to me. I don't see any change in the
+concurrency. The only difference is that the calls ~(protected
+withdraw)~ and ~(protected-deposit)~ are done only once.
