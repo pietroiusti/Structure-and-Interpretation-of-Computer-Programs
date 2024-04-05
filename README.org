@@ -10323,3 +10323,107 @@ in what concurrency is allowed by these two versions of
 The change seems safe to me. I don't see any change in the
 concurrency. The only difference is that the calls ~(protected
 withdraw)~ and ~(protected-deposit)~ are done only once.
+
+*** Exercise 3.43
+*Exercise*:
+#+begin_quote
+Suppose that the balances in three accounts start out as $10, $20, and
+$30, and that multiple processes run, exchanging the balances in the
+accounts.  Argue that if the processes are run sequentially, after any
+number of concurrent exchanges, the account balances should be $10,
+$20, and $30 in some order.  Draw a timing diagram like the one in
+Figure 3-29 to show how this condition can be violated if the
+exchanges are implemented using the first version of the
+account-exchange program in this section.  On the other hand, argue
+that even with this `exchange' program, the sum of the balances in the
+accounts will be preserved.  Draw a timing diagram to show how even
+this condition would be violated if we did not serialize the
+transactions on individual accounts.
+#+end_quote
+
+Answer:
+
+- ``Argue that if the processes are run sequentially, after any number
+  of concurrent exchanges, the account balances should be $10, $20,
+  and $30 in some order.''
+
+  An exchange just moves the value of a variable ~foo~ into another
+  variable ~bar~, as well as the value of ~bar~ in ~foo~. So, if any
+  exchange is atomic (that is, cannot be be interleaved with another
+  exchange), then the final value values of the variable involved can
+  only change in their order
+
+- ``Draw a timing diagram like the one in Figure 3-29 to show how this
+  condition can be violated if the exchanges are implemented using the
+  first version of the account-exchange program in this section.''
+
+  An example (without the diagram) is offered by Authors themselves at
+  page 308.
+
+  #+begin_src
+  Peters swaps A1 and A2, and Paul swaps A1 and A3:
+
+  Peter             A1     A2     A3        Paul
+
+                    10     20     30
+
+  calculates
+  diff A1/A2
+  (-10)
+                                          calculates
+                                          diff A1/A3
+                                          (-20)
+
+                    30<-------------------withdraw -20 A1
+
+                                  10<-----deposit -20 A3
+
+  withdraw -10 A1-->40
+
+  deposit -10 A2---------->10
+  #+end_src
+
+- ``On the other hand, argue that even with this `exchange' program,
+  the sum of the balances in the accounts will be preserved.''
+
+  Each exchange adds and removes the /same/ amount to a variable and
+  from another variable. This is enough to conclude that the sum of
+  everything cannot change.
+
+- ``Draw a timing diagram to show how even this condition would be
+  violated if we did not serialize the transactions on individual
+  accounts''
+
+  In order to violate the condition we can reproduce the kind of
+  situation previously presented by Authors at page 301 (interleaving
+  the events of two withdrawals):
+
+  #+begin_src
+    Peters swaps A1 and A2, and Paul swaps A1 and A3:
+
+    Peter             A1     A2     A3        Paul
+
+                      10     20     30
+
+    calculates
+    diff (-10)
+
+                                             calculates
+                                             diff (-20)
+
+    accesses A1 (10)
+
+                                             accesses A1 (10)
+
+    computes 20
+
+                                             computes 30
+
+    sets A1 to 20---->20
+
+                      30<--------------------sets A1 to 30
+
+    deposits -10 2---------->20
+
+                                    10<------deposits -20 3
+  #+end_src
