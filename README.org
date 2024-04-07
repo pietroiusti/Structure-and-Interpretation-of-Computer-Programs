@@ -10042,20 +10042,134 @@ one at a time in sequence.  Rather we perceive them as acting
 #+end_quote
 *** 3.4.1 The Nature of Time in Concurrent Systems
 
-- exaple of how we can mess up: ...
+- Introduction of time has meant admitting /time/.
 
--
-  #+begin_quote
-  The general phenomenon illustrated here is that several processes
-  may share a common state variable.  What makes this complicated is
-  that more than one process may be trying to manipulate the shared
-  state at the same time.  For the bank account example, during each
-  transaction, each customer should be able to act as if the other
-  customers did not exist.  When a customer changes the balance in a
-  way that depends on the balance, he must be able to assume that,
-  just before the moment of change, the balance is still what he
-  thought it was.
-  #+end_quote
+- Our programs are not timeless anymore.
+  - Successive evaluations of the same expression can yield different
+    values.
+
+- Execution of assignment statements delineate a moment in time.
+
+- The result of an evaluation now depends:
+  - not only on the expression itself,
+  - but also on whether the evaluation occurs before or after one the
+    moments delineated by the execution of assignment statements.
+
+- For any event A and B:
+  - either A happens and then B happens,
+  - or B happens and then A happens,
+  - or A and B happen at the same time.
+
+- Authors give an example of Peter and Paul withdrawing from an
+  account at the same time in which concurrency is not handled
+  correctly.
+  - ``The general phenomenon illustrated here is that several processes
+    may share a common state variable.''
+  - ``The above example typifies the subtle bugs that can creep into
+    concurrent programs.  The root of this complexity lies in the
+    assignments to variables that are shared among the different
+    processes.''
+
+- Consider two processes, each of which with three ordered
+  events. Respectively: (a, b, c), and (x, y, z).
+  - there are 20 possible orderings (See p. 303)
+
+- Consider a parallel execution of ~(set! x (* x x))~ and ~(set! x (+
+  x 1))~.
+  - We can do so using ~parallel-execute~:
+    #+begin_src emacs-lisp
+      (define x 10)
+
+      (parallel-execute (lambda () (set! x (* x x)))
+                        (lambda () (set! x (+ x 1))))
+    #+end_src
+- There are five possible final values for the variable ~x~.
+- If we use a /serializer/, though, there are only two possible final
+  values.
+  - here is how we would use a serializer:
+    #+begin_src emacs-lisp
+      (define x 10)
+
+      (define s (make-serializer))
+
+      (parallel-execute (s (lambda () (set! x (* x x))))
+                        (s (lambda () (set! x (+ x 1)))))
+    #+end_src
+
+- We can now write a safer version of ~make-account~:
+  #+begin_src emacs-lisp
+    (define (make-account balance)
+            (define (withdraw amount)
+                    (if (>= balance amount)
+                        (begin (set! balance (- balance amount))
+                               balance)
+                      "Insufficient funds"))
+            (define (deposit amount)
+                    (set! balance (+ balance amount))
+                    balance)
+            (let ((protected (make-serializer)))
+              (define (dispatch m)
+                      (cond ((eq? m 'withdraw) (protected withdraw))
+                            ((eq? m 'deposit) (protected deposit))
+                            ((eq? m 'balance) balance)
+                            (else (error "Unknown request -- MAKE-ACCOUNT"
+                                         m))))
+              dispatch))
+  #+end_src
+
+- Consider this procedure which swaps the value of two accounts:
+  #+begin_src emacs-lisp
+    (define (exchange account1 account2)
+            (let ((difference (- (account1 'balance)
+                                 (account2 'balance))))
+              ((account1 'withdraw) difference)
+              ((account2 'deposit) difference)))
+  #+end_src
+
+- ``For correct behavior, we must arrange for the ~exchange~ procedure
+  to lock out any other concurrent accesses to the accounts during the
+  entire time of the exchange.''
+
+- Authors show how to implement a serializer using a /mutex/ (aka
+  /lock/).
+  #+begin_src emacs-lisp
+    (define (make-serializer)
+            (let ((mutex (make-mutex)))
+              (lambda (p)
+                (define (serialized-p . args)
+                        (mutex 'acquire)
+                        (let ((val (apply p args)))
+                          (mutex 'release)
+                          val))
+                serialized-p)))
+
+    (define (make-mutex)
+            (let ((cell (list false)))
+              (define (the-mutex m)
+                      (cond ((eq? m 'acquire)
+                             (if (test-and-set! cell)
+                                 (the-mutex 'acquire))) ; retry
+                            ((eq? m 'release) (clear! cell))))
+              the-mutex))
+
+    (define (clear! cell)
+            (set-car! cell false))
+
+
+    (define (test-and-set! cell)
+            (if (car cell)
+                true
+              (begin (set-car! cell true)
+                     false)))
+  #+end_src
+
+- Very important detail: the `test-and-set!' operation must be
+  performed "atomically". (This operation is also known as Compare And
+  Swap, (CAS). See Fedor Pikus' presentation:
+  https://youtu.be/ZQFzMfHIxng?t=1028)
+
+- Authors explain what a /deadlock/ is.
+
 *** Exercise 3.38
 #+begin_quote
 Suppose that Peter, Paul, and Mary share a joint ank account that
