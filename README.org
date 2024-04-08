@@ -10541,3 +10541,37 @@ Answer:
 
                                     10<------deposits -20 3
   #+end_src
+
+*** Exercise 3.46
+*Exercise*:
+#+begin_quote
+Suppose that we implement ~test-and-set!~ using an ordinary procedure
+as shown in the text, without attempting to make the operation atomic.
+Draw a timing diagram like the one in Figure 3-29 to demonstrate how
+the mutex implementation can fail by allowing two processes to acquire
+the mutex at the same time.
+#+end_quote
+
+*Answer*:
+#+begin_src
+  |    Peter             mutex             Paul
+  |      |                                  |
+  |      |               false              |
+  |      |                                  |
+  |    test:                                |
+  |    okay                                 |
+  |      |                                  |
+  |      |                                test:
+  |      |                                okay
+  |      |                                  |
+  |      |                                does
+  |      |                                stuff
+  |      |                                  |
+  |     does                                |
+  |     stuff                               |
+  |      |                                  |
+  |     set------------->true               |
+  |                                         |
+  V                      true<-------------set
+time
+#+end_src
