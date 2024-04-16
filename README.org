@@ -10042,7 +10042,7 @@ one at a time in sequence.  Rather we perceive them as acting
 #+end_quote
 *** 3.4.1 The Nature of Time in Concurrent Systems
 
-- Introduction of time has meant admitting /time/.
+- Introduction of assignment has meant admitting /time/.
 
 - Our programs are not timeless anymore.
   - Successive evaluations of the same expression can yield different
@@ -10189,7 +10189,6 @@ executing the following commands:
  b. What are some other values that could be produced if the system
     allows the processes to be interleaved?  Draw timing diagrams like
     the one in *Note Figure 3-29 to explain how these values can occur.
-
 #+end_quote
 
 *Answer*:
@@ -10235,8 +10234,6 @@ Here is an example of how we could end up with 110 in the bank:
                  V
               Set 110--------------------------->110
 #+end_src
-
-
 
 *** Exercise 3.39
 *Exercise*:
@@ -10455,7 +10452,7 @@ this condition would be violated if we did not serialize the
 transactions on individual accounts.
 #+end_quote
 
-Answer:
+*Answer*:
 
 - ``Argue that if the processes are run sequentially, after any number
   of concurrent exchanges, the account balances should be $10, $20,
@@ -10575,3 +10572,32 @@ the mutex at the same time.
   V                      true<-------------set
 time
 #+end_src
+
+** 3.5 Streams
+- This section introduces an alternative approach (alternative to
+  assignment) to modeling state.
+
+- Modeling state was somehow complex.
+
+- Where was this complexity coming from?
+  - Real-world world objects with local state modeled by computational
+    objects with local variables;
+  - time variation in the real-world identified with time variation in
+    the computer.
+  - time variation of the states of the model objects in the computer
+    implemented with assignment to the local variables in the model
+    objects.
+
+- ``Can we avoid identifying time in the computer with time in the
+  modeled world?''
+
+- ``time history''
+
+- A new data structure is introduced: /streams/.
+
+- Technique of /delayed evaluation/.
+
+- We can model systems that have a state without ever using assignment
+  or mutable data.
+  - No more drawbacks...
+  - There are, though, other difficulties...
