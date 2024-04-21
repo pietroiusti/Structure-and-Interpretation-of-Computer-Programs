@@ -10601,3 +10601,35 @@ time
   or mutable data.
   - No more drawbacks...
   - There are, though, other difficulties...
+
+** Exercise 3.50:
+*Exercise*:
+
+Complete the following definition, which generalizes ~stream-map~ to
+allow procedures that take multiple arguments, analogous to ~map~ in
+section 2-2-3, footnote 12.
+
+#+begin_src scheme
+  (define (stream-map proc . argstreams)
+    (if (<??> (car argstreams))
+        the-empty-stream
+        (<??>
+         (apply proc (map <??> argstreams))
+         (apply stream-map
+                (cons proc (map <??> argstreams))))))
+#+end_src
+
+*Answer*:
+
+AFAICS, Authors haven't shown the implementation of the map procedure
+presented in the footnote 12. Let's implement that first. I will call
+it ~map*~.
+
+#+begin_src scheme
+  (define (map* proc . args)
+    (if (null? (car args))
+        nil
+        (cons
+         (apply proc (map car args))
+         (apply map* (cons proc (map cdr args))))))
+#+end_src
