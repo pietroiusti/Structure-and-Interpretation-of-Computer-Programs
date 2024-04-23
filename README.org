@@ -10633,3 +10633,15 @@ it ~map*~.
          (apply proc (map car args))
          (apply map* (cons proc (map cdr args))))))
 #+end_src
+
+Here is the stream version:
+
+#+begin_src scheme
+  (define (stream-map proc . argstreams)
+    (if (stream-null? (car argstreams))
+        (the-empty-stream
+         (cons
+          (apply proc (map stream-car argstreams))
+          (apply stream-map
+                 (cons proc (map stream-cdr argstreams)))))))
+#+end_src
