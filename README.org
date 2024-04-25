@@ -10645,3 +10645,88 @@ Here is the stream version:
           (apply stream-map
                  (cons proc (map stream-cdr argstreams)))))))
 #+end_src
+
+** Exercise 3.51
+*Exercise*:
+
+#+begin_quote
+In order to take a closer look at delayed
+evaluation, we will use the following procedure, which simply
+returns its argument after printing it:
+
+#+begin_src scheme
+  (define (show x)
+    (display-line x)
+    x)
+#+end_src
+
+
+What does the interpreter print in response to evaluating each
+expression in the following sequence?(7)
+
+#+begin_src scheme
+  (define x (stream-map show (stream-enumerate-interval 0 10)))
+
+  (stream-ref x 5)
+
+  (stream-ref x 7)
+#+end_src
+#+end_quote
+
+*Answer*:
+
+#+begin_src scheme
+  ;; relevant code
+  (define (stream-car stream) (car stream))
+  (define (stream-cdr stream) (force (cdr stream)))
+
+  (define (show x)
+    (display-line x)
+    x)
+
+  (define (display-line x)
+    (newline)
+    (display x))
+
+  (define (stream-map proc s)
+    (if (stream-null? s)
+        the-empty-stream
+        (cons-stream (proc (stream-car s))
+                     (stream-map proc (stream-cdr s)))))
+
+  (define (stream-enumerate-interval low high)
+    (if (> low high)
+        the-empty-stream
+        (cons-stream low
+                     (stream-enumerate-interval (+ low 1) high))))
+
+  (define (stream-ref s n)
+    (if (= n 0)
+        (stream-car s)
+        (stream-ref (- n 1) (stream-cdr s))))
+#+end_src
+
+Executing ~(define x (stream-map show (stream-enumerate-interval 0
+10)))~ only prints ~0~.
+
+Let's try to think why is that so.
+
+First, ~(stream-enumerate-interval 0 10)~ evaluates to a list whose
+car is 0 and whose cdr is a promise:
+#+begin_src scheme
+  (0 . #<promise>)
+#+end_src
+
+Then we apply ~stream-map~ to show and to ~(0 . #<promise>)~.
+
+~stream-map~ evaluates to a list whose cdr is a promise; its car is
+~(show (stream-car (0 . #<promise>)))~. This latter expression
+evaluates to 0, but it also has the side effect of printing a new line
+and 0.
+
+So, when evaluating ~(define x (stream-map show
+(stream-enumerate-interval 0 10)))~, the interpreter prints 0.
+
+When we evaluate ~(stream-ref x 5)~, ~stream-cdr~ is repeatedly called
+and the stream is consumed until we find the 5. Therefore, we print
+all the numbers from 1 to 5 (and the whole expression evaluates to 5).
