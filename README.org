@@ -10730,3 +10730,61 @@ So, when evaluating ~(define x (stream-map show
 When we evaluate ~(stream-ref x 5)~, ~stream-cdr~ is repeatedly called
 and the stream is consumed until we find the 5. Therefore, we print
 all the numbers from 1 to 5 (and the whole expression evaluates to 5).
+** Infinite streams
+- We can use streams to represent /infinite/ sequences.
+
+- For example, this is the definition of the stream of positive
+  integers:
+  #+begin_src scheme
+    (define (integers-starting-from n)
+      (cons-streams n (integers-starting-from (+ n 1))))
+
+    (define integers (integers-starting-from n))
+  #+end_src
+
+  ``Our programs will never know that the entire infinite stream is
+  not there.''
+
+- We can now define other infinite streams based on this one, e.g.:
+  #+begin_src scheme
+    (define (divisible? x y) (= (remainder x y) 0))
+
+    (define no-sevens ;; streams of integers that are not divisible by 7
+      (stream-filter (lambda (x) (not (divisible? x 7)))
+                     integers))
+
+    (stream-ref no-sevens 100)
+    ;; => 117
+  #+end_src
+
+- Authors show the analog way to define the infinite streams of
+  Fibonacci numbers.
+
+- Authors show the method, known as the ``sieve of Eratosthenes'', to
+  construct the infinite streams of prime numbers.
+
+- ~integers~ is
+  #+begin_quote
+  defined by specifying ``generating'' procedures that explicitly
+  compute the stream elements one by one. An alternative way to
+  specify streams is to take advantage of delayed evaluation to define
+  streams implicitly. (328)
+  #+end_quote
+
+- Here is an infinite streams of ones:
+  #+begin_src scheme
+    (define ones (cons-stream 1 ones))
+  #+end_src
+
+- Consider the following operation, which uses the generalized version
+  of ~stream-map~ from exercise 3.50:
+  #+begin_src scheme
+    (define (add-stream s1 s2)
+      (stream-map + s1 s2))
+  #+end_src
+
+- Now ~integers~ can be defined as follows:
+  #+begin_src scheme
+    (define integers (cons-stream 1 (add-streams ones integers)))
+  #+end_src
+
