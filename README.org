@@ -10730,7 +10730,7 @@ So, when evaluating ~(define x (stream-map show
 When we evaluate ~(stream-ref x 5)~, ~stream-cdr~ is repeatedly called
 and the stream is consumed until we find the 5. Therefore, we print
 all the numbers from 1 to 5 (and the whole expression evaluates to 5).
-** Infinite streams
+** 3.5.2 Infinite streams
 - We can use streams to represent /infinite/ sequences.
 
 - For example, this is the definition of the stream of positive
@@ -10787,4 +10787,43 @@ all the numbers from 1 to 5 (and the whole expression evaluates to 5).
   #+begin_src scheme
     (define integers (cons-stream 1 (add-streams ones integers)))
   #+end_src
+*** Defining streams implicitly
+- Authors show ``[a]n alternative way to specify a stream.''
 
+- Here is an infinite stream of ones
+  #+begin_src scheme
+    (define ones (cons-stream 1 ones))
+  #+end_src
+
+- And here is a way to define ~integers~:
+  #+begin_src scheme
+    (define (add-streams s1 s2)
+      (stream-map + s1 s2))
+
+    (define integers (cons-stream 1 (add-streams ones integers)))
+  #+end_src
+** Exercise 3.53
+*Exercise*:
+
+#+begin_quote
+Without running the program, describe the elements of the stream
+defined by
+
+#+begin_src scheme
+  (define s (cons-stream 1 (add-streams s s)))
+#+end_src
+#+end_quote
+
+*Answer*:
+
+The elements of the streams are the powers of 2.
+
+~s~ is the the list whose ~car~ is 1 and whose ~cdr~ is the promise to
+execute ~(add-stream s s)~.
+
+Forcing the ~cdr~ of ~s~ gives us the the list whose ~car~ is 2 and
+whose ~cdr~ is the promise to execute ~(add-stream (stream-cdr s)
+(stream-cdr s))~.
+
+Forcing the ~cdr~ of the ~cdr~ of ~s~ gives us the list whose car is 4
+and whose ~cdr~...
