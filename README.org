@@ -10827,3 +10827,71 @@ whose ~cdr~ is the promise to execute ~(add-stream (stream-cdr s)
 
 Forcing the ~cdr~ of the ~cdr~ of ~s~ gives us the list whose car is 4
 and whose ~cdr~...
+*** Exercise 4.1
+*Exercise*:
+#+begin_quote
+Notice that we cannot tell whether the metacircular evaluator
+evaluates operands from left to right or from right to left.  Its
+evaluation order is inherited from the underlying Lisp: If the
+arguments to `cons' in `list-of-values' are evaluated from left to
+right, then `list-of-values' will evaluate operands from left to
+right; and if the arguments to `cons' are evaluated from right to
+left, then `list-of-values' will evaluate operands from right to left.
+
+Write a version of `list-of-values' that evaluates operands from left
+to right regardless of the order of evaluation in the underlying Lisp.
+Also write a version of `list-of-values' that evaluates operands from
+right to left.
+#+end_quote
+
+*Answer*:
+
+Looking at the solutions published online, this is the widespread
+approach:
+#+begin_src scheme
+  ;; left to right
+  (define (list-of-values exps env)
+    (if (no-operands? exps)
+        '()
+        (let ((fst (eval (first-operand exps) env)))
+          (cons fst
+                (list-of-values (rest-operands exps) env)))))
+;; see, for example: https://youtu.be/eoNyHC_cM7w?list=PLVFrD1dmDdvdvWFK8brOVNL7bKHpE-9w0
+#+end_src
+
+Analogously, but without using `let` (which is just syntactic sugar):
+#+begin_src scheme
+  (define (list-of-values-left exp env)
+    (if (no-operands? exp)
+        '()
+        ((lambda (first-value)
+           (cons first-value (list-of-values-left (rest-operands-exps) env)))
+         (eval (first-operand exps) env))))
+;; found here: https://github.com/cmccloud/SICP/blob/master/exercise-4.1.scm
+#+end_src
+
+My solution was a bit more... complex. But it should count as valid,
+shouldn't it?
+#+begin_src scheme
+  (define (list-of-values exps env)
+    ;; return exps as they are except for the nth exp which is evaluated
+    ;; as an operand
+    (define (eval-nth-operand exps env n)
+      (cond ((no-operands? exps)
+             '())
+            ((= n 0)
+             (cons (eval (first-operand exps) env)
+                   (cdr exps)))
+            (else (cons (car exps)
+                        (eval-nth-operand (cdr exps) env (- n 1))))))
+
+    ;; iteratively call eval-nth-operand for each exp
+    (define (iter exps env count)
+      (if (= count (length exps))
+          exps
+          (iter (eval-nth-operand exps env count)
+                env
+                (+ count 1))))
+
+    (iter exps env 0))
+#+end_src
