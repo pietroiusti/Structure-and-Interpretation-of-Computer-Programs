@@ -11042,3 +11042,43 @@ This should be enough as far as I can see:
     (cddr exp))
 #+end_src
 
+*** Exercise 4.3
+#+begin_quote
+Rewrite `eval' so that the dispatch is done in data-directed style.
+Compare this with the data-directed differentiation procedure of
+Exercise 2-73.  (You may use the `car' of a compound expression as the
+type of the expression, as is appropriate for the syntax implemented
+in this section.)
+#+end_quote
+
+*Answer*:
+
+I think the code would look like something like this:
+
+#+begin_src scheme
+  (define (type-tag datum) ;; p. 176
+    (if (pair? datum)
+        (car datum)
+        (error "Bad tagged datum -- TYPE-TAG" datum)))
+
+  (define (contents datum) ;; p. 176
+    (if (pair? datum)
+        (cdr datum)
+        (error "Bad tagged datum -- CONTENTS" datum)))
+
+  (define (eval exp env)
+    (let ((tag (type-tag exp)))
+      (let ((proc (get 'eval tag))
+            (if proc
+                (apply proc (list contents env))
+                (error "no proc found"))))))
+
+  (put 'eval
+       'self-evaluating
+       (lambda (exp env) exp))
+
+  (put 'eval
+       'variable
+       lookup-variable-value))
+  ;; etc.
+#+end_src
