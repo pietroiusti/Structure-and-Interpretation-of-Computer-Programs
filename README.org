@@ -10829,12 +10829,124 @@ Forcing the ~cdr~ of the ~cdr~ of ~s~ gives us the list whose car is 4
 and whose ~cdr~...
 
 * Metalinguistic Abstraction
+We have seen several techniques that programmers can use to tame
+complexity.
+
+So far we have used Lisp. But, as complexity grows, it will not be
+sufficient. To the strategies for controlling complexity we must add
+/metalinguistic abstraction/ of establishing new languages.
+
+#+begin_quote
+Establishing new languages is a powerful strategy for controlling
+complexity in engineering design; we can often enhance our ability to
+deal with a complex problem by adopting a new language that enables us
+to describe (and hence to think about) the problem in a different way,
+using primitives, means of combination, and means of abstraction that
+are particularly well suited to the problem at hand.
+#+end_quote
+
+In computer programming, not only new languages can be formulated;
+they can also be implemented by constructing /evaluators/ (aka
+/interpreters/), that is, procedures that, when applied to an
+expression of the relevant language (the language they are evaluators
+of), perform the actions required to evaluate the expression.
+
+#+begin_quote
+It is no exaggeration to regard this as the most fundamental idea in
+programming:
+
+The evaluator, which determines the meaning of expressions in a
+programming language, is just another program.
+
+To appreciate this point is to change our images of ourselves as
+programmers.  We come to see ourselves as designers of languages,
+rather than only users of languages designed by others.
+
+In fact, we can regard almost any program as the evaluator for some
+language.
+#+end_quote
+
+From a certain perspective,
+#+begin_quote
+the technology for coping with large-scale computer systems merges
+with the technology for building new computer languages, and computer
+science itself becomes no more (and no less) than the discipline of
+constructing appropriate descriptive languages.
+#+end_quote
+
+That's the technology this chapter explores. More precisely: the
+technology by which languages are established in terms of other
+languages. Needless to say, our evaluators will be written in
+Lisp. The first evaluator will be for Lisp itself (a subset of the
+Scheme dialect).
 ** The Metacircular Evaluator
-*** The Core of the Evaluator
+#+begin_quote
+An evaluator that is written in the same language that it evaluates is
+said to be /metacircular/.
+
+The metacircular evaluator is essentially a Scheme formulation of the
+environment model of evaluation described in section 3.2. (362)
+#+end_quote
+
 #+begin_quote
 The evaluation process can be described as the interplay between two
 procedures: `eval' and `apply'.
+
+Recall that the model has two basic parts...
+
+[...]
+
+The implementation of the evaluator will depend upon procedures that
+define the "syntax" of the expressions to be evaluated.
 #+end_quote
+
+*** The Core of the Evaluator
+
+``Abstract syntax'':
+#+begin_quote
+Each type of expression has a predicate that tests for it and an
+abstract means for selecting its parts.
+#+end_quote
+
+- Primitive expressions
+- Special forms
+  - quoted expressions
+  - assignments/definitions of a variable
+  - ~if~ expressions
+  - ~lambda~ expressions
+  - ~begin~
+  - ~cond~
+- Combinations
+
+
+#+begin_src
+*Figure 4.1:* The `eval'-`apply' cycle exposes the essence of a
+computer language.
+
+                                     .,ad88888888baa,
+                            _    ,d8P"""        ""9888ba.      _
+                           /  .a8"          ,ad88888888888a   |\
+                         /   aP'          ,88888888888888888a   \
+                        /  ,8"           ,88888888888888888888,  \
+                       |  ,8'            (888888888888888888888, |
+                      /  ,8'             `8888888888888888888888  \
+                      |  8)               `888888888888888888888, |
+          Procedure,  |  8                  "88888 Apply 8888888) | Expression
+          Arguments   |  8     Eval          `888888888888888888) | Environment
+                      |  8)                    "8888888888888888  |
+                      \  (b                     "88888888888888'  /
+                       | `8,                     8888888888888)  |
+                       \  "8a                   ,888888888888)  /
+                        \   V8,                 d88888888888"  /
+                        _\| `8b,             ,d8888888888P' _/
+                               `V8a,       ,ad8888888888P'
+                                  ""88888888888888888P"
+                                       """"""""""""
+
+[graphic by Normand Veillux, modified]
+[Figure from SICP Unofficial Texinfo Format version 2.neilvandyke4 (January 10, 2007)]
+#+end_src
+
 
 #+begin_src scheme
   (define (eval exp env)
@@ -10910,6 +11022,7 @@ procedures: `eval' and `apply'.
       env)
     'ok)
 #+end_src
+
 *** Exercise 4.1
 *Exercise*:
 #+begin_quote
@@ -11041,7 +11154,6 @@ This should be enough as far as I can see:
   (define (operands exp)
     (cddr exp))
 #+end_src
-
 *** Exercise 4.3
 #+begin_quote
 Rewrite `eval' so that the dispatch is done in data-directed style.
