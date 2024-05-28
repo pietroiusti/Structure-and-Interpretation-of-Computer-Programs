@@ -11249,3 +11249,101 @@ and ~or~ as derived expressions.
               1st-evaluated-disjunct
               (eval-or (cons 'or (rest-disjuncts exp)) env)))))
 #+end_src
+
+*** Exercise 4.5
+#+begin_quote
+Scheme allows an additional syntax for ~cond~ clauses, ~(<TEST> =>
+<RECIPIENT>)~.  If <TEST> evaluates to a true value, then <RECIPIENT>
+is evaluated.  Its value must be a procedure of one argument; this
+procedure is then invoked on the value of the <TEST>, and the result
+is returned as the value of the `cond' expression.  For example
+
+#+begin_src scheme
+  (cond ((assoc 'b '((a 1) (b 2))) => cadr)
+  (else false))
+#+end_src
+
+returns 2.  Modify the handling of ~cond~ so that it supports this
+extended syntax.
+#+end_quote
+
+*Answer*:
+
+#+begin_src scheme
+  #lang sicp
+  (define (tagged-list? exp tag)
+    (if (pair? exp)
+        (eq? (car exp) tag)
+        false))
+
+  (define (begin? exp) (tagged-list? exp 'begin))
+
+  (define (begin-actions exp) (cdr exp))
+
+  (define (last-exp? seq) (null? (cdr seq)))
+
+  (define (first-exp seq) (car seq))
+
+  (define (rest-exps seq) (cdr seq))
+
+  (define (sequence->exp seq)
+    (cond ((null? seq) seq)
+          ((last-exp? seq) (first-exp seq))
+          (else (make-begin seq))))
+
+  (define (sequence->exp2 seq)
+    (cond ((null? seq) seq)
+          ((last-exp? seq) (first-exp seq))
+          (else (make-begin seq))))
+
+  (define (make-begin seq) (cons 'begin seq))
+
+  (define (cond? exp) (tagged-list? exp 'cond))
+
+  (define (cond-clauses exp) (cdr exp))
+
+  (define (cond-else-clause? clause)
+    (eq? (cond-predicate clause) 'else))
+
+  (define (cond-predicate clause) (car clause))
+
+  (define (cond-actions clause) (cdr clause))
+
+  (define (alternative-cond-actions clause)
+    (list (caddr clause) (car clause)))
+
+  (define (cond->if exp)
+    (expand-clauses (cond-clauses exp)))
+
+  (define (make-if predicate consequent alternative)
+    (list 'if predicate consequent alternative))
+
+  (define (alternative-cond? exp)
+    (eq? (cadr exp) '=>))
+
+  (define (expand-clauses clauses)
+    (if (null? clauses)
+        'false                          ; no `else' clause
+        (let ((first (car clauses))
+              (rest (cdr clauses)))
+          (if (cond-else-clause? first)
+              (if (null? rest)
+                  (if (alternative-cond? first)
+                      (alternative-cond-actions first)
+                      (sequence->exp (cond-actions first)))
+                  (error "ELSE clause isn't last -- COND->IF"
+                         clauses))
+              (make-if (cond-predicate first)
+                       (if (alternative-cond? first)
+                           (alternative-cond-actions first)
+                           (sequence->exp (cond-actions first)))
+                       (expand-clauses rest))))))
+
+  (cond->if
+   '(cond ((assoc 'b '((a 1) (b 2))) => cadr)
+          (else false)))
+  ;; =>
+  ;;(if (assoc 'b '((a 1) (b 2)))
+  ;;    (cadr (assoc 'b '((a 1) (b 2))))
+  ;;    false)
+#+end_src
