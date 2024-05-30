@@ -11433,3 +11433,93 @@ expressions.
           (else
            (error "Unknown expression type -- EVAL" exp))))
 #+end_src
+
+*** Exercise 4.7
+*Exercise*:
+
+#+begin_quote
+~Let*~ is similar to ~let~, except that the bindings of the ~let~
+variables are performed sequentially from left to right, and each
+binding is made in an environment in which all of the preceding
+bindings are visible.  For example
+
+#+begin_src scheme
+  (let* ((x 3)
+         (y (+ x 2))
+         (z (+ x y 5)))
+    (* x z))
+#+end_src
+
+returns 39.  Explain how a ~let*~ expression can be rewritten as a set
+of nested ~let~ expressions, and write a procedure ~let*->nested-lets~
+that performs this transformation.  If we have already implemented
+~let~ (exercise 4-6) and we want to extend the evaluator to handle
+~let*~, is it sufficient to add a clause to ~eval~ whose action is
+
+#+begin_src scheme
+  (eval (let*->nested-lets exp) env)
+#+end_src
+
+or must we explicitly expand ~let*~ in terms of non-derived
+expressions?
+#+end_quote
+
+*Answer*:
+
+This is the way we can translate the example given:
+
+#+begin_src scheme
+  (let (x 3)
+    (let (y (+ x 2))
+      (let (z (+ x y 5))
+        (* x z))))
+#+end_src
+
+Here is ~let*->nested-lets~:
+
+#+begin_src scheme
+  (define (let*-bindings exp)
+    (cadr exp))
+
+  (define (let*-first-binding exp)
+    (car (let*-bindings exp)))
+
+  (define (let*-rest-bindings exp)
+    (cdr (let*-bindings exp)))
+
+  (define (let*-body exp)
+    (caddr exp))
+
+  (define (let*->nested-lets exp)
+    (cond ((null? (let*-bindings exp))
+           (let*-body exp))
+          (else (cons 'let
+                      (list (list (let*-first-binding exp))
+                            (let*->nested-lets
+                             (cons 'let*
+                                   (list (let*-rest-bindings exp)
+                                         (let*-body exp)))))))))
+
+  (let*->nested-lets '(let* ((x 3)
+                             (y (+ x 2)))
+                        (* x y)))
+  ;; =>
+  ;; (let ((x 3))
+  ;;   (let ((y (+ x 2)))
+  ;;     (* x y)))
+
+  (let*->nested-lets '(let* ((x 3)
+                             (y (+ x 2))
+                             (z (+ x y 5)))
+                        (* x z)))
+  ;; =>
+  ;; (let ((x 3))
+  ;;   (let ((y (+ x 2)))
+  ;;     (let ((z (+ x y 5)))
+  ;;       (* x z))))
+#+end_src
+
+
+Adding ~(eval (let*->nested-lets exp) env)~ to ~eval~ should be
+sufficient, in the same way we do for ~cond~. Or am I missing
+something?
