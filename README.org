@@ -11534,7 +11534,7 @@ The <BINDINGS> and <BODY> are just as in ordinary ~let~, except that
 <VAR> is bound within <BODY> to a procedure whose body is <BODY> and
 whose parameters are the variables in the <BINDINGS>.  Thus, one can
 repeatedly execute the <BODY> by invoking the procedure named <VAR>.
-For example, the iterative Fibonacci procedure (1-2-2) can be
+For example, the iterative Fibonacci procedure (1.2.2) can be
 rewritten using named ~let~ as follows:
 
 #+begin_src scheme
@@ -11549,6 +11549,9 @@ Modify ~let->combination~ of Exercise 4-6 to also support named ~let~.
 #+end_quote
 
 *Answer*:
+
+Basically I'm making ~let->combination~ transform the ``named ~let~''
+into the ~fib-iter~ definition and call as from 1.2.2.
 
 #+begin_src scheme
     #lang sicp
@@ -11595,6 +11598,44 @@ Modify ~let->combination~ of Exercise 4-6 to also support named ~let~.
   ;; (begin
   ;;   (define (fib-iter a b count)
   ;;     (if (= count 0) b (fib-iter (+ a b) a (- count 1))))
+  ;;   (fib-iter 1 0 n))
+#+end_src
+
+Should we define ~fib-iter~ only if it hasn't already been defined? We
+could add an ~if~:
+#+begin_src scheme
+  (define (named-let->combination exp)
+    (let ((nameless (cons (car exp) (cddr exp)))
+          (name (cadr exp)))
+      (cons 'begin (cons
+                    (list 'if
+                          (list 'not name)
+                          (cons 'define
+                                (cons (cons name (let-vars nameless))
+                                      (let-body nameless))))
+                    (list
+                     (cons name (let-exps nameless)))))))
+
+  (define (let->combination exp)
+    (if (not (pair? (cadr exp)))
+        (named-let->combination exp)
+        (cons (list 'lambda
+                    (let-vars exp)
+                    (let-body exp))
+              (let-exps exp))))
+
+  (let ((let-exp '(let fib-iter ((a 1) (b 0) (count n))
+                    (if (= count 0)
+                        b
+                        (fib-iter (+ a b) a (- count 1))))))
+    (let->combination let-exp))
+
+  ;; =>
+  ;; (begin
+  ;;   (if (not fib-iter)
+  ;;       (define
+  ;;         (fib-iter a b count)
+  ;;         (if (= count 0) b (fib-iter (+ a b) a (- count 1)))))
   ;;   (fib-iter 1 0 n))
 #+end_src
 
