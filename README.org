@@ -11523,3 +11523,78 @@ Here is ~let*->nested-lets~:
 Adding ~(eval (let*->nested-lets exp) env)~ to ~eval~ should be
 sufficient, in the same way we do for ~cond~. Or am I missing
 something?
+
+*** Exercise 4.8
+#+begin_quote
+"Named ~let~" is a variant of ~let~ that has the form
+
+~(let <VAR> <BINDINGS> <BODY>)~
+
+The <BINDINGS> and <BODY> are just as in ordinary ~let~, except that
+<VAR> is bound within <BODY> to a procedure whose body is <BODY> and
+whose parameters are the variables in the <BINDINGS>.  Thus, one can
+repeatedly execute the <BODY> by invoking the procedure named <VAR>.
+For example, the iterative Fibonacci procedure (1-2-2) can be
+rewritten using named ~let~ as follows:
+
+#+begin_src scheme
+  (define (fib n)
+    (let fib-iter ((a 1) (b 0) (count n))
+      (if (= count 0)
+          b
+          (fib-iter (+ a b) a (- count 1)))))
+#+end_src
+
+Modify ~let->combination~ of Exercise 4-6 to also support named ~let~.
+#+end_quote
+
+*Answer*:
+
+#+begin_src scheme
+    #lang sicp
+    (define (tagged-list? exp tag)
+      (if (pair? exp)
+          (eq? (car exp) tag)
+          false))
+
+    (define (let? exp) (tagged-list? exp 'let))
+
+    (define (let-vars exp)
+      (map car (cadr exp)))
+
+    (define (let-exps exp)
+      (map cadr (cadr exp)))
+
+    (define (let-body exp)
+      (cddr exp))
+
+    (define (named-let->combination exp)
+      (let ((nameless (cons (car exp) (cddr exp)))
+            (name (cadr exp)))
+
+        (cons 'begin (list (cons 'define
+                                 (cons (cons name (let-vars nameless))
+                                       (let-body nameless)))
+                           (cons name (let-exps nameless))))))
+
+    (define (let->combination exp)
+      (if (not (pair? (cadr exp)))
+          (named-let->combination exp)
+          (cons (list 'lambda
+                      (let-vars exp)
+                      (let-body exp))
+                (let-exps exp))))
+
+    (let ((let-exp '(let fib-iter ((a 1) (b 0) (count n))
+                      (if (= count 0)
+                          b
+                          (fib-iter (+ a b) a (- count 1))))))
+      (let->combination let-exp))
+
+  ;; =>
+  ;; (begin
+  ;;   (define (fib-iter a b count)
+  ;;     (if (= count 0) b (fib-iter (+ a b) a (- count 1))))
+  ;;   (fib-iter 1 0 n))
+#+end_src
+
