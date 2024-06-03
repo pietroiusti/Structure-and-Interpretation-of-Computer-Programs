@@ -11639,3 +11639,82 @@ could add an ~if~:
   ;;   (fib-iter 1 0 n))
 #+end_src
 
+*** TODO Exercise 4.9
+#+begin_quote
+Many languages support a variety of iteration constructs, such as
+`do', `for', `while', and `until'.  In Scheme, iterative processes can
+be expressed in terms of ordinary procedure calls, so special
+iteration constructs provide no essential gain in computational power.
+On the other hand, such constructs are often convenient.  Design some
+iteration constructs, give examples of their use, and show how to
+implement them as derived expressions.Many languages support a variety
+of iteration constructs, such as `do', `for', `while', and `until'.
+In Scheme, iterative processes can be expressed in terms of ordinary
+procedure calls, so special iteration constructs provide no essential
+gain in computational power.  On the other hand, such constructs are
+often convenient.  Design some iteration constructs, give examples of
+their use, and show how to implement them as derived expressions.
+#+end_quote
+
+*Answer*:
+
+We could design a while construct to have this syntax:
+
+#+begin_src scheme
+  (while (<operator> <operand1> <operand2>)
+         <body>)
+#+end_src
+
+Example:
+#+begin_src scheme
+  (while (> foo 0)
+         (display foo)
+         (set! foo (- foo 1)))
+#+end_src
+
+We have learnt that we can iterate using procedures. The ~while~ loop
+above can be implement in the following way:
+#+begin_src scheme
+  (define (gp-while)
+    (if (> foo 0)
+        (begin
+          (display foo)
+          (set! foo (- foo 1))
+          (gp-while))))
+
+  (gp-while)
+#+end_src
+
+Code to transform the new while syntax into procedural syntax:
+#+begin_src scheme
+  (define (append l1 l2)
+      (if (null? l1)
+          l2
+          (cons (car l1) (append (cdr l1) l2))))
+
+    (define (while-cond exp)
+      (cadr exp))
+
+    (define (while-body exp)
+      (cddr exp))
+
+    (define (while->combination exp)
+      (list 'begin
+            (list 'define
+                  (list 'gp-while)
+                  (list 'if
+                        (while-cond exp)
+                        (cons
+                         'begin
+                         (append
+                          (while-body exp)
+                          (list (list 'gp-while))))))
+            (list 'gp-while)))
+  ;; =>
+  ;; (begin (define (gp-while)
+  ;;        (if (> foo 0)
+  ;;            (begin (display foo)
+  ;;                   (set! foo (- foo 1))
+  ;;                   (gp-while))))
+  ;;     (gp-while))
+#+end_src
