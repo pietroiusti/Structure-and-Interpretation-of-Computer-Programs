@@ -11639,7 +11639,7 @@ could add an ~if~:
   ;;   (fib-iter 1 0 n))
 #+end_src
 
-*** TODO Exercise 4.9
+*** Exercise 4.9
 #+begin_quote
 Many languages support a variety of iteration constructs, such as
 `do', `for', `while', and `until'.  In Scheme, iterative processes can
@@ -11658,14 +11658,14 @@ their use, and show how to implement them as derived expressions.
 
 *Answer*:
 
-We could design a while construct to have this syntax:
+We could design a ~while~ construct with this syntax:
 
 #+begin_src scheme
   (while (<operator> <operand1> <operand2>)
          <body>)
 #+end_src
 
-Example:
+Here is an example:
 #+begin_src scheme
   (while (> foo 0)
          (display foo)
@@ -11685,7 +11685,8 @@ above can be implement in the following way:
   (gp-while)
 #+end_src
 
-Code to transform the new while syntax into procedural syntax:
+~While->combination~ transforms the new ~while~ syntax into procedural
+syntax:
 #+begin_src scheme
   (define (append l1 l2)
       (if (null? l1)
@@ -11717,4 +11718,15 @@ Code to transform the new while syntax into procedural syntax:
   ;;                   (set! foo (- foo 1))
   ;;                   (gp-while))))
   ;;     (gp-while))
+#+end_src
+
+Now ~while~ can be handled as a derived expression by the evaluator:
+
+#+begin_src scheme
+  (define (eval exp env)
+    (cond
+     ;; ...
+     ((while? exp) (eval (while->combination exp) env)
+     ;; ...
+  ))
 #+end_src
