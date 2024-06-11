@@ -10828,13 +10828,13 @@ whose ~cdr~ is the promise to execute ~(add-stream (stream-cdr s)
 Forcing the ~cdr~ of the ~cdr~ of ~s~ gives us the list whose car is 4
 and whose ~cdr~...
 
-* Metalinguistic Abstraction
+* 4. Metalinguistic Abstraction
 We have seen several techniques that programmers can use to tame
 complexity.
 
 So far we have used Lisp. But, as complexity grows, it will not be
 sufficient. To the strategies for controlling complexity we must add
-/metalinguistic abstraction/ of establishing new languages.
+that of establishing new languages: /metalinguistic abstraction/.
 
 #+begin_quote
 Establishing new languages is a powerful strategy for controlling
@@ -11015,6 +11015,7 @@ computer language.
                          env)
     'ok)
 #+end_src
+
 #+begin_src scheme
   (define (eval-definition exp env)
     (define-variable! (definition-variable exp)
@@ -11120,7 +11121,7 @@ applications start with ~call~.  For example, instead of ~(factorial
 **** a.
 If we do as Louis say, then, the evaluator will think that ~(define x
 3)~ is an application, because ~(application? exp)~ will return
-true. Given so the evaluator will evaluate the expression
+true. Given so, the evaluator will evaluate the expression
 #+begin_src scheme
   (apply (eval (operator exp) env)
          (list-of-values (operands exp) env))
@@ -11136,7 +11137,8 @@ So we have
 #+end_src
 
 The problem is that ~x~ in ~(eval x env)~ will be taken as a variable
-and we will try to evaluate ~(lookup-variable-value x env)~.
+and, therefore, we will try to evaluate ~(lookup-variable-value x
+env)~.
 
 We haven't looked at ~lookup-variable-value~ yet, but, regardless,
 given that ~x~ hasn't been defined, we shouldn't be looking it up.
@@ -11155,6 +11157,7 @@ This should be enough as far as I can see:
     (cddr exp))
 #+end_src
 *** Exercise 4.3
+*Exercise*:
 #+begin_quote
 Rewrite `eval' so that the dispatch is done in data-directed style.
 Compare this with the data-directed differentiation procedure of
@@ -11196,6 +11199,7 @@ I think the code would look like something like this:
 #+end_src
 
 *** Exercise 4.4
+*Exercise*:
 #+begin_quote
 Recall the definitions of the special forms ~and~ and ~or~ from
 Chapter 1:
@@ -11251,6 +11255,7 @@ and ~or~ as derived expressions.
 #+end_src
 
 *** Exercise 4.5
+*Exercise*:
 #+begin_quote
 Scheme allows an additional syntax for ~cond~ clauses, ~(<TEST> =>
 <RECIPIENT>)~.  If <TEST> evaluates to a true value, then <RECIPIENT>
@@ -11349,6 +11354,7 @@ extended syntax.
 #+end_src
 
 *** Exercise 4.6
+*Exercise*:
 #+begin_quote
 `Let' expressions are derived expressions, because
 
@@ -11756,4 +11762,190 @@ A couple of examples:
   (define (assignment-variable exp) (caddr exp))
 
   (define (assignment-value exp) (cadr exp))
+#+end_src
+** Evaluator Data Structures
+Testing predicates:
+#+begin_src scheme
+  (define (true? x)
+    (not (eq? x false)))
+
+  (define (false? x)
+    (eq? x false))
+#+end_src
+
+We assume we have these two procedures:
+#+begin_src scheme
+  (apply-primitive-procedure <PROC> <ARGS>)
+
+  (primitive-procedure? <PROC>)
+#+end_src
+
+Compound procedures:
+#+begin_src scheme
+  (define (make-procedure parameters body env)
+    (list 'procedure parameters body env))
+
+  (define (compound-procedure? p)
+    (tagged-list? p 'procedure))
+
+  (define (procedure-parameters p) (cadr p))
+
+  (define (procedure-body p) (caddr p))
+
+  (define (procedure-environment p) (cadddr p))
+#+end_src
+
+Operations for manipulating environments:
+#+begin_src scheme
+  (lookup-variable-value <VAR> <ENV>)
+
+  (extend-environment <VARIABLES> <VALUES> <BASE-ENV>)
+
+  (define-variable! <VAR> <VALUE> <ENV>)
+
+  (set-variable-value! <VAR> <VALUE> <ENV>)
+#+end_src
+
+#+begin_quote
+To implement these operations we represent an environment as a list of
+frames.  The enclosing environment of an environment is the ~cdr~ of
+the list.  The empty environment is simply the empty list.
+#+end_quote
+
+#+begin_src scheme
+  (define (enclosing-environment env) (cdr env))
+
+  (define (first-frame env) (car env))
+
+  (define the-empty-environment '())
+#+end_src
+
+#+begin_src scheme
+  (define (make-frame variables values)
+    (cons variables values))
+
+  (define (frame-variables frame) (car frame))
+
+  (define (frame-values frame) (cdr frame))
+
+  (define (add-binding-to-frame! var val frame)
+    (set-car! frame (cons var (car frame)))
+    (set-cdr! frame (cons val (cdr frame))))
+#+end_src
+
+#+begin_src scheme
+  (define (extend-environment vars vals base-env)
+    (if (= (length vars) (length vals))
+        (cons (make-frame vars vals) base-env)
+        (if (< (length vars) (length vals))
+            (error "Too many arguments supplied" vars vals)
+            (error "Too few arguments supplied" vars vals))))
+#+end_src
+
+#+begin_src scheme
+  (define (lookup-variable-value var env)
+    (define (env-loop env)
+      (define (scan vars vals)
+        (cond ((null? vars)
+               (env-loop (enclosing-environment env)))
+              ((eq? var (car vars))
+               (car vals))
+              (else (scan (cdr vars) (cdr vals)))))
+      (if (eq? env the-empty-environment)
+          (error "Unbound variable" var)
+          (let ((frame (first-frame env)))
+            (scan (frame-variables frame)
+                  (frame-values frame)))))
+    (env-loop env))
+#+end_src
+
+#+begin_src scheme
+  (define (set-variable-value! var val env)
+    (define (env-loop env)
+      (define (scan vars vals)
+        (cond ((null? vars)
+               (env-loop (enclosing-environment env)))
+              ((eq? var (car vars))
+               (set-car! vals val))
+              (else (scan (cdr vars) (cdr vals)))))
+      (if (eq? env the-empty-environment)
+          (error "Unbound variable -- SET!" var)
+          (let ((frame (first-frame env)))
+            (scan (frame-variables frame)
+                  (frame-values frame)))))
+    (env-loop env))
+#+end_src
+
+#+begin_src scheme
+  (define (define-variable! var val env)
+    (let ((frame (first-frame env)))
+      (define (scan vars vals)
+        (cond ((null? vars)
+               (add-binding-to-frame! var val frame))
+              ((eq? var (car vars))
+               (set-car! vals val))
+              (else (scan (cdr vars) (cdr vals)))))
+      (scan (frame-variables frame)
+            (frame-values frame))))
+#+end_src
+*** Exercise 4.11
+*Exercise*:
+#+begin_quote
+Instead of representing a frame as a pair of lists, we can represent a
+frame as a list of bindings, where each binding is a name-value pair.
+Rewrite the environment operations to use this alternative
+representation.
+#+end_quote
+
+*Answer*:
+
+Let's remember that these are the operations presented at the
+beginning:
+#+begin_src scheme
+  (lookup-variable-value <VAR> <ENV>)
+  (extend-environment <VARIABLES> <VALUES> <BASE-ENV>)
+  (define-variable! <VAR> <VALUE> <ENV>)
+  (set-variable-value! <VAR> <VALUE> <ENV>)
+#+end_src
+
+~Enclosing-environment~, ~first-frame~, and ~the-empty-environment~
+can remain the way they are. For an environment remains a list of
+frames.
+
+~Make-frame~, instead, has to change:
+#+begin_src scheme
+  (define (make-frame variable values)
+    (if (null? variable) ;; assumes variable and values have the same length
+        nil
+        (cons (cons (car variable) (car values))
+              (make-frame (cdr variable) (cdr values)))))
+#+end_src
+
+Not sure we need ~frame-variables~ and ~frame-values~ given our new
+implementation. Let's see
+
+For sure, though, we need a way to add a binding to a frame. Here is
+one way of doing it:
+#+begin_src scheme
+  (define (add-binding-to-frame! var val frame)
+    (set-car! frame (cons var val))
+    (set-cdr! frame (cons (car frame) (cdr frame))))
+#+end_src
+
+~Extend-environment~ can be left the way it is.
+
+Here is ~lookup-variable-value~ (to review):
+#+begin_src scheme
+  (define (lookup-variable-value var env)
+    (define (env-loop env)
+      (define (scan frame)
+        (cond ((null? frame)
+               (env-loop (enclosing-environment env)))
+              ((eq? var (caar frame))
+               (cadar frame))
+              (else (scan (cdr frame)))))
+      (if (eq? env the-empty-environment)
+          (error "Unbound variable" var)
+          (scan (first-frame env))))
+    (env-loop env))
 #+end_src
