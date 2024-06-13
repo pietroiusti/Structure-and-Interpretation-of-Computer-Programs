@@ -11932,9 +11932,17 @@ one way of doing it:
     (set-cdr! frame (cons (car frame) (cdr frame))))
 #+end_src
 
-~Extend-environment~ can be left the way it is.
+~Extend-environment~ can be left the way it is:
+#+begin_src scheme
+  (define (extend-environment vars vals base-env)
+    (if (= (length vars) (length vals))
+        (cons (make-frame vars vals) base-env)
+        (if (< (length vars) (length vals))
+            (error "Too many arguments supplied" vars vals)
+            (error "Too few arguments supplied" vars vals))))
+#+end_src
 
-Here is ~lookup-variable-value~ (to review):
+Here is ~lookup-variable-value~:
 #+begin_src scheme
   (define (lookup-variable-value var env)
     (define (env-loop env)
@@ -11942,10 +11950,83 @@ Here is ~lookup-variable-value~ (to review):
         (cond ((null? frame)
                (env-loop (enclosing-environment env)))
               ((eq? var (caar frame))
-               (cadar frame))
+               (cdar frame))
               (else (scan (cdr frame)))))
       (if (eq? env the-empty-environment)
           (error "Unbound variable" var)
           (scan (first-frame env))))
     (env-loop env))
+#+end_src
+
+Example:
+#+begin_src scheme
+  (let ((gp-env (list (make-frame '(foo bar baz) '(1 2 3))
+                      (make-frame '(foobaz) '(4))
+                      (make-frame '(x y z) '(5 6 7)))))
+    (lookup-variable-value 'foobaz gp-env))
+  ;; => 4
+#+end_src
+
+Here is ~set-variable-value!~:
+#+begin_src scheme
+  (define (set-variable-value! var val env)
+    (define (env-loop env)
+      (define (scan frame)
+        (cond ((null? frame)
+               (env-loop (enclosing-environment env)))
+              ((eq? var (caar frame))
+               (set-cdr! (car frame) val))
+              (else (scan (cdr frame)))))
+      (if (eq? env the-empty-environment)
+          (error "Unbound variable -- SET!" var)
+          (scan (first-frame env))))
+    (env-loop env))
+#+end_src
+
+Example:
+#+begin_src scheme
+  (let ((gp-env (list (make-frame '(foo bar baz) '(1 2 3))
+                      (make-frame '(foobaz) '(4))
+                      (make-frame '(x y z) '(5 6 7)))))
+    (set-variable-value! 'foobaz 'FOOBAZ gp-env)
+    (lookup-variable-value 'foobaz gp-env))
+#+end_src
+
+~Define-variable!~ was a bit more problematic.
+
+First of all let's notice that Authors version assumes that the
+enviroment is not empty. We will assume that too.
+
+The main problem I had to solve was this: if a frame is an empty list
+because there are no bindings, ~add-binding-to-frame!~ won't work. For
+neither ~set-car!~ nor ~set-cdr!~ can applied to an empty list. So, my
+solution assumes that we established the convention that that an empty
+frame is a list with an empty list in it.
+
+This is an empty frame:
+#+begin_src scheme
+'(())
+#+end_src
+
+And this is an environment with an empty frame:
+#+begin_src scheme
+'((()))
+#+end_src
+
+Given this, here is ~define-variable!~:
+#+begin_src scheme
+  (define (define-variable! var val env)
+    (let ((frame (first-frame env)))
+      (define (scan frame)
+        (cond ((null? (car frame))
+               (set-car! frame (cons var val)))
+              ((eq? var (caar frame))
+               (set-car! frame (cons var val)))
+              (else
+               (if (null? (cdr frame))
+                   (begin
+                     (set-car! frame '())
+                     (scan frame))
+                   (scan (cdr frame))))))
+      (scan frame)))
 #+end_src
