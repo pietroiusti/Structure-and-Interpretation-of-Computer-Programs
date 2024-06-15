@@ -12092,3 +12092,64 @@ procedures in terms of these abstractions.
       (scan (frame-variables frame)
             (frame-values frame))))
 #+end_src
+*** Exercise 4.13
+*Exercise*:
+#+begin_quote
+Scheme allows us to create new bindings for variables by means of
+`define', but provides no way to get rid of bindings.  Implement for
+the evaluator a special form `make-unbound!' that removes the binding
+of a given symbol from the environment in which the `make-unbound!'
+expression is evaluated.  This problem is not completely specified.
+For example, should we remove only the binding in the first frame of
+the environment?  Complete the specification and justify any choices
+you make.
+#+end_quote
+
+I think we should remove the binding only in the first frame. If we
+did otherwise, then couldn't we mutate frames other parts of the
+program rely on?
+
+Given that, as far as I know, we cannot /mutate/ a list with one
+member into an empty list, I'm using an iterative-process-evolving
+~filter-frame~ procedure which /construct/ a new list (well two new
+lists, new-vars and new-vals) and then I set the car of the
+environment (that is, I replace the first frame with a new one).
+
+#+begin_src scheme
+  (define (append l1 l2)
+    (if (null? l1)
+        l2
+        (cons (car l1) (append (cdr l1) l2))))
+
+  ;; Usage:
+  ;; (make-unbound! 'foo)
+
+  (define (var-to-unbind exp)
+    (cadr exp))
+
+  (define (eval-make-unbound exp env)
+    (define (filter-frame vars vals var new-vars new-vals)
+      (cond ((null? vars)
+             (set-car! env (cons new-vars new-vals)))
+            ((eq? (car vars) var)
+             (filter-frame nil
+                           nil
+                           var
+                           (append (cdr vars) new-vars)
+                           (append (cdr vals) new-vals)))
+            (else (filter-frame (cdr vars)
+                                (cdr vals)
+                                var
+                                (append (list (car vars)) new-vars)
+                                (append (list (car vals)) new-vals)))))
+    (filter-frame (frame-variables (first-frame env))
+                  (frame-values (first-frame env))
+                  (var-to-unbind exp)
+                  nil
+                  nil))
+
+  (define gp-env '(((a b c) 1 2 3) ((d e f) 4 5 6)))
+  (eval-make-unbound '(make-unbound b) gp-env)
+  gp-env
+  ;; => (((c a) 3 1) ((d e f) 4 5 6))
+#+end_src
