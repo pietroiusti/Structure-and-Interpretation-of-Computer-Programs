@@ -12177,7 +12177,7 @@ I've evaluated the following code in DrRacket. It works.
           ((cond? exp) (eval (cond->if exp) env))
           ((application? exp)
            (apply-evaluator (eval (operator exp) env)
-                  (list-of-values (operands exp) env)))
+                            (list-of-values (operands exp) env)))
           (else
            (error "Unknown expression type -- EVAL" exp))))
 
@@ -12428,7 +12428,11 @@ I've evaluated the following code in DrRacket. It works.
     (list (list 'car car)
           (list 'cdr cdr)
           (list 'cons cons)
-          (list 'null? null?)))
+          (list 'null? null?)
+          (list '+ +)
+          (list '- -)
+          (list '* *)
+          (list '/ /)))
 
   (define (primitive-procedure-names)
     (map car
@@ -12485,3 +12489,21 @@ I've evaluated the following code in DrRacket. It works.
 
   (driver-loop)
 #+end_src
+*** Exercise 4.14
+#+begin_quote
+Eva Lu Ator and Louis Reasoner are each experimenting with the
+metacircular evaluator.  Eva types in the definition of ~map~, and
+runs some test programs that use it.  They work fine.  Louis, in
+contrast, has installed the system version of ~map~ as a primitive for
+the metacircular evaluator.  When he tries it, things go terribly
+wrong.  Explain why Louis's ~map~ fails even though Eva's works.
+#+end_quote
+
+~Apply~ is called in both scenarios. The ~arguments~ that ~apply~
+receives are the already-evaluated operands of the combination
+(evaluated by ~list-of-values~). I think that the problem with using
+the primitive ~map~ is that one the arguments received by ~apply~ is
+an entity representing a procedure /using our implementation/ (Our
+implementation is a list whose ~car~ is the tag ~'procedure~, among
+other aspects). But the primitive ~car~ expects a different kind of
+procedure object (whatever Scheme natively uses).
