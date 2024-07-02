@@ -10947,6 +10947,10 @@ computer language.
 [Figure from SICP Unofficial Texinfo Format version 2.neilvandyke4 (January 10, 2007)]
 #+end_src
 
+``Eval is a `universal machine'''. It is a machine that takes as input
+a description of another machine. It becomes a simulator for the
+machine it takes. It's amazing that it fits on a
+blackboard. (https://youtu.be/aAlR3cezPJg?t=140).
 
 #+begin_src scheme
   (define (eval exp env)
@@ -12154,7 +12158,140 @@ environment (that is, I replace the first frame with a new one).
   ;; => (((c a) 3 1) ((d e f) 4 5 6))
 #+end_src
 ** Running the Evaluator as a Program
-I've evaluated the following code in DrRacket. It works.
+- The evaluator provides a description of the process to evaluate a
+  Lisp expression.
+
+- Such a description is in a programming language (Lisp), so we can
+  run it.
+
+- Given that evaluator ``reduces expressions ultimately to the
+  application of primitive procedures'', we need a way to use the
+  underlying Lisp system to apply those procedures.
+
+- The global environment, consequently, shall contain bindings for
+  each primitive procedure name.
+
+- The global environment shall also contain bindings for ~true~ and
+  ~false~.
+
+#+begin_src scheme
+  (define (setup-environment)
+    (let ((initial-env
+           (extend-environment (primitive-procedure-names)
+                               (primitive-procedure-objects)
+                               the-empty-environment)))
+      (define-variable! 'true true initial-env)
+      (define-variable! 'false false initial-env)
+      initial-env))
+
+  (define the-global-environment (setup-environment))
+#+end_src
+
+Primitive procedure are represented as tagged lists. This specific
+representation is hidden behind the ~primitive-procedure?~ and
+~primitive-implementation~ abstractions so it could be replaced by a
+different one.
+
+#+begin_src scheme
+  (define (primitive-procedure? proc)
+    (tagged-list? proc 'primitive))
+
+  (define (primitive-implementation proc) (cadr proc))
+#+end_src
+
+#+begin_src scheme
+  (define primitive-procedures
+    (list (list 'car car)
+          (list 'cdr cdr)
+          (list 'cons cons)
+          (list 'null? null?)
+          <MORE PRIMITIVES>
+          ))
+
+  (define (primitive-procedure-names)
+    (map car
+         primitive-procedures))
+
+  (define (primitive-procedure-objects)
+    (map (lambda (proc) (list 'primitive (cadr proc)))
+         primitive-procedures))
+#+end_src
+
+Here is how we apply a primitive
+procedure. ~Apply-in-underlying-scheme~ is nothing more than the
+~apply~ procedures from the underlying scheme we have used in the
+previous chapters.
+
+#+begin_src scheme
+  (define (apply-primitive-procedure proc args)
+    (apply-in-underlying-scheme
+     (primitive-implementation proc) args))
+#+end_src
+
+Authors provide what they call a ``driver loop'' as a convenience for
+running the evaluator, which ``models the read-eval-print loop of the
+underlying Lisp system.''
+
+#+begin_src scheme
+  (define input-prompt ";;; M-Eval input:")
+  (define output-prompt ";;; M-Eval value:")
+
+  (define (driver-loop)
+    (prompt-for-input input-prompt)
+    (let ((input (read)))
+      (let ((output (eval input the-global-environment)))
+        (announce-output output-prompt)
+        (user-print output)))
+    (driver-loop))
+
+  (define (prompt-for-input string)
+    (newline) (newline) (display string) (newline))
+
+  (define (announce-output string)
+    (newline) (display string) (newline))
+#+end_src
+
+~User-print~ is used to avoid printing the the environment part of a
+compound procedure:
+
+#+begin_src scheme
+  (define (user-print object)
+    (if (compound-procedure? object)
+        (display (list 'compound-procedure
+                       (procedure-parameters object)
+                       (procedure-body object)
+                       '<procedure-env>))
+        (display object)))
+#+end_src
+
+Finally:
+#+begin_src scheme
+  (define the-global-environment (setup-environment))
+
+  (driver-loop)
+
+  ;;; M-Eval input:
+  (define (append x y)
+    (if (null? x)
+        y
+        (cons (car x)
+              (append (cdr x) y))))
+  ;;; M-Eval value:
+  ok
+
+  ;;; M-Eval input:
+  (append '(a b c) '(d e f))
+  ;;; M-Eval value:
+  (a b c d e f)
+#+end_src
+
+What follows is the whole code for the evaluator presented so
+far. I've evaluated it in DrRacket and I can confirm that it works.
+
+Notice: I've renamed ~apply~ into ~apply-evaluator~. Racket would
+otherwise complain about the first definition (~(define
+apply-in-underlying-scheme apply)~), telling me that I cannot use
+~apply~ before defining it.
 
 #+begin_src scheme
   #lang sicp
@@ -12490,6 +12627,7 @@ I've evaluated the following code in DrRacket. It works.
   (driver-loop)
 #+end_src
 *** Exercise 4.14
+*Exercise*:
 #+begin_quote
 Eva Lu Ator and Louis Reasoner are each experimenting with the
 metacircular evaluator.  Eva types in the definition of ~map~, and
@@ -12499,11 +12637,34 @@ the metacircular evaluator.  When he tries it, things go terribly
 wrong.  Explain why Louis's ~map~ fails even though Eva's works.
 #+end_quote
 
+*Answer*:
+
 ~Apply~ is called in both scenarios. The ~arguments~ that ~apply~
 receives are the already-evaluated operands of the combination
 (evaluated by ~list-of-values~). I think that the problem with using
 the primitive ~map~ is that one the arguments received by ~apply~ is
-an entity representing a procedure /using our implementation/ (Our
+an entity representing a procedure /using our implementation/ (our
 implementation is a list whose ~car~ is the tag ~'procedure~, among
 other aspects). But the primitive ~car~ expects a different kind of
 procedure object (whatever Scheme natively uses).
+** Data as Programs
+- One operational view of the meaning of a program: a program is a
+  description of an abstract machine. (Cf. the lecture)
+
+- Example: ~factorial~.
+
+- The evaluator can be thought of as a special machine that takes as
+  input a description of a machine and emulates the machine whose
+  description it takes.
+
+  - The evaluator could, for example, take ~factorial~ and be able to
+    compute factorials.
+
+- The evaluator can, therefore, be seen as a /universal machine/.
+
+- ``This is striking'' (386)
+
+- ``Another striking aspect of the evaluator is that it acts as a
+  bridge between the data objects that are manipulated by our
+  programming language and the programming language itself''. (386)
+  - ``...the user's program are the evaluator's data...''
