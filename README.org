@@ -12668,3 +12668,44 @@ procedure object (whatever Scheme natively uses).
   bridge between the data objects that are manipulated by our
   programming language and the programming language itself''. (386)
   - ``...the user's program are the evaluator's data...''
+*** Exercise 4.15
+*Exercise*:
+
+Given a one-argument procedure ~p~ and an object ~a~, ~p~ is said to
+"halt" on ~a~ if evaluating the expression ~(p a)~ returns a value (as
+opposed to terminating with an error message or running forever).
+Show that it is impossible to write a procedure ~halts?~ that
+correctly determines whether ~p~ halts on ~a~ for any procedure ~p~
+and object ~a~.  Use the following reasoning: If you had such a
+procedure ~halts?~, you could implement the following program:
+
+#+begin_src scheme
+  (define (run-forever) (run-forever))
+
+  (define (try p)
+    (if (halts? p p)
+        (run-forever)
+        'halted))
+#+end_src
+
+Now consider evaluating the expression ~(try try)~ and show that any
+possible outcome (either halting or running forever) violates the
+intended behavior of ~halts?~.[fn::Although we stipulated that
+`halts?' is given a procedure object, notice that this reasoning still
+applies even if `halts?' can gain access to the procedure's text and
+its environment.  This is Turing's celebrated "Halting Theorem", which
+gave the first clear example of a "non-computable" problem, i.e., a
+well-posed task that cannot be carried out as a computational
+procedure.]
+
+*Answer*:
+
+Suppose that applying ~try~ to ~try~ halts. If so, then, when calling
+~(try try)~, we will call ~(run-forever)~ and, indeed, run forever.
+
+Suppose that applying ~try~ to ~try~ does not halt. If so, then, when
+calling ~(try try)~, we would return ~halted~.
+
+This is the way I would put it: we have got a paradox. On the one
+hand, if ~(try try)~ halts, then it doesn't halt. On the other hand,
+if ~(try try)~ does not halt, then it halts.
