@@ -12709,3 +12709,70 @@ calling ~(try try)~, we would return ~halted~.
 This is the way I would put it: we have got a paradox. On the one
 hand, if ~(try try)~ halts, then it doesn't halt. On the other hand,
 if ~(try try)~ does not halt, then it halts.
+** Internal Definitions
+- Environment model of evaluation & metacircular evaluator: definition
+  are executed ``in sequence, extending the environment frame one
+  definition at a time.''
+
+- ``This is particularly convenient for interactive program
+  development...''
+
+- ``However, if we think carefully about the internal definitions used
+  to implement block structure [...] we will find that name-by-name
+  extension of the environment may not be the best way to define local
+  variables.''
+
+- Example:
+  #+begin_src scheme
+    (define (f x)
+      (define (even? n)
+        (if (= n 0)
+            true
+            (odd? (- n 1))))
+      (define (odd? n)
+        (if (= n 0)
+            false
+            (even? (- n 1))))
+      <REST OF BODY OF `F'>)
+  #+end_src
+
+- ``the only satisfactory interpretation of the two ~define~'s is to
+  regard them as if the name ~even?~ and ~odd?~ were being added to
+  the environment simultaneously.''
+
+- ``More generally, in block structure, the scope of a local name is
+  the entire procedure body in which the `define' is evaluated.''
+
+- ``...our interpreter will evaluate calls to `f' correctly, but for
+  an "accidental" reason...''
+
+- There is ``a simple way to treat definitions so that internally
+  defined names have truly simultaneous scope''...
+
+- The procedure
+
+  #+begin_src scheme
+    (lambda <VARS>
+      (define u <E1>)
+      (define v <E2>)
+      <E3>)
+  #+end_src
+
+  can be transformed into
+
+  #+begin_src scheme
+    (lambda <VARS>
+      (let ((u '*unassigned*)
+            (v '*unassigned*))
+        (set! u <E1>)
+        (set! v <E2>)
+        <E3>))
+  #+end_src
+
+  ``where `*unassigned*' is a special symbol that causes looking up a
+  variable to signal an error if an attempt is made to use the value
+  of the not-yet-assigned variable.''
+
+- ``An alternative strategy for scanning out internal definitions is
+  shown in *Note Exercise 4-18.''
+
