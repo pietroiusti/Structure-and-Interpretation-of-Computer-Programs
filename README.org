@@ -12776,3 +12776,152 @@ if ~(try try)~ does not halt, then it halts.
 - ``An alternative strategy for scanning out internal definitions is
   shown in *Note Exercise 4-18.''
 
+*** Exercise 4.16
+*Exercise*:
+
+#+begin_quote
+In this exercise we implement the method just described for
+interpreting internal definitions.  We assume that the evaluator
+supports ~let~ (See Exercise 4.6).
+
+a. Change ~lookup-variable-value~ (Section 4.1.3) to signal an error
+if the value it finds is the symbol ~*unassigned*~.
+
+b. Write a procedure ~scan-out-defines~ that takes a procedure body
+and returns an equivalent one that has no internal definitions, by
+making the transformation described above.
+
+c. Install ~scan-out-defines~ in the interpreter, either in
+~make-procedure~ or in ~procedure-body~ (section 4-1-3).  Which place
+is better?  Why?
+#+end_quote
+
+*Answer*:
+
+- a:
+
+  #+begin_src scheme
+    (define (lookup-variable-value var env)
+      (define (env-loop env)
+        (define (scan vars vals)
+          (cond ((null? vars)
+                 (env-loop (enclosing-environment env)))
+                ((eq? var (car vars))
+                 (if (eq? (car vals) '*unassigned*)
+                     (error "not-yet-assigned variable" var)
+                     (car vals)))
+                (else (scan (cdr vars) (cdr vals)))))
+        (if (eq? env the-empty-environment)
+            (error "Unbound variable" var)
+            (let ((frame (first-frame env)))
+              (scan (frame-variables frame)
+                    (frame-values frame)))))
+      (env-loop env))
+  #+end_src
+
+- b:
+
+  #+begin_src scheme
+    (define (filter pred seq)
+      (cond ((null? seq)
+             nil)
+            ((pred (car seq))
+             (cons (car seq)
+                   (filter pred (cdr seq))))
+            (else (filter pred (cdr seq)))))
+
+    (define (append l1 l2)
+      (if (null? l1)
+          l2
+          (cons (car l1) (append (cdr l1) l2))))
+
+    ;; example of a procedure body
+    (define body-example
+      '((define even?
+          (lambda (n)
+            (if (= n 0)
+                true
+                (odd? (- n 1)))))
+        (define odd?
+          (lambda (n)
+            (if (= n 0)
+                false
+                (even? (- n 1)))))
+        (message "hello world")
+        (progn (* 3 3)
+               (message "foobar"))
+        (define another-var
+          (* 3 2))))
+
+    ;; return a list with:
+    ;; car   (1st el): body without definitions
+    ;; cadr  (2nd el): a list of the variables
+    ;; caddr (3rd el): a list of the values for the variables
+    (define (gp-build-lists body body-no-defs vars vals)
+      (cond ((null? body)
+             (list body-no-defs vars vals)) ;; we finished scanning, return results
+            ((eq? (caar body) 'define)
+             (gp-build-lists (cdr body) ;; filter definition out
+                             body-no-defs ;; nothing to be addedd to new-body (we
+                             ;; want the define to be gone)
+                             (cons (cadar body) vars) ;; add var
+                             (cons (caddar body) vals))) ;; add val
+            (else (gp-build-lists (cdr body)
+                                  (append body-no-defs (list (car body)))
+                                  vars
+                                  vals))))
+
+    ;; map vars to lists whose car is the var and show cadr is the symbol
+    ;; '*unassigned*
+    (define (build-unassigned-vars vars)
+      ;; we could use map, but I'm doing it manually
+      (if (null? vars)
+          nil
+          (cons (list (car vars) '*unassigned*) (build-unassigned-vars (cdr vars)))))  
+
+    ;; maps vars to lists whose car is the var and whose cadr is the
+    ;; associated val
+    (define (build-sets vars vals)
+      ;; we could use map, but I'm doing it manually
+      (if (null? vars)
+          nil
+          (cons (list 'set! (car vars) (car vals))
+                (build-sets (cdr vars) (cdr vals)))))
+
+    (define (scan-out-defines body)
+      (let ((lists (gp-build-lists body nil nil nil)))
+        (let ((body-no-defs (car lists))
+              (vars (cadr lists))
+              (vals (caddr lists)))
+          (append (append
+                   (cons 'let (list (build-unassigned-vars vars)))
+                   (build-sets vars vals))
+                  body-no-defs))))
+
+    ;; example:
+    (scan-out-defines body-example)
+    ;; =>
+    ;; (let ((another-var *unassigned*) (odd? *unassigned*) (even? *unassigned*))
+    ;; (set! another-var (* 3 2))
+    ;; (set! odd? (lambda (n) (if (= n 0) false (even? (- n 1)))))
+    ;; (set! even? (lambda (n) (if (= n 0) true (odd? (- n 1)))))
+    ;; (message "hello world")
+    ;; (progn (* 3 3) (message "foobar")))
+  #+end_src
+
+- c:
+
+  ~Make-procedure~ is used in ~eval~ to construct procedures.
+  ~Procedure-body~ is used in ~apply~ to select the bodies of
+  procedures.
+  
+  I think it would be better to install ~scan-out-defines~ in
+  ~make-procedure~, rather than in ~procedure-body~, because we would
+  avoid calling ~scan-out-defines~ more than once for the same
+  procedure (~scan-out-defines~ would be called for each application).
+
+  #+begin_src scheme
+    (define (make-procedure parameters body env)
+      (list 'procedure parameters (scan-out-defines body) env))
+  #+end_src
+  
