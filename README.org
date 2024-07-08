@@ -12877,7 +12877,7 @@ is better?  Why?
       ;; we could use map, but I'm doing it manually
       (if (null? vars)
           nil
-          (cons (list (car vars) '*unassigned*) (build-unassigned-vars (cdr vars)))))  
+          (cons (list (car vars) '*unassigned*) (build-unassigned-vars (cdr vars)))))
 
     ;; maps vars to lists whose car is the var and whose cadr is the
     ;; associated val
@@ -12914,7 +12914,7 @@ is better?  Why?
   ~Make-procedure~ is used in ~eval~ to construct procedures.
   ~Procedure-body~ is used in ~apply~ to select the bodies of
   procedures.
-  
+
   I think it would be better to install ~scan-out-defines~ in
   ~make-procedure~, rather than in ~procedure-body~, because we would
   avoid calling ~scan-out-defines~ more than once for the same
@@ -12924,4 +12924,86 @@ is better?  Why?
     (define (make-procedure parameters body env)
       (list 'procedure parameters (scan-out-defines body) env))
   #+end_src
-  
+
+*** Exercise 4.17
+*Exercise*:
+
+#+begin_quote
+Draw diagrams of the environment in effect when evaluating the
+expression <e3> in the procedure in the text, comparing how this will
+be structured when definitions are interpreted sequentially with how
+it will be structured if definitions are scanned out as described.
+Why is there an extra frame in the transformed program?  Explain why
+this difference in environment structure can never make a difference
+in the behavior of a correct program.  Design a way to make the
+interpreter implement the "simultaneous" scope rule for internal
+definitions without constructing the extra frame.
+#+end_quote
+
+*Answer*:
+
+The following is the environment structure when definition are
+interpreted sequentially; <e3> is evaluated in E1.
+#+begin_src
+   global env
+        |
+        V
+  +-------------+
+  | ...         |
+  |             |
+  +-------------+
+         ^    ^        E1
+         |    |         |
+         |    |         V
+   +---+-+-+  |    +-------------+
+   | . | . |  +----+  u: e1      |
+   +-+-+---+       |  v: e2      |
+     |             +-------------+
+     |
+     V
+   params: vars
+   body: (define u <E1>)
+         (define v <E2>)
+         <E3>
+#+end_src
+
+The following is the environment structure when definition are scanned
+out; <e3> is evaluated in E2.
+#+begin_src
+     global env
+        |
+        V
+  +-------------+
+  | ...         |
+  |             |
+  +-------------+
+         ^    ^                 E1
+         |    |                  |
+         |    |                  V
+   +---+-+-+  |             +-------------+
+   | . | . |  +-------------+ vars        |
+   +-+-+---+                |             |
+     |                      +-------------+          E2
+     |                                  ^             |
+     V                                  |             V
+   params: vars                         |  +-------------+
+   body: (let ((u '*unassigned*)        +--+ u: e1       |
+              (v '*unassigned*))           | v: e2       |
+           (set! u <E1>)                   +-------------+
+           (set! v <E2>)
+           <E3>)
+#+end_src
+
+In the second structure there is an extra frame because a ~let~ is
+equivalent to the application of a lambda, and the application of a
+lambda involves the creation of a new frame.
+
+As long as ~<e3>~ is evaluated after ~u~ is set to ~e1~ and ~v~ to
+~e2~ there won't be any difference between the behaviuor in the two
+environments, because there is no difference with respect to the
+values of the bindings in the environment.
+
+Simultaneous scope without an extra frame could be achieved by
+transforming the body of the lambda so that all its internal
+definitions come before all the rest (cf. the ``accidental reason'',
+Authors mention, because calls to the example procedure ~f~ work).
