@@ -13007,3 +13007,73 @@ Simultaneous scope without an extra frame could be achieved by
 transforming the body of the lambda so that all its internal
 definitions come before all the rest (cf. the ``accidental reason'',
 Authors mention, because calls to the example procedure ~f~ work).
+
+*** Exercise 4.19
+*Exercise*:
+
+#+begin_quote
+Ben Bitdiddle, Alyssa P. Hacker, and Eva Lu Ator are arguing about the
+desired result of evaluating the expression
+
+#+begin_src scheme
+  (let ((a 1))
+    (define (f x)
+      (define b (+ a x))
+      (define a 5)
+      (+ a b))
+    (f 10))
+#+end_src
+
+Ben asserts that the result should be obtained using the sequential
+rule for ~define~: ~b~ is defined to be 11, then ~a~ is defined to be
+5, so the result is 16.  Alyssa objects that mutual recursion requires
+the simultaneous scope rule for internal procedure definitions, and
+that it is unreasonable to treat procedure names differently from
+other names. Thus, she argues for the mechanism implemented Exercise
+4.16.  This would lead to ~a~ being unassigned at the time that the
+value for ~b~ is to be computed.  Hence, in Alyssa's view the
+procedure should produce an error.  Eva has a third opinion.  She says
+that if the definitions of ~a~ and ~b~ are truly meant to be
+simultaneous, then the value 5 for ~a~ should be used in evaluating
+~b~.  Hence, in Eva's view ~a~ should be 5, ~b~ should be 15, and the
+result should be 20.  Which (if any) of these viewpoints do you
+support?  Can you devise a way to implement internal definitions so
+that they behave as Eva prefers?
+#+end_quote
+
+*Answer*:
+
+Both Ben's approach and Alyssa's approach seem okay to me.  As far as
+I can see, a serious obstacle for Eva's approach is represented by
+what we might call ``interdependent definitions''. For example, what
+would we be supposed to do if the definitions of ~b~ and ~a~ were the
+following?
+#+begin_src scheme
+  (define b (+ a x))
+  (define a (b + 5))
+#+end_src
+I cannot see a way to follow Eva's approach, given the possibility of
+this kind of situations, can I?
+
+(
+
+Authors say that MIT Scheme generates an error.  Javascript raises an
+error too, when evaluating equivalent code:
+
+#+begin_src javascript
+  ((a) => {
+    function f(x) {
+      let b = a + x;
+      let a = 5;
+      return a + b;
+    }
+    f(10);
+  })(1)
+  /*
+    Uncaught ReferenceError: Cannot access 'a' before initialization
+    at f (REPL11:4:15)
+    at REPL11:9:5
+  */
+#+end_src
+
+)
