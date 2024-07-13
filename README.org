@@ -13209,3 +13209,94 @@ a:
   ;;   (message "ciao")
   ;;   (message "hola"))
 #+end_src
+
+b:
+
+I had a bit of trouble doing part b of the exercise. But, after
+looking on the web for what people have said and asking for help...,
+the following should be the correct drawings. The key thing to notice,
+assuming this is correct, is that, when using ~let~ (which is just a
+lambda; see p. 64), the expressions whose evaluation gives the values
+of the ~let~ bindings are not evaluated in the context of the new
+frame created by the ~let~, but they are evaluated in the context of
+the frame to which the new frame created by the ~let~ points to (that
+is, its ``enclosing environment''). In a sense, we can say, they are
+evaluated while the new frame is in the process of being created.
+
+#+begin_src
+  using letrec:
+
+        E0
+    +-------------------+
+    |f:--+              |
+    |    |              |
+    |    |              |
+    +----+--------------+
+         |   ^    ^
+         |   |    |
+         V   |    |                 E1
+  +---+---+  |    |   +--+------+---------+
+  | | |  -+--+    +---+x: 5               |
+  +-+-+---+           +-------------------+
+    |                          ^
+    V                          |
+   ...                         |
+                               |    E2
+                       +-------+------------+
+                       | even?:-------------+---------------+
+                       |                    |               |
+                       |                    |<-----------   |
+                       | odd?:---+          |            \  |
+                       +---------+----------+             \ V
+                                 |     ^             +---+-\-+
+                                 |     |             | | |   +
+                                 |     |             +-+-+---+
+                                 V     |               |
+                            +---+---+  |               |
+                            | | |  -+--+               V
+                            +-+-+---+                 ...
+                              |
+                              |
+                              V
+                             ...
+#+end_src
+
+#+begin_src
+  using let:
+
+      E0
+    +-------------------+
+    |f:--+              |
+    |    |              |
+    |    |              |
+    +----+--------------+
+         |   ^    ^
+         |   |    |
+         V   |    |                 E1
+  +---+---+  |    |   +--+------+---------+ <----------------------------+
+  | | |  -+--+    +---+x: 5               | <---------------------+      |
+  +-+-+---+           +-------------------+                       |      |
+    |                          ^                                  |      |
+    V                          |                                  |      |
+   ...                         |                                  |      |
+                               |    E2                            |      |
+                       +-------+------------+                     |      |
+                       | even?:-------------+---------------+     |      |
+                       |                    |               |     |      |
+                       |                    |               |     |      |
+                       | odd?:---+          |               |     |      |
+                       +---------+----------+               V     |      |
+                                 |                   +---+---+    |      |
+                                 |                   | | |  -+----+      |
+                                 |                   +-+-+---+           |
+                                 V                     |                 |
+                            +---+---+                  |                 |
+                            | | |   +---------+        V                 |
+                            +-+-+---+         |       ...                |
+                              |               |                          |
+                              |               |                          |
+                              V               |                          |
+                             ...              |                          |
+                                              |                          |
+                                              +--------------------------+
+#+end_src
