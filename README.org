@@ -13137,7 +13137,7 @@ b. Louis Reasoner is confused by all this fuss about internal
 definitions.  The way he sees it, if you don't like to use ~define~
 inside a procedure, you can just use ~let~.  Illustrate what is loose
 about his reasoning by drawing an environment diagram that shows the
-environment in which the <rest of body of f> is evaluated during
+environment in which the ~<rest of body of f>~ is evaluated during
 evaluation of the expression ~(f 5)~, with ~f~ defined as in this
 exercise.  Draw an environment diagram for the same evaluation, but
 with ~let~ in place of ~letrec~ in the definition of ~f~.
@@ -13224,7 +13224,7 @@ is, its ``enclosing environment''). In a sense, we can say, they are
 evaluated while the new frame is in the process of being created.
 
 #+begin_src
-  using letrec:
+  When using letrec, <rest of body of f> is evaluated in the following E2 frame:
 
         E0
     +-------------------+
@@ -13262,7 +13262,7 @@ evaluated while the new frame is in the process of being created.
 #+end_src
 
 #+begin_src
-  using let:
+  When using let, <rest of body of f> is evaluated in the following E2 frame:
 
       E0
     +-------------------+
