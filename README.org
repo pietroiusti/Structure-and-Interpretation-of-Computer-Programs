@@ -13391,3 +13391,142 @@ b:
      (lambda (ev? od? n)
        (if (= n 0) false (ev? ev? od? (- n 1))))))
 #+end_src
+** Separating Syntactic Analysis from Execution
+- Our evaluator is inefficient in that it interleaves syntactic
+  analysis and execution of expressions.
+
+- If a program is executed many times, then its syntax is expensively
+  and wastefully analyzed each of those times.
+
+- Consider:
+  #+begin_src scheme
+    (define (factorial n)
+      (if (= n 1)
+          1
+          (* (factorial (- n 1)) n)))
+  #+end_src
+
+  Each time ~factorial~ is called, the evaluator must determine that
+  the body is an ~if~ statement and act accordingly. Each time ~(*
+  (factorial (- n 1)) n)~, ~(factorial (- n 1))~, and ~(- n 1)~ are
+  evaluated, the evaluator must determine that they are applications
+  and act accordingly.
+
+- Authors present a way, used by Jonathan Rees in 1982 and
+  indepedently invented by Marc Feeley in 1986, to perform syntactic
+  analysis only once.
+
+- ~Eval~ is split into two parts.
+
+- ``The procedure ~analyze~ takes only the expression. It performs the
+  syntactic analysis and returns a new procedure, the /execution
+  procedure/, that encapsulates the work to be done in executing the
+  analyzed expression. The execution procedure takes an environment as
+  its argument and completes the evaluation. This saves work because
+  ~analyze~ will be called only once on an expression, while the
+  execution procedure may be called many times.'' (394)
+
+  #+begin_src scheme
+    (define (eval exp env)
+      ((analyze exp) env))
+
+    (define (analyze exp)
+      (cond ((self-evaluating? exp)
+             (analyze-self-evaluating exp))
+            ((quoted? exp) (analyze-quoted exp))
+            ((variable? exp) (analyze-variable exp))
+            ((assignment? exp) (analyze-assignment exp))
+            ((definition? exp) (analyze-definition exp))
+            ((if? exp) (analyze-if exp))
+            ((begin? exp) (analyze-sequence (begin-action exp)))
+            ((cond? exp) (analyze (cond->if exp)))
+            ((application? exp) (analyze-application exp))
+            (else
+             (error "Unknown expression type -- ANALYZE" exp))))
+
+    (define (analyze-self-evaluating exp)
+      (lambda (env) exp))
+
+    (define (analyze-quoted exp)
+      (let ((qval (text-of-quotation exp)))
+        (lambda (env) qval)))
+
+    ;; Looking up a var depends upon knowing the env so it must be done at
+    ;; execution time (Sec. 5.5.6 will show, though, how to perform an
+    ;; important part of the variable search as part of the syntactic
+    ;; analysis).
+    (define (analyze-variable exp)
+      (lambda (env) (lookup-variable-value exp env)))
+
+    ;; Assignments and definitions, too, can be performed only when the
+    ;; env is known. However, the recursive analysis of ~assignment-value~
+    ;; and ~definition-value~ during syntactic analys is a ``major gain in
+    ;; efficiency''.
+    (define (analyze-assignment exp)
+      (let ((var (assignment-variable exp))
+            (vproc (analyze (assignment-value exp))))
+        (lambda (env)
+          (set-variable-value! var (vproc env) env)
+          'ok)))
+
+    (define (analyze-definition exp)
+      (let ((var (definition-variable exp))
+            (vproc (analyze (definition-value exp))))
+        (lambda (env)
+          (define-variable! var (vproc env) env)
+          'ok)))
+
+    ;; we now analyze predicates, consequents, and alternatives of if
+    ;; statements at analysis time:
+    (define (analyze-if exp)
+      (let ((pproc (analyze (if-predicate exp)))
+            (cproc (analyze (if-consequent exp)))
+            (aproc (analyze (if-alternative exp))))
+        (lambda (env)
+          (if (true? (pproc env))
+              (cproc env)
+              (aproc env)))))
+
+    ;; λ:
+    (define (analyze-lambda exp)
+      (let ((vars (lambda-parameters exp))
+            (bproc (analyze-sequence (lambda-body exp))))
+        (lambda (env) (make-procedure vars bproc env))))
+
+    ;; analysis of sequences is ``more involved'': ...
+    (define (analyze-sequence exps)
+      (define (sequentially proc1 proc2)
+        (lambda (env) (proc1 env) (proc2 env)))
+      (define (loop first-proc rest-procs)
+        (if (null? rest-procs)
+            first-proc
+            (loop (sequentially first-proc (car rest-procs))
+                  (cdr rest-procs))))
+      (let ((procs (map analyze exps)))
+        (if (null? procs)
+            (error "Empty sequence -- ANALYZE"))
+        (loop (car procs) (cdr procs))))
+
+    ;; Finally, to analyze an application...
+    (define (analyze-application exp)
+      (let ((fproc (analyze (operator exp)))
+            (aprocs (map analyze (operands exp))))
+        (lambda (env)
+          (execute-application (fproc env)
+                               (map (lambda (aproc) (aproc env))
+                                    aprocs)))))
+
+    (define (execute-application proc args)
+      (cond ((primitive-procedure? proc)
+             (apply-primitive-procedure proc args))
+            ((compound-procedure? proc)
+             ((procedure-body proc)
+              (extend-environment (procedure-parameters proc)
+                                  args
+                                  (procedure-environment proc))))
+            (else
+             (error
+              "Unknown procedure type -- EXECUTE-APPLICATION"
+              proc))))
+  #+end_src
+  
