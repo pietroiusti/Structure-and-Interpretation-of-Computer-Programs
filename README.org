@@ -13559,3 +13559,79 @@ Extend the evaluator in this section to support the special form
   ;; Exercise 4.6, that transforms a let expression into (the
   ;; application of) a lambda expression.
 #+end_src
+** Exercise 4.23
+*Exercise*:
+
+Alyssa P. Hacker doesn't understand why ~analyze-sequence~ needs to be
+so complicated.  All the other analysis procedures are straightforward
+transformations of the corresponding evaluation procedures (or ~eval~
+clauses) in section 4.1.1.  She expected ~analyze-sequence~ to look
+like this:
+
+#+begin_src scheme
+  (define (analyze-sequence exps)
+    (define (execute-sequence procs env)
+      (cond ((null? (cdr procs)) ((car procs) env))
+            (else ((car procs) env)
+                  (execute-sequence (cdr procs) env))))
+    (let ((procs (map analyze exps)))
+      (if (null? procs)
+          (error "Empty sequence -- ANALYZE"))
+      (lambda (env) (execute-sequence procs env))))
+#+end_src
+
+Eva Lu Ator explains to Alyssa that the version in the text does more
+of the work of evaluating a sequence at analysis time.  Alyssa's
+sequence-execution procedure, rather than having the calls to the
+individual execution procedures built in, loops through the procedures
+in order to call them: In effect, although the individual expressions
+in the sequence have been analyzed, the sequence itself has not been.
+
+Compare the two versions of ~analyze-sequence~.  For example, consider
+the common case (typical of procedure bodies) where the sequence has
+just one expression.  What work will the execution procedure produced
+by Alyssa's program do?  What about the execution procedure produced
+by the program in the text above?  How do the two versions compare for
+a sequence with two expressions?
+
+*Answer*:
+
+Let's consider a sequence with one expression, the self-evaluating
+expression ~1~: ~(1)~.
+
+This is what happens with the program in the main text:
+- ~Procs~ is assigned this value: ~((lambda (env) 1))~;
+- ~loop~ is called: ~(loop (lambda (env) 1) nil)~;
+- final value: ~(lambda (env) 1)~;
+- if we pass to this latter value an environment, we get back 1.
+
+This is what happens with Alyssa's program:
+- ~Procs~ are assigned the same value they are assigned by the program
+  in the main text;
+- final value: ~(lambda (env) (execute-sequence ((lambda (env) q))
+  env))~;
+- if the final value, which is a ~lambda~, is passed an environment,
+  then we get this call: ~((lambda (env) 1) env)~, which evaluates to
+  1; so the result is the same as the one we get with the program in
+  the main text.
+
+Let's now consider the sequence with the self-evaluting expression ~1~
+and the self-evaluting expression ~2~: ~(1 2)~.
+
+This is what happens with the program in the main text:
+- ~procs~ is set to this value: ~((lambda (env) 1) (lambda (env) 2))~;
+- we call: ~(loop (lambda (env) 1) ((lambda (env) 2)))~;
+- we call: ~(loop (lambda (env) (lambda (env) 1) (lambda (env) 2))
+  nil)~
+- final value: ~(lambda (env) ((lambda (env) 1 env)) ((lambda (env) 2)
+  env))~
+
+This is what happens with Alyssa's program:
+- ~procs~ is set the same way as above;
+- final value: ~(lambda (env) (execute-sequence ((lambda (env) 1)
+  (lambda (env) 2)) env))~
+- when we apply this final value (which is a ~lambda~) to an
+  environment we got: ~(((lambda (env) 1) env) (execute-sequence
+  ((lambda (env) 2)) env)~. This is wrong because, this is an
+  application, but the operator evaluates to ~1~ and not to a
+  procedure object.
