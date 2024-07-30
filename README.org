@@ -13406,7 +13406,7 @@ b:
           (* (factorial (- n 1)) n)))
   #+end_src
 
-  Each time ~factorial~ is called, the evaluator must determine that
+  Each time ~factorial~ is called the evaluator must determine that
   the body is an ~if~ statement and act accordingly. Each time ~(*
   (factorial (- n 1)) n)~, ~(factorial (- n 1))~, and ~(- n 1)~ are
   evaluated, the evaluator must determine that they are applications
@@ -13451,16 +13451,16 @@ b:
       (let ((qval (text-of-quotation exp)))
         (lambda (env) qval)))
 
-    ;; Looking up a var depends upon knowing the env so it must be done at
-    ;; execution time (Sec. 5.5.6 will show, though, how to perform an
-    ;; important part of the variable search as part of the syntactic
-    ;; analysis).
+    ;; Looking up a variable depends upon knowing the environment, so it
+    ;; must be done at execution time (Sec. 5.5.6 will show, though, how
+    ;; to perform an important part of the variable search as part of the
+    ;; syntactic analysis).
     (define (analyze-variable exp)
       (lambda (env) (lookup-variable-value exp env)))
 
     ;; Assignments and definitions, too, can be performed only when the
-    ;; env is known. However, the recursive analysis of ~assignment-value~
-    ;; and ~definition-value~ during syntactic analys is a ``major gain in
+    ;; env is known. However, the recursive analysis of `assignment-value`
+    ;; and `definition-value` during syntactic analys is a ``major gain in
     ;; efficiency''.
     (define (analyze-assignment exp)
       (let ((var (assignment-variable exp))
@@ -13476,7 +13476,7 @@ b:
           (define-variable! var (vproc env) env)
           'ok)))
 
-    ;; we now analyze predicates, consequents, and alternatives of if
+    ;; We now analyze predicates, consequents, and alternatives of if
     ;; statements at analysis time:
     (define (analyze-if exp)
       (let ((pproc (analyze (if-predicate exp)))
@@ -13493,7 +13493,7 @@ b:
             (bproc (analyze-sequence (lambda-body exp))))
         (lambda (env) (make-procedure vars bproc env))))
 
-    ;; analysis of sequences is ``more involved'': ...
+    ;; The analysis of sequences is ``more involved'': ...
     (define (analyze-sequence exps)
       (define (sequentially proc1 proc2)
         (lambda (env) (proc1 env) (proc2 env)))
@@ -13555,8 +13555,8 @@ Extend the evaluator in this section to support the special form
             ((application? exp) (analyze-application exp))
             (else
              (error "Unknown expression type -- ANALYZE" exp))))
-  ;; where `let-combination' is the procedure, shown in the answer to
-  ;; Exercise 4.6, that transforms a let expression into (the
+  ;; where `let-combination' is the procedure (shown in the answer to
+  ;; Exercise 4.6) that transforms a let expression into (the
   ;; application of) a lambda expression.
 #+end_src
 ** Exercise 4.23
@@ -13601,7 +13601,7 @@ contains the self-evaluating expression ~1~: ~(1)~.
 
 This is what happens when the program in the main text is applied to
 that sequence:
-- ~Procs~ is assigned this value:
+- ~procs~ is assigned this value:
   #+begin_src scheme
     ((lambda (env) 1))
   #+end_src
@@ -13617,7 +13617,7 @@ that sequence:
   environment, then it evaluates to ~1~.
 
 This, instead, is what happens with Alyssa's program:
-- ~Procs~ are assigned the same value they are assigned by the program
+- ~procs~ are assigned the same value they are assigned by the program
   in the main text;
 - final value:
   #+begin_src scheme
@@ -13681,3 +13681,47 @@ This is what happens with Alyssa's program:
   work when it is called; it has to construct the final lambda
   calls. The program in the main text returns a lambda whose body
   already contains those final lambda calls.
+
+** Variation on a Scheme --- Lazy Evaluation
+** Normal Order and Applicative Order
+- In /applicative order/ languages like Scheme, the arguments to a
+  procedures are all evaluated when the procedure is applied.
+- In /normal order/ languages, instead, the evaluation is peformed
+  when the values are needed.
+- /Lazy evaluation/ consists in postponing the evaluation until the
+  last possible moment.
+- Consider the following procedure:
+  #+begin_src scheme
+    (define (try a b)
+      (if (= a 0) 1 b))
+  #+end_src
+  Scheme would give an error if we try to evaluate ~(try 0 (1 /
+  0))~. It wouldn't, though, if its evaluation were lazy.
+- Also consider:
+  #+begin_src scheme
+    (define (unless condition usual-value exceptional-value)
+      (if condition exceptional-value usual-value))
+  #+end_src
+
+  This
+  #+begin_src scheme
+    (unless (= b 0)
+      (/ a b)
+      (begin (display "exception: returning 0")
+             0))
+  #+end_src
+  would not work in an applicative order language... But lazy
+  evaluation has the benefit of letting procedures of this kind do
+  useful computations.
+- ``If the body of a procedure is entered before an argument has been
+  evaluated we say that the procedure is /non-strict/ in that
+  argument. If the argument is evaluated before the body of the
+  procedure is entered we say that the procedure is /strict/ in that
+  argument.''
+- (``The `strict' versus `non-strict' terminology means essentially
+  the same thing as `applicative-order' versus `normal-order', except
+  that it refers to individual procedures and arguments rather than to
+  the language as a whole.'')
+- ``A striking example of a procedure that can usefully be made
+  non-strict is ~cons~ (or, in general, almost any constructor for
+  data structures).''
