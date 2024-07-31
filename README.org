@@ -13725,3 +13725,34 @@ This is what happens with Alyssa's program:
 - ``A striking example of a procedure that can usefully be made
   non-strict is ~cons~ (or, in general, almost any constructor for
   data structures).''
+*** Exercise 4.25
+*Exercise*:
+
+Suppose that (in ordinary applicative-order Scheme) we define ~unless~
+as shown above and then define ~factorial~ in terms of ~unless~ as
+
+#+begin_src scheme
+  (define (factorial n)
+    (unless (= n 1)
+      (* n (factorial (- n 1)))
+      1))
+#+end_src
+
+What happens if we attempt to evaluate ~(factorial 5)~? Will our
+definitions work in a normal-order language?
+
+*Answer*:
+
+In scheme (which is applicative order) we
+
+At some point, the chain of recursive calls ends up calling ~unless~
+where ~n~ is bound to 1.
+
+This means that the second argument passed to ~unless~, if evaluated,
+would entail the application of ~factorial~ to ~0~.
+
+An applicative order evaluation language would evaluate it; so it
+would initiate an infinite chain of applications (because the
+terminating condition will never be satisfied).
+
+But there should be no problem in a normal-order language.
