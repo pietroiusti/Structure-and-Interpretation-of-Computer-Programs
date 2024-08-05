@@ -13756,3 +13756,110 @@ would initiate an infinite chain of applications (because the
 terminating condition will never be satisfied).
 
 But there should be no problem in a normal-order language.
+
+*** Exercise 4.26
+*Exercise*:
+
+#+begin_quote
+Ben Bitdiddle and Alyssa P. Hacker disagree over the importance of
+lazy evaluation for implementing things such as ~unless~.  Ben points
+out that it's possible to implement ~unless~ in applicative order as a
+special form.  Alyssa counters that, if one did that, ~unless~ would
+be merely syntax, not a procedure that could be used in conjunction
+with higher-order procedures.  Fill in the details on both sides of
+the argument.  Show how to implement ~unless~ as a derived expression
+(like ~cond~ or ~let~), and give an example of a situation where it
+might be useful to have ~unless~ available as a procedure, rather than
+as a special form.
+#+end_quote
+
+*Answer*:
+
+Remember Authors saying:
+#+begin_quote
+Some special forms in our language can be defined in terms of
+expressions involving other special forms, rather than being
+implemented directly (p. ?) [...] Expressions (such as cond) that we
+choose to implement as syntactic transformations are called /derived
+expressions/.
+#+end_quote
+That is the way Authors intend ~unless~ as a special form (i.e.,
+defined in terms of ~if~).
+
+This is the way we can transform an ~unless~ expression into a ~if~
+expression:
+
+#+begin_src scheme
+  (define (tagged-list? exp tag)
+    (if (pair? exp)
+        (eq? (car exp) tag)
+        false))
+
+  (define (unless? exp)
+    (tagged-list? exp 'unless))
+
+  (define (unless-condition exp)
+    (cadr exp))
+
+  (define (unless-usual-value exp)
+    (caddr exp))
+
+  (define (unless-exceptional-value exp)
+    (cadddr exp))
+
+  (define (unless->if exp)
+    (list 'if
+          (unless-condition exp)
+          (unless-exceptional-value exp)
+          (unless-usual-value exp)))
+#+end_src
+
+So... by exploring a little bit, I found out that Authors say this in
+4.2.3:
+#+begin_quote
+we showed how to implement streams as delayed lists. We introduced
+special forms delay and cons-stream... For one thing, a special form
+is not a first-class object like a procedure, so we cannot use it
+together with higher-order procedures.
+#+end_quote
+This is basically the same thing that Alyssa is saying with respect to
+~unless~ when it is implemented as a special form in tersm of ~if~. In
+fact, Authors added a footnote that refer to our exercise. They don't
+seem to give any example, though.
+
+Okay, let's make some tests... ~if~ is a special, so let's try to pass
+it to a higher-order function.
+
+#+begin_src scheme
+  (define BOH
+    (lambda (cond-eval-strategy cond alt1 alt2)
+      (cond-eval-strategy cond alt1 alt2)))
+
+  (BOH if #t 1 2) ;; => if: bad syntax in: if
+#+end_src
+
+We get an error, indeed: ~if: bad syntax in: if~.
+
+How so? Let's try with a normal procedure.
+
+#+begin_src scheme
+  (define (gp/if cond alt1 alt2)
+    (if cond alt1 alt2))
+
+  (BOH gp/if #t 1 2) ;; => 1
+#+end_src
+
+No error.
+
+So... Ben is right that we can implement ~unless~ as a special
+form. Alyssa is right in maintaining that, if implemented that way, it
+could not be passed to higher-order procedures. The reason is that the
+arguments of a procedures are evaluated; the evaluation of a lambda
+expression yields a procedure object; but the evaluation of a special
+form? It doesn't really make sense, does it? (At least in our case.)
+It's kind of hard to think of a case where it would be useful to have
+~unless~ as a procedure. The only thing I can think of is something
+like ~BOH~, that is, a procedure that gives the user the choice of how
+to deal with a certain condition.
+
+
