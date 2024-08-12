@@ -10880,6 +10880,9 @@ languages. Needless to say, our evaluators will be written in
 Lisp. The first evaluator will be for Lisp itself (a subset of the
 Scheme dialect).
 ** The Metacircular Evaluator
+We are going to write in Lisp an evaluator for Lisp. There's nothing
+wrong with that.
+
 #+begin_quote
 An evaluator that is written in the same language that it evaluates is
 said to be /metacircular/.
@@ -10888,20 +10891,52 @@ The metacircular evaluator is essentially a Scheme formulation of the
 environment model of evaluation described in section 3.2. (362)
 #+end_quote
 
+The environment model of evaluation has two basic parts:
 #+begin_quote
-The evaluation process can be described as the interplay between two
-procedures: `eval' and `apply'.
+1. To evaluate a combination (a compound expression other than a
+   special form), evaluate the subexpressions and then apply the value
+   of the operator subexpression to the values of the operand
+   subexpressions.
 
-Recall that the model has two basic parts...
+2. To apply a compound procedure to a set of arguments, evaluate the
+   body of the procedure in a new environment.  To construct this
+   environment, extend the environment part of the procedure object by
+   a frame in which the formal parameters of the procedure are bound
+   to the arguments to which the procedure is applied.
+#+end_quote
 
-[...]
+Authors say that those two rules ``describe the essence of the
+evaluation process.'' Such a process is a cycle in which expressions
+which are to be evaluated in environments are reduced to procedures
+which are to be applied to arguments, which, in turn are reduced to
+other expression which are to evaluated in other environments, and so
+on. The process terminates when the evaluator has either to look up
+the value of a symbol in an environment or to apply a primitive
+procedure (See Figure 4.1).
 
+I find footnote 2 quite illuminating: given that the primitive
+procedures are not implemented in the evaluator, Authors feel the need
+to note that ``[t]he job of the evaluator is not to specify the
+primitive of the language, but rather to provide the connective tissue
+--- the means of combination and the means of abstraction --- that
+binds a collection of primitives to form a language.'' Authors, after
+having said that, are more specific:
+- The evaluator lets us deal with *nested expressions*. Consider: ~(+
+  1 (* 2 3))~. The ~+~ procedure does not know how to deal with ~(* 2
+  3)~ by itself; it expects number.
+- The evaluator lets us use *variables*. Consider: ~(+ x 1)~. The
+  primitive procedure ~+~ does not know how to deal with ~x~; it
+  expects numbers.
+- The evaluator lets us define *compound procedures*.
+- The evaluator provides the *special forms*.
+
+#+begin_quote
 The implementation of the evaluator will depend upon procedures that
-define the "syntax" of the expressions to be evaluated.
+define the "syntax" of the expressions to be evaluated.  We will use
+data abstraction...
 #+end_quote
 
 *** The Core of the Evaluator
-
 ``Abstract syntax'':
 #+begin_quote
 Each type of expression has a predicate that tests for it and an
