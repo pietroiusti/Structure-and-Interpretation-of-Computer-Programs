@@ -1,6 +1,9 @@
 #lang sicp
 
-;; first version of the evaluator
+;; First version of the evaluator
+;;
+;; With:
+;; - support for let (ex. 4.6.)
 
 (define apply-in-underlying-scheme apply)
 
@@ -18,6 +21,7 @@
         ((begin? exp)
          (eval-sequence (begin-actions exp) env))
         ((cond? exp) (eval (cond->if exp) env))
+        ((let? exp) (eval (let->lambda exp) env))
         ((application? exp)
          (apply-evaluator (eval (operator exp) env)
                           (list-of-values (operands exp) env)))
@@ -183,6 +187,23 @@
             (make-if (cond-predicate first)
                      (sequence->exp (cond-actions first))
                      (expand-clauses rest))))))
+
+(define (let? exp) (tagged-list? exp 'let))
+
+(define (let-vars exp)
+  (map car (cadr exp)))
+
+(define (let-exps exp)
+  (map cadr (cadr exp)))
+
+(define (let-body exp)
+  (cddr exp))
+
+(define (let->lambda exp)
+  (cons (cons 'lambda
+              (cons (let-vars exp)
+                    (let-body exp)))
+        (let-exps exp)))
 
 (define (true? x)
   (not (eq? x false)))
