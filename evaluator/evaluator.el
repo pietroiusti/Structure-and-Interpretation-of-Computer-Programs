@@ -18,6 +18,7 @@
         ((sicp/beginp exp)
          (sicp/eval-sequence (sicp/begin-actions exp) env))
         ((sicp/condp exp) (sicp/eval (sicp/cond->if exp) env))
+        ((sicp/letp exp) (sicp/eval (sicp/let->lambda exp) env))
         ((sicp/applicationp exp)
          (sicp/apply (sicp/eval (sicp/operator exp) env)
                      (sicp/list-of-values (sicp/operands exp) env)))
@@ -201,6 +202,23 @@
         (sicp/make-if (sicp/cond-predicate first)
                       (sicp/sequence->exp (sicp/cond-actions first))
                       (sicp/expand-clauses rest))))))
+
+(defun sicp/letp (exp) (sicp/tagged-listp exp 'let))
+
+(defun sicp/let-vars (exp)
+  (map #'car (cadr exp)))
+
+(defun sicp/let-exps (exp)
+  (map #'cadr (cadr exp)))
+
+(defun sicp/let-body (exp)
+  (cddr exp))
+
+(defun sicp/let->lambda (exp)
+  (cons (cons 'lambda
+              (cons (sicp/let-vars exp)
+                    (sicp/let-body exp)))
+        (sicp/let-exps exp)))
 
 (defun sicp/truep (x)
   (not (eq x nil)))
