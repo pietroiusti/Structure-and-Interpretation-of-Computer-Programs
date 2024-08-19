@@ -11439,9 +11439,9 @@ expressions.
     (cddr exp))
 
   (define (let-combination exp)
-    (cons (list 'lambda
-                (let-vars exp)
-                (let-body exp))
+    (cons (cons 'lambda
+                (cons (let-vars exp)
+                      (let-body exp)))
           (let-exps exp)))
 
   ;; Example:
@@ -11471,7 +11471,7 @@ expressions.
           ((begin? exp)
            (eval-sequence (begin-actions exp) env))
           ((cond? exp) (eval (cond->if exp) env))
-          ((let? exp) (eval (let-combination) env)) ;; <----------------
+          ((let? exp) (eval (let-combination exp) env)) ;; <----------------
           ((application? exp)
            (apply (eval (operator exp) env)
                   (list-of-values (operands exp) env)))
