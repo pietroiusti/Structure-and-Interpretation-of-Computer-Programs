@@ -22,7 +22,7 @@
         ((begin? exp)
          (eval-sequence (begin-actions exp) env))
         ((cond? exp) (eval (cond->if exp) env))
-        ((let? exp) (eval (let->lambda exp) env))
+        ((let? exp) (eval (let->combination exp) env))
         ((let*? exp) (eval (let*->nested-lets exp) env))
         ((application? exp)
          (apply-evaluator (eval (operator exp) env)
@@ -201,11 +201,22 @@
 (define (let-body exp)
   (cddr exp))
 
-(define (let->lambda exp)
-  (cons (cons 'lambda
-              (cons (let-vars exp)
-                    (let-body exp)))
-        (let-exps exp)))
+(define (named-let->combination exp)
+  (let ((nameless (cons (car exp) (cddr exp)))
+        (name (cadr exp)))
+
+    (cons 'begin (list (cons 'define
+                             (cons (cons name (let-vars nameless))
+                                   (let-body nameless)))
+                       (cons name (let-exps nameless))))))
+
+(define (let->combination exp)
+  (if (not (pair? (cadr exp)))
+      (named-let->combination exp)
+      (cons (list 'lambda
+                  (let-vars exp)
+                  (let-body exp))
+            (let-exps exp))))
 
 (define (let*? exp) (tagged-list? exp 'let*))
 
@@ -319,6 +330,7 @@
         (list 'cdr cdr)
         (list 'cons cons)
         (list 'null? null?)
+        (list '= =)
         (list '+ +)
         (list '- -)
         (list '* *)
