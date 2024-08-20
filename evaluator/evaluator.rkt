@@ -2,8 +2,9 @@
 
 ;; First version of the evaluator
 ;;
-;; With:
-;; - support for let (ex. 4.6.)
+;; With support for:
+;; - let (ex. 4.6)
+;; - let* (ex. 4.7)
 
 (define apply-in-underlying-scheme apply)
 
@@ -22,6 +23,7 @@
          (eval-sequence (begin-actions exp) env))
         ((cond? exp) (eval (cond->if exp) env))
         ((let? exp) (eval (let->lambda exp) env))
+        ((let*? exp) (eval (let*->nested-lets exp) env))
         ((application? exp)
          (apply-evaluator (eval (operator exp) env)
                           (list-of-values (operands exp) env)))
@@ -204,6 +206,30 @@
               (cons (let-vars exp)
                     (let-body exp)))
         (let-exps exp)))
+
+(define (let*? exp) (tagged-list? exp 'let*))
+
+(define (let*-bindings exp)
+  (cadr exp))
+
+(define (let*-first-binding exp)
+  (car (let*-bindings exp)))
+
+(define (let*-rest-bindings exp)
+  (cdr (let*-bindings exp)))
+
+(define (let*-body exp)
+  (caddr exp))
+
+(define (let*->nested-lets exp)
+  (cond ((null? (let*-bindings exp))
+         (let*-body exp))
+        (else (cons 'let
+                    (list (list (let*-first-binding exp))
+                          (let*->nested-lets
+                           (cons 'let*
+                                 (list (let*-rest-bindings exp)
+                                       (let*-body exp)))))))))
 
 (define (true? x)
   (not (eq? x false)))
