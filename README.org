@@ -13897,7 +13897,140 @@ It's kind of hard to think of a case where it would be useful to have
 like ~BOH~, that is, a procedure that gives the user the choice of how
 to deal with a certain condition.
 ** An Interpreter with Lazy Evaluation
-Here is the modified evaluator. The changes consist of...
+Basic idea:
+#+begin_quote
+when applying a procedure, the interpreter must determine which
+arguments are to be evaluated and which are to be delayed.
+#+end_quote
+
+The arguments to delay are turned into ``thunks''. A thunk includes
+all the information we need to evaluate the argument and produce the
+same value which would have been produced normally at application
+time. When a thunk is made produce its value we say that the thunk is
+``forced'' --- that information must include the relevant environment.
+
+When do we need to force a thunk? Usually when:
+1. it is passed to a primitive procedure;
+2. it represents the predicate of a conditional;
+3. it represents the operator in an application.
+
+Our interpreter will memoize the thunks.
+
+We change the `application' clause of eval:
+
+#+begin_src scheme
+  ((application? exp)
+   (apply (actual-value (operator exp) env)
+          (operands exp)
+          env))
+#+end_src
+
+The operator is completely evaluated. The operands are left the way
+they are. We also need to pass the environment for apply to construct
+the thunk.
+
+~actual-value~ completely evaluates an expression:
+
+#+begin_src scheme
+  (define (actual-value exp env)
+    (force-it (eval exp env)))
+#+end_src
+
+~apply~ now has to deal with unevaluated operand expressions. When it
+deals with a primitve procedure, it evaluates all the arguments before
+applying the primitive. When it deals with a compound procedure, it
+delays all the arguments before applying the procedure.
+
+#+begin_src scheme
+  (define (apply procedure arguments env)
+    (cond ((primitive-procedure? procedure)
+           (apply-primitive-procedure
+            procedure
+            (list-of-arg-values arguments env)))  ; changed
+          ((compound-procedure? procedure)
+           (eval-sequence
+            (procedure-body procedure)
+            (extend-environment
+             (procedure-parameters procedure)
+             (list-of-delayed-args arguments env) ; changed
+             (procedure-environment procedure))))
+          (else
+           (error
+            "Unknown procedure type -- APPLY" procedure))))
+
+     (define (list-of-arg-values exps env)
+       (if (no-operands? exps)
+           '()
+           (cons (actual-value (first-operand exps) env)
+                 (list-of-arg-values (rest-operands exps)
+                                     env))))
+
+     (define (list-of-delayed-args exps env)
+       (if (no-operands? exps)
+           '()
+           (cons (delay-it (first-operand exps) env)
+                 (list-of-delayed-args (rest-operands exps)
+                                       env))))
+#+end_src
+
+~eval-if~ also has to change:
+
+#+begin_src scheme
+  (define (eval-if exp env)
+    (if (true? (actual-value (if-predicate exp) env))
+        (eval (if-consequent exp) env)
+        (eval (if-alternative exp) env)))
+#+end_src
+
+Finally, we are also changing the driver-loop, because if some thunk
+has to be printed, then we want to force it:
+#+begin_src scheme
+  (define input-prompt ";;; L-Eval input:")
+  (define output-prompt ";;; L-Eval value:")
+
+  (define (driver-loop)
+    (prompt-for-input input-prompt)
+    (let ((input (read)))
+      (let ((output
+             (actual-value input the-global-environment)))
+        (announce-output output-prompt)
+        (user-print output)))
+    (driver-loop))
+#+end_src
+
+How are thunks implemented?
+
+#+begin_src scheme
+  (define (force-it obj)
+    (cond ((thunk? obj)
+           (let ((result (actual-value
+                          (thunk-exp obj)
+                          (thunk-env obj))))
+             (set-car! obj 'evaluated-thunk)
+             (set-car! (cdr obj) result)  ; replace `exp' with its value
+             (set-cdr! (cdr obj) '())     ; forget unneeded `env'
+             result))
+          ((evaluated-thunk? obj)
+           (thunk-value obj))
+          (else obj)))
+
+  (define (delay-it exp env)
+    (list 'thunk exp env))
+
+  (define (thunk? obj)
+    (tagged-list? obj 'thunk))
+
+  (define (thunk-exp thunk) (cadr thunk))
+
+  (define (thunk-env thunk) (caddr thunk))
+
+  (define (evaluated-thunk? obj)
+    (tagged-list? obj 'evaluated-thunk))
+
+  (define (thunk-value evaluated-thunk) (cadr evaluated-thunk))
+#+end_src
+
+Here is the modified evaluator.
 
 #+begin_src scheme
   #lang sicp
