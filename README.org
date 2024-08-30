@@ -13906,7 +13906,7 @@ arguments are to be evaluated and which are to be delayed.
 The arguments to delay are turned into ``thunks''. A thunk includes
 all the information we need to evaluate the argument and produce the
 same value which would have been produced normally at application
-time. When a thunk is made produce its value we say that the thunk is
+time. When we squeeze a value out of a thunk we say that the thunk is
 ``forced'' --- that information must include the relevant environment.
 
 When do we need to force a thunk? Usually when:
@@ -14424,3 +14424,60 @@ Try now to evaluate this:
 
   (try 0 (/ 1 0))
 #+end_src
+** Exercise 4.27
+*Exercise*:
+
+Suppose we type in the following definitions to the lazy evaluator:
+
+#+begin_src scheme
+  (define count 0)
+
+  (define (id x)
+    (set! count (+ count 1))
+    x)
+#+end_src
+
+Give the missing values in the following sequence of interactions, and
+explain your answers.(5)
+
+#+begin_src scheme
+  (define w (id (id 10)))
+
+  ;;; L-Eval input:
+  count
+  ;;; L-Eval value:
+  <RESPONSE>
+
+  ;;; L-Eval input:
+  w
+  ;;; L-Eval value:
+  <RESPONSE>
+
+  ;;; L-Eval input:
+  count
+  ;;; L-Eval value:
+  <RESPONSE>
+#+end_src
+
+*Answer*:
+
+The first <RESPONSE> is 1 (I thought it was 0...). When we evaluate
+~(define w (id (id 10)))~, among other things, we apply ~eval~ to the
+``definition-value'', that is, to ~(id (id 10))~.
+
+That's the application of a compound procedure (of the outer
+~id~). Regardless of lazy evaluation, that means we are going to
+evaluate the expressions of the body of ~id~ (in an environment in
+which the parameters are set to delayed values).
+
+This means, first, that the ~set!~ in the body is evaluated, so
+~count~ won't be 1 anymore. And, second, that the value of the final
+expression --- that value ~w~ is set to --- will be a thunk.
+
+The second <RESPONSE> is 10: we are trying to print a thunk, so the
+thunk is forced (remember the modification we made to the driver
+loop).
+
+The third <RESPONSE> is 2. To print the value of ~w~ we nee to perform
+the application of the inner ~id~ (which entails increasing ~count~
+for the second time).
