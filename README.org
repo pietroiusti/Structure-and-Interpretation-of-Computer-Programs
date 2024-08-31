@@ -14481,3 +14481,71 @@ loop).
 The third <RESPONSE> is 2. To print the value of ~w~ we nee to perform
 the application of the inner ~id~ (which entails increasing ~count~
 for the second time).
+** Exercise 4.28
+*Exercise*:
+
+#+begin_quote
+~Eval~ uses ~actual-value~ rather than ~eval~ to evaluate the operator
+before passing it to ~apply~, in order to force the value of the
+operator. Give an example that demonstrates the need for this forcing.
+#+end_quote
+
+Example: higher order functions. E.g., ~map~.
+
+#+begin_src scheme
+  ;; Unmodified evaluator (using `actual-value'):
+
+  ;;; L-Eval input:
+  (define (add1 x)
+    (+ x 1))
+
+  ;;; L-Eval value:
+  ok
+
+  ;;; L-Eval input:
+  (define (map proc items)
+    (if (null? items)
+        '()
+        (cons (proc (car items))
+              (map proc (cdr items)))))
+
+  ;;; L-Eval value:
+  ok
+
+  ;;; L-Eval input:
+  (map add1 '(1 2 3))
+
+  ;;; L-Eval value:
+  (2 3 4)
+#+end_src
+
+#+begin_src scheme
+  ;; Using `eval' instead of `actual-value':
+
+  ;;; L-Eval input:
+  (define (add1 x)
+    (+ x 1))
+
+  ;;; L-Eval value:
+  ok
+
+  ;;; L-Eval input:
+  (add1 5)
+
+  ;;; L-Eval value:
+  6
+
+  ;;; L-Eval input:
+  (define (map proc items)
+    (if (null? items)
+        '()
+        (cons (proc (car items))
+              (map proc (cdr items)))))
+
+  ;;; L-Eval value:
+  ok
+
+  ;;; L-Eval input:
+  (map add1 '(1 2 3))
+  . . Unknown procedure type -- APPLY (thunk add1 #0=(((map add1 try false true car cdr cons null? = + - * /) (procedure (proc items) ((if (null? items) '() (cons (proc (car items)) (map proc (cdr items))))) #0#) (procedure (x) ((+ x 1)) #0#) (procedure (a b) ((if (= a 0) 1 b)) #0#) #...
+#+end_src
