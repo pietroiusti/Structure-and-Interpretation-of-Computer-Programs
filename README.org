@@ -14549,3 +14549,37 @@ Example: higher order functions. E.g., ~map~.
   (map add1 '(1 2 3))
   . . Unknown procedure type -- APPLY (thunk add1 #0=(((map add1 try false true car cdr cons null? = + - * /) (procedure (proc items) ((if (null? items) '() (cons (proc (car items)) (map proc (cdr items))))) #0#) (procedure (x) ((+ x 1)) #0#) (procedure (a b) ((if (= a 0) 1 b)) #0#) #...
 #+end_src
+** Exercise 4.29
+*Exercise*:
+
+Exhibit a program that you would expect to run much more slowly
+without memoization than with memoization.  Also, consider the
+following interaction, where the ~id~ procedure is defined as in *Note 4.27
+and ~count~ starts at 0:
+
+#+begin_src scheme
+  (define (square x)
+    (* x x))
+
+  ;;; L-Eval input:
+  (square (id 10))
+  ;;; L-Eval value:
+  <RESPONSE>
+
+  ;;; L-Eval input:
+  count
+  ;;; L-Eval value:
+  <RESPONSE>
+#+end_src
+
+Give the responses both when the evaluator memoizes and when it
+does not.
+
+*Answer*:
+
+The argument of ~(square (id 10))~ is delayed (turned into a thunk),
+In the body of ~square~, though, we have the application of a
+primitive procedure (~(* thunk thunk)~) so the thunks must be
+forced. Given that the two thunks are the same thunk, if se memoize,
+then the final <RESPONSES> is 1, otherwise is 2. The first <RESPONSES>
+is 100, regardless of whether we memoize or not.
