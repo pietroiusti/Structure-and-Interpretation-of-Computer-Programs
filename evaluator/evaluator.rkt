@@ -213,9 +213,9 @@
 (define (let->combination exp)
   (if (not (pair? (cadr exp)))
       (named-let->combination exp)
-      (cons (list 'lambda
-                  (let-vars exp)
-                  (let-body exp))
+      (cons (cons 'lambda
+                  (cons (let-vars exp)
+                        (let-body exp)))
             (let-exps exp))))
 
 (define (let*? exp) (tagged-list? exp 'let*))
