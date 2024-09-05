@@ -14583,3 +14583,66 @@ primitive procedure (~(* thunk thunk)~) so the thunks must be
 forced. Given that the two thunks are the same thunk, if se memoize,
 then the final <RESPONSES> is 1, otherwise is 2. The first <RESPONSES>
 is 100, regardless of whether we memoize or not.
+
+Clearly memoization will entail an improvement in performance in those
+cases in which we need the value for the same thunk many times and
+where forcing the thunk requires non-trivial computation.
+
+The procedures ~fact~ and ~fib~ are two example where a difference can
+be seen.
+
+#+begin_src scheme
+  (eval '(define (fact n)
+           (if (= n 1)
+               1
+               (* n (fact (- n 1)))))
+        the-global-environment)
+
+  (define (fib n)
+    (cond ((= n 0) 0)
+          ((= n 1) 1)
+          (else (+ (fib (- n 1))
+                   (fib (- n 2))))))
+#+end_src
+
+Let's test ~fact~:
+
+#+begin_src scheme
+  (define start (runtime))
+
+  (eval '(define (fact n)
+           (if (= n 1)
+               1
+               (* n (fact (- n 1)))))
+        the-global-environment)
+
+  (eval '(fact 140)
+        the-global-environment)
+
+  (display (- (runtime) start))
+#+end_src
+
+With memoization:
+#+begin_src scheme
+  ;; ok
+  ;; 13462012475717524605876073858941615558355851148193967190051391468057460367090535696797920946629681836680869097041958983702264048370902871114013579941370766400374327741701139895604871545254810788060989321379840000000000000000000000000000000000
+  ;; 1556
+#+end_src
+
+Without memoization:
+
+#+begin_src scheme
+  ;; ok
+  ;; 13462012475717524605876073858941615558355851148193967190051391468057460367090535696797920946629681836680869097041958983702264048370902871114013579941370766400374327741701139895604871545254810788060989321379840000000000000000000000000000000000
+  ;; 53581
+#+end_src
+
+When calling ~(fact <EXP>)~, ~<EXP>~ is turned into a thunk. So the
+body of ~fact~ will be evaluated in an environment where ~n~ (the
+parameter name tow hich ~<EXP>~ corresponds to) is bound to that
+thunk. Given the body of ~fact~ we need the value of ~n~ twice (when
+~n~ is not 1). Getting the value of ~n~ requires looking up the value
+of the variable in the environment. If we memoize, then we need to do
+that once (the second time we already have the value in the thunk we
+has become an ~evaluated-thunk~). If we don't memoize, then we need to
+do it twice. Mutatis mutandis for ~fib~.
