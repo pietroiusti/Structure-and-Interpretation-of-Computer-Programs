@@ -14646,3 +14646,149 @@ of the variable in the environment. If we memoize, then we need to do
 that once (the second time we already have the value in the thunk we
 has become an ~evaluated-thunk~). If we don't memoize, then we need to
 do it twice. Mutatis mutandis for ~fib~.
+** Exercise 4.30
+#+begin_quote
+Cy D. Fect, a reformed C programmer, is worried that some side effects
+may never take place, because the lazy evaluator doesn't force the
+expressions in a sequence.  Since the value of an expression in a
+sequence other than the last one is not used (the expression is there
+only for its effect, such as assigning to a variable or printing),
+there can be no subsequent use of this value (e.g., as an argument to
+a primitive procedure) that will cause it to be forced.  Cy thus
+thinks that when evaluating sequences, we must force all expressions
+in the sequence except the final one.  He proposes to modify
+~eval-sequence~ from section 4-1-1 to use ~actual-value~ rather than
+~eval~:
+
+#+begin_src scheme
+  (define (eval-sequence exps env)
+    (cond ((last-exp? exps) (eval (first-exp exps) env))
+          (else (actual-value (first-exp exps) env)
+                (eval-sequence (rest-exps exps) env))))
+#+end_src
+
+a. Ben Bitdiddle thinks Cy is wrong.  He shows Cy the ~for-each~
+procedure described in Exercise 2-23, which gives an important example
+of a sequence with side effects:
+
+#+begin_src scheme
+  (define (for-each proc items)
+    (if (null? items)
+        'done
+        (begin (proc (car items))
+               (for-each proc (cdr items)))))
+#+end_src
+
+He claims that the evaluator in the text (with the original
+~eval-sequence~) handles this correctly:
+
+#+begin_src scheme
+  ;;; L-Eval input:
+  (for-each (lambda (x) (newline) (display x))
+            (list 57 321 88))
+  57
+  321
+  88
+  ;;; L-Eval value:
+  done
+#+end_src
+
+Explain why Ben is right about the behavior of ~for-each~.
+
+b. Cy agrees that Ben is right about the ~for-each~ example, but says
+that that's not the kind of program he was thinking about when he
+proposed his change to ~eval-sequence~.  He defines the following two
+procedures in the lazy evaluator:
+
+#+begin_src scheme
+  (define (p1 x)
+    (set! x (cons x '(2)))
+    x)
+
+  (define (p2 x)
+    (define (p e)
+      e
+      x)
+    (p (set! x (cons x '(2)))))
+#+end_src
+
+What are the values of ~(p1 1)~ and ~(p2 1)~ with the original
+~eval-sequence~?  What would the values be with Cy's proposed change
+to ~eval-sequence~?
+
+c. Cy also points out that changing ~eval-sequence~ as he proposes
+   does not affect the behavior of the example in part a.  Explain why
+   this is true.
+
+d. How do you think sequences ought to be treated in the lazy
+   evaluator?  Do you like Cy's approach, the approach in the text, or
+   some other approach?
+#+end_quote
+
+*Answer*:
+
+a.
+
+It is false that ``the lazy evaluator doesn't force the expressions in
+a sequence''. There is nothing to force, at least in the example. For
+the expressions in the sequences are not thunks.
+
+When we evaluate
+#+begin_src scheme
+  (begin
+    (display "foo")
+    ...)
+#+end_src
+We are going, among other things, to apply ~eval~ to ~(display
+"foo")~. And that is enough to carry out the complete application of
+~display~ to ~"foo"~.
+
+b.
+
+When using the original ~eval-sequence~, the value of ~(p1 1)~ is ~(1
+2)~: the evaluation of ~p1~'s definition creates a procedure object
+whose environment is the global environment.  The application of ~p1~
+to ~1~, first, creates a a new environment by extending the global
+environment with a frame which binds ~x~ to a thunk whose expression
+is 1 and whose environment is the global evironment; and, second,
+evaluates the body of of ~p1~ within that environment. This latter
+evaluation entails the application of ~eval~ to ~(set! x (cons x
+'(2)))~ and ~x~.  The evaluation of ~(set!  x (cons x '(2)))~ entails
+the forcing of ~x~, because primitive procedures must receive values
+they can understand --- not thunks. So the value of ~x~ is set to ~(1
+2)~.
+
+When using Cy's ~eval-sequence~, the value of ~(p1 1)~ should be ~(1
+2)~ as well.
+
+When using the original ~eval-sequence~, the value of ~(p2 1)~ is a
+thunk:
+
+The evaluation of ~p2~'s definition creates a procedure object whose
+environment is the global environment.
+
+The application of ~p2~ to ~1~, first, creates a new environment by
+extending the global environment with a frame which binds ~x~ to a
+thunk whose expression is 1 and whose environment is the global
+evironment; and, second, evaluates the body of of ~p2~ within that
+environment. This latter evaluation entails the evaluation of the
+definition of ~p~ and the application of ~p~ to ~(set! x (cons x
+'(2)))~.
+
+The evaluation of the definition of ~p~ creates a procedures object
+whose environment is the environment ~p2~ points to.
+
+The application of ~p~ to ~(set! x (cons x '(2)))~, first, creates a
+new environment by extending the environment ~p~ points to with a
+frame which binds ~e~ to a thunk whose expression is ~(set! x (cons x
+'(2)))~ and whose environemnt is the environment ~p~ points to.
+
+This latter evaluation entails the evaluation of ~e~ and ~x~ (in the
+environemnt ~p~ points to). ~e~ evaluates to the thunk described above
+and nothing is done with it. ~x~ evaluates to the other thunk
+described above and it is returned (it is the value of the ~p~'s
+application). So the final value is that thunk.
+
+When using Cy's ~eval-sequence~, the value of ~(p2 1)~ should be ~(1
+2)~ --- that's because we are not applying ~eval~ to ~e~; we are
+applying ~actual-value~ to it.
