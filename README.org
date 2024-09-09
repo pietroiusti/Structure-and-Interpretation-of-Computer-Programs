@@ -14729,9 +14729,8 @@ d. How do you think sequences ought to be treated in the lazy
 
 a.
 
-It is false that ``the lazy evaluator doesn't force the expressions in
-a sequence''. There is nothing to force, at least in the example. For
-the expressions in the sequences are not thunks.
+There is nothing to force in the example. For the expressions in the
+sequences are not thunks.
 
 When we evaluate
 #+begin_src scheme
@@ -14792,3 +14791,26 @@ application). So the final value is that thunk.
 When using Cy's ~eval-sequence~, the value of ~(p2 1)~ should be ~(1
 2)~ --- that's because we are not applying ~eval~ to ~e~; we are
 applying ~actual-value~ to it.
+
+c.
+
+The difference between the old ~eval-sequence~ and the new one wit
+respect to the example in a. is that, when using the old procedure, we
+apply ~eval~ to ~(proc (car items))~, whereas, when using the new one,
+we apply ~actual-value~~ to it.
+
+When we apply ~eval~ to ~(proc (car items))~, ~items~ have already
+been forced, because ~null?~ has been applied to them. ~proc~ is
+forced, because it is the operator of an application. So the value of
+the application of ~eval~ is the expression's actual value.
+
+When we apply ~actual-value~ to ~(proc (car items))~, there is an
+extra step: we passed the evaluated value to ~force-it~. But since the
+value is not a thunk, nothing changes.
+
+d.
+
+Cy's seems a better approach, since i) it ensures that side effects
+take place in both a-type cases and b-type cases, and ii) the
+difference with the other approach is minimal when it comes to a-type
+cases.
