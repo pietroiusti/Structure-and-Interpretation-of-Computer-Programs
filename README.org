@@ -14814,3 +14814,145 @@ Cy's seems a better approach, since i) it ensures that side effects
 take place in both a-type cases and b-type cases, and ii) the
 difference with the other approach is minimal when it comes to a-type
 cases.
+** Exercise 4.31
+#+begin_quote
+The approach taken in this section is somewhat unpleasant, because it
+makes an incompatible change to Scheme.  It might be nicer to
+implement lazy evaluation as an /upward-compatible extension/, that
+is, so that ordinary Scheme programs will work as before.  We can do
+this by extending the syntax of procedure declarations to let the user
+control whether or not arguments are to be delayed.  While we're at
+it, we may as well also give the user the choice between delaying with
+and without memoization.  For example, the definition
+
+#+begin_src scheme
+  (define (f a (b lazy) c (d lazy-memo))
+    ...)
+#+end_src
+
+would define ~f~ to be a procedure of four arguments, where the first
+and third arguments are evaluated when the procedure is called, the
+second argument is delayed, and the fourth argument is both delayed
+and memoized.  Thus, ordinary procedure definitions will produce the
+same behavior as ordinary Scheme, while adding the `lazy-memo'
+declaration to each parameter of every compound procedure will produce
+the behavior of the lazy evaluator defined in this section. Design and
+implement the changes required to produce such an extension to Scheme.
+You will have to implement new syntax procedures to handle the new
+syntax for `define'.  You must also arrange for `eval' or `apply' to
+determine when arguments are to be delayed, and to force or delay
+arguments accordingly, and you must arrange for forcing to memoize or
+not, as appropriate.
+#+end_quote
+
+*Answer*:
+- Changes:
+  - ~apply-evaluator~, instead of using ~list-of-delayed-args~, uses
+    ~list-of-args~ which can decide whether to delay an argument or
+    not, since it receives that information that, thanks to the new
+    syntax, is possibly included in the parameters (I'm packing that
+    information into the arguments that ~list-of-args~ receives).
+
+  - When we delay an argument, we create a thunk which now contains
+    information about whether the forcing should use memoization or
+    not. More concretely, the second element of the thunk is now
+    either the symbol ~memo~ or the symbol ~no-memo~.
+
+- Here are new and modified methods:
+  #+begin_src scheme
+    (define (to-delay? arg-with-info)
+      (cond ((not (pair? arg-with-info))
+             (error "arg-with-info is expected to be a pair"))
+            (else (or (eq? (car arg-with-info) 'lazy)
+                      (eq? (car arg-with-info) 'lazy-memo)))))
+
+    (define (arg arg-with-info)
+      (cdr arg-with-info))
+
+    ;; apply either `actual-value` or `delay-it` depending on the symbol
+    ;; attached
+    (define (list-of-args exps env)
+      (if (no-operands? exps)
+          '()
+          (cons (actual-value-or-delay (first-operand exps) env)
+                (list-of-args (rest-operands exps) env))))
+
+    (define (actual-value-or-delay operand-with-info env)
+      (if (to-delay? operand-with-info)
+          (delay-it operand-with-info env)
+          (actual-value (arg operand-with-info) env)))
+
+    (define (make-args-with-info args params-with-info)
+      (if (null? args)
+          '()
+          (if (pair? (car params-with-info))
+
+              (cons (cons (memo-info-symbol (car params-with-info))
+                          (car args))
+                    (make-args-with-info (cdr args)
+                                         (cdr params-with-info)))
+              (cons (cons 'non-lazy (car args))
+                    (make-args-with-info (cdr args)
+                                         (cdr params-with-info))))))
+
+    (define (memo-info-symbol param-with-info)
+      (cadr param-with-info))
+
+    (define (force-it obj)
+      (cond ((thunk? obj)
+             (if (eq? (cadr obj) 'lazy) ;; no memo
+                 (actual-value (thunk-exp obj) (thunk-env obj))
+                 (let ((result (actual-value ;; memo
+                                (thunk-exp obj)
+                                (thunk-env obj))))
+                   (set-car! obj 'evaluated-thunk)
+                   (set-car! (cdr obj) result)
+                   (set-cdr! (cdr obj) '())
+                   result)))
+            ((evaluated-thunk? obj)
+             (thunk-value obj))
+            (else obj)))
+
+    ;; it expects the exp to be tagged with either 'lazy or 'lazy-memo
+    (define (delay-it exp env)
+      (if (to-memo? exp)
+          (list 'thunk 'memo (cdr exp) env)
+          (list 'thunk 'no-memo (cdr exp) env)))
+
+    (define (to-memo? exp)
+      (eq? (car exp) 'lazy-memo))
+
+    (define (thunk-exp thunk) (caddr thunk))
+
+    (define (thunk-env thunk) (cadddr thunk))
+
+    (define (apply-evaluator procedure arguments env)
+      (cond ((primitive-procedure? procedure)
+             (apply-primitive-procedure
+              procedure
+              (list-of-arg-values arguments env)))
+            ((compound-procedure? procedure)
+             (eval-sequence
+              (procedure-body procedure)
+              (extend-environment
+               (procedure-parameters-names procedure)
+               (list-of-args (make-args-with-info arguments
+                                                  (procedure-parameters procedure))
+                             env)
+               (procedure-environment procedure))))
+            (else
+             (error
+              "Unknown procedure type -- APPLY" procedure))))
+
+    (define (procedure-parameters-names proc)
+      (param-names (cadr proc)))
+
+    (define (param-names params-with-info)
+      (cond ((null? params-with-info)
+             '())
+            ((pair? (car params-with-info))
+             (cons (car (car params-with-info))
+                   (param-names (cdr params-with-info))))
+            (else (cons (car params-with-info)
+                        (param-names (cdr params-with-info))))))
+  #+end_src
