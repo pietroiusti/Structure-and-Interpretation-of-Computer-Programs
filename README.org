@@ -14956,3 +14956,210 @@ not, as appropriate.
             (else (cons (car params-with-info)
                         (param-names (cdr params-with-info))))))
   #+end_src
+** Exercise 4.32
+*Exercise*:
+
+#+begin_quote
+Give some examples that illustrate the difference between the streams
+of chapter 3 and the ``lazier'' lazy lists described in this section.
+How can you take advantage of this extra laziness?
+#+end_quote
+
+*Answer*:
+
+First of all, here a way in which we can add the lazy lists feature to
+the evaluator:
+#+begin_src scheme
+  ;; remove cons, car and cdr from primitive procedures
+  (define primitive-procedures
+    (list (list 'null? null?)
+          (list '= =)
+          (list '+ +)
+          (list '- -)
+          (list '* *)
+          (list '/ /)
+          (list 'newline newline)
+          (list 'display display)))
+  ;; add new cons, car and cdr to env, by modifying setup-environment
+  (define (setup-environment)
+    (let ((initial-env
+           (extend-environment (primitive-procedure-names)
+                               (primitive-procedure-objects)
+                               the-empty-environment)))
+      (define-variable! 'cons (make-procedure '(x y) '((lambda (m) (m x y))) initial-env) initial-env)
+      (define-variable! 'car (make-procedure '(z) '((z (lambda (p q) p))) initial-env) initial-env)
+      (define-variable! 'cdr (make-procedure '(z) '((z (lambda (p q) q))) initial-env) initial-env)
+      (define-variable! 'true true initial-env)
+      (define-variable! 'false false initial-env)
+      initial-env))
+#+end_src
+
+Here are a couple of examples.
+
+In normal scheme (racket), ~cons~ is strict in both arguments:
+#+begin_src scheme
+  #lang sicp
+  (define (foo)
+    (display "foo!")
+    (newline)
+    "foo")
+
+  (cons (foo) (foo))
+  ;; foo!
+  ;; foo!
+  ;; ("foo" . "foo")
+#+end_src
+
+The ~cons~ of chapter 3 streams is strict in the first argument and
+non-strict in the second:
+#+begin_src scheme
+  (define (foo)
+    (display "foo!")
+    (newline)
+    "foo")
+
+  (cons-stream (foo) (foo))
+  ;; foo!
+  ;; ("foo" . #<promise>)
+#+end_src
+
+The ~cons~ of chapter 4 lazy lists is non-strict on both arguments:
+#+begin_src scheme
+  ;;; L-Eval input:
+  (define (foo)
+    (display "foo!")
+    (newline)
+    "foo")
+
+  ;;; L-Eval value:
+  ok
+
+  ;;; L-Eval input:
+  (cons (foo) (foo))
+
+  ;;; L-Eval value:
+  (compound-procedure (m) ((m x y)) <procedure-env>)
+#+end_src
+
+Here is an example of the extra-lazyness Authors mention:
+
+With chapter 3 streams, calling ~stream-cdr~ forces the ~cdr~:
+#+begin_src scheme
+  #lang sicp
+  (define (stream-car stream) (car stream))
+  (define (stream-cdr stream) (force (cdr stream)))
+
+  (define (foo)
+    (display "foo!")
+    (newline)
+    "foo")
+
+  (define foovar (cons-stream (foo) (foo)))
+  ;; foo!
+
+  (define foovarcar (stream-car foovar))
+
+  (define foovarcdr (stream-cdr foovar))
+  ;; foo!
+#+end_src
+
+With chapter 4 lazy lists, neither the application of ~cdr~ nor of ~car~
+forces delayed value:
+#+begin_src scheme
+  ;;; L-Eval input:
+  (define (foo) (display "foo!") (newline) "foo")
+
+  ;;; L-Eval value:
+  ok
+
+  ;;; L-Eval input:
+  (define foovar (cons (foo) (foo)))
+
+  ;;; L-Eval value:
+  ok
+
+  ;;; L-Eval input:
+  (define foovarcar (car foovar))
+
+  ;;; L-Eval value:
+  ok
+
+  ;;; L-Eval input:
+  (define foovarcdr (cdr foovar))
+
+  ;;; L-Eval value:
+  ok
+#+end_src
+
+Chapter 3 streams are lazy at construction time with respect to the
+~cdr~. They are non-lazy with respect to everything else.
+
+Chapter 4 lazy lists are lazy both at construction time and at
+selection time with respect to both the ~car~ and the ~cdr~. Delayed
+values are forced only when they are ``really needed --- e.g., for use
+as the argument of a primitive, or to be printed as an answer.''
+
+We can take advantage of the fact that the actual value of the ~car~
+is not computed at construction time. If the application of ~foo~
+involves a lot of computations, then ~(cons-stream (foo) nil)~ will
+make them, wheres the lazy ~cons~ of chapter 3 won't.
+
+And we can take advantage of the fact that the selection of the ~cdr~
+does not entail its actual value in situation where its actual value
+is not needed. For example, computing the length of a
+stream/lazy-list:
+
+Streams of chapter 3:
+#+begin_src scheme
+  (define (stream-car stream) (car stream))
+  (define (stream-cdr stream) (force (cdr stream)))
+
+  (define (foo)
+    (display "foo!")
+    (newline)
+    "foo")
+
+  (define foolist
+    (cons-stream (foo)
+                 (cons-stream (foo)
+                              (cons-stream (foo) nil))))
+
+  (define (length stream-items)
+    (if (stream-null? stream-items)
+        0
+        (+ 1 (length (stream-cdr stream-items)))))
+
+  (length foolist)
+
+  ;; foo!
+  ;; foo!
+  ;; foo!
+  ;; 3
+#+end_src
+
+Lazy lists of chapter 4:
+#+begin_src scheme
+  ;;; L-Eval input:
+  (define (length items) (if (null? items) 0 (+ 1 (length (cdr items)))))
+
+  ;;; L-Eval value:
+  ok
+
+  ;;; L-Eval input:
+  (define (foo) (display "foo!") (newline) "foo")
+
+  ;;; L-Eval value:
+  ok
+
+  ;;; L-Eval input:
+  (define foolist (cons (foo) (cons (foo) (cons (foo) '()))))
+
+  ;;; L-Eval value:
+  ok
+
+  ;;; L-Eval input:
+  (length foolist)
+
+  ;;; L-Eval value:
+  3
+#+end_src
