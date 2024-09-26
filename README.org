@@ -15163,3 +15163,60 @@ Lazy lists of chapter 4:
   ;;; L-Eval value:
   3
 #+end_src
+** Exercise 4.33
+*Exercise*:
+
+#+begin_quote
+Ben Bitdiddle tests the lazy list implementation given above by
+evaluating the expression
+
+#+begin_src scheme
+  (car '(a b c))
+#+end_src
+
+To his surprise, this produces an error.  After some thought, he
+realizes that the "lists" obtained by reading in quoted expressions
+are different from the lists manipulated by the new definitions of
+`cons', `car', and `cdr'.  Modify the evaluator's treatment of quoted
+expressions so that quoted lists typed at the driver loop will produce
+true lazy lists.
+#+end_quote
+
+*Answer*:
+
+#+begin_src scheme
+(define (is-non-empty-list? exp)
+  (and (quoted? exp)
+       (list? (text-of-quotation exp))
+       (not (null? (text-of-quotation exp)))))
+
+(define (list->cons exp)
+    (if (null? exp)
+        ''()
+        (list
+         'cons
+         (car exp)
+         (list->cons (cdr exp)))))
+
+(define (eval exp env)
+  (cond ((self-evaluating? exp) exp)
+        ((variable? exp) (lookup-variable-value exp env))
+        ((is-non-empty-list? exp) (eval (list->cons (cadr exp)) env));;<-------------
+        ((quoted? exp) (text-of-quotation exp))
+        ((assignment? exp) (eval-assignment exp env))
+        ((definition? exp) (eval-definition exp env))
+        ((if? exp) (eval-if exp env))
+        ((lambda? exp)
+         (make-procedure (lambda-parameters exp)
+                         (lambda-body exp)
+                         env))
+        ((begin? exp)
+         (eval-sequence (begin-actions exp) env))
+        ((cond? exp) (eval (cond->if exp) env))
+        ((application? exp)
+         (apply-evaluator (actual-value (operator exp) env)
+                          (operands exp)
+                          env))
+        (else
+         (error "Unknown expression type -- EVAL" exp))))
+#+end_src
