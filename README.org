@@ -16067,3 +16067,73 @@ then some ellipses.
   (1 ...)
 #+end_src
 
+* 5. Computing with Register Machines
+** Exercise 5.1
+#+begin_quote
+Design a register machine to compute factorials using the iterative
+algorithm specified by the following procedure.  Draw data-path and
+controller diagrams for this machine.
+
+#+begin_src scheme
+  (define (factorial n)
+    (define (iter product counter)
+      (if (> counter n)
+          product
+          (iter (* counter product)
+                (+ counter 1))))
+    (iter 1 1))
+#+end_src
+#+end_quote
+
+#+begin_src
+                  Data paths                                                                Controller
+
+       /\--------------------------------+
+      /  \                               |                                                    start
+ +---/ 1  \                             (x) 1->n                                                |
+ |  /      \                   -----     |                                                      |
+ | ----------       --------->(  >  )    |                                                      V
+ |       \         /           -----     |                                                 +-----------+
+ |  1->c (x)      /              ^       |                                                 |  1->c     |
+ |         \     /               |       |                                                 |           |
+ |          V   /                |       V                                                 +-----------+
+ |     +----------+            +-+---------+            +------------+                          |
+ |     | counter  |            |     n     |            | product    |                          |
+ |     |          |            |           |            |            |                          V
+ |     +----------+            +-----------+            +------------+                     +-----------+
+ |      |   \    ^                                       /      ^                          |  1->n     |
+ |      |    \   +------------------------+             /       |                          |           |
+ |      |     \                           |            /        |                          +-----------+
+ |      |      \                          |           /         |                               |
+ |      |       \               +---------+-----------          |                               |
+ |      |        \              |         |                     |                               V
+ |      |         V             V         |                     |                               /\
+ |      |      \-------------------/      |                     |                              /  \
+ |      |       \                 /       |                    (x) *->p                       /    \     yes
+ |      |        \       *       /        |                     |                     +----> /  >   \----------> done
+ |      |         \             /         |                     |                     |      \      /
+ |      |          \           /          |                     |                     |       \    /
+ |      |           -----+-----           |                     |                     |        \  /
+ |      |                |                |                     |                     |         \/
+ |      +------------+   |                |                     |                     |         |
+ |                   |   -----------------+---------------------+                     |         |
+ +---------------+   |                    |                                           |         |no
+                 |   |                    |                                           |         |
+                 V   V                    |                                           |         |
+               \-------------------/      |                                           |         V
+                \                 /       |                                           |    +-----------+
+                 \       +       /        |                                           |    |  *->p     |
+                  \             /        (x) +->c                                     |    |           |
+                   \           /          |                                           |    +-----------+
+                    -----+-----           |                                           |         |
+                         |                |                                           |         |
+                         |                |                                           |         V
+                         +----------------+                                           |    +-----------+
+                                                                                      |    |  +->c     |
+                                                                                      |    |           |
+                                                                                      |    +----+------+
+                                                                                      |         |
+                                                                                      |         |
+                                                                                      +---------+
+       The result is stored in the product register.
+#+end_src
