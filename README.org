@@ -16137,3 +16137,21 @@ controller diagrams for this machine.
                                                                                       +---------+
        The result is stored in the product register.
 #+end_src
+** Exercise 5.2
+#+begin_quote
+Use the register-machine language to describe the iterative factorial
+machine of Exercise 5.1
+#+end_quote
+
+#+begin_src scheme
+  (controller
+   (assign counter (const 1))
+   (assign n (const 1))
+  test-counter-n
+   (test (op >) (reg counter) (reg n))
+   (branch (label factorial-done))
+   (assign product (op *) (reg counter) (reg product))
+   (assign counter (op +) (reg counter) (const 1))
+   (goto (label test-counter-n))
+  factorial-done)
+#+end_src
