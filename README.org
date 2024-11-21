@@ -16155,3 +16155,74 @@ machine of Exercise 5.1
    (goto (label test-counter-n))
   factorial-done)
 #+end_src
+** Exercise 5.3
+#+begin_quote
+Design a machine to compute square roots using Newton's method, as
+described in section 1.1.7.
+
+#+begin_src scheme
+  (define (sqrt x)
+    (define (good-enough? guess)
+      (< (abs (- (square guess) x)) 0.001))
+    (define (improve guess)
+      (average guess (/ x guess)))
+    (define (sqrt-iter guess)
+      (if (good-enough? guess)
+          guess
+          (sqrt-iter (improve guess))))
+    (sqrt-iter 1.0))
+#+end_src
+
+Begin by assuming that ~good-enough?~ and ~improve~ operations are
+available as primitives.  Then show how to expand these in terms of
+arithmetic operations.  Describe each version of the ~sqrt~ machine
+design by drawing a data-path diagram and writing a controller
+definition in the register-machine language.
+#+end_quote
+
+First version of ~sqrt~ machine:
+
+Data paths:
+#+begin_src
+             /\
+            /  \                                -----------------------
+           /    \                               \                     /
+          /      \                               \      read         /
+         /   1    \                               \                 /
+        /          \                               \               /
+       /            \                               ----+---------/
+       ------+-------                                   |
+             |    g<-1                                  |
+             +----(x)-----+                   +----------
+                          |                   |
+                          V                   v
+                 +--------------+       +------+-----+
+                 |              |       |            |
+                 |    guess     |       |      x     |
+                 |              |       |            |
+                 +----------+---+       +------------+
+                    |       | ^
+                    |       | |          g<-i
+                    |       | +-----------(x)--------+
+                    V       |                        |
+                 -------    +--------------+         |
+               -/       \-                 V         |
+              /           \            --------------+---------
+              |good-enough|             \                    /
+              \           /              \    improve       /
+               -\       /-                \                /
+                 -------                   \--------------/
+#+end_src
+
+Controller:
+#+begin_src scheme
+  (controller
+   (assign guess (const 1))
+   (assign x (op read))
+  test-ge
+   (test (op good-enough) (reg guess))
+   (branch (label sqr-done))
+   (assign guess (op improve) (reg guess))
+   (goto (label test-ge))
+  sqr-done)
+#+end_src
