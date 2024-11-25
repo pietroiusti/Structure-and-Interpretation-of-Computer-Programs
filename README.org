@@ -16188,7 +16188,7 @@ Data paths:
             /  \                                -----------------------
            /    \                               \                     /
           /      \                               \      read         /
-         /   1    \                               \                 /
+         /   1.0  \                               \                 /
         /          \                               \               /
        /            \                               ----+---------/
        ------+-------                                   |
@@ -16217,7 +16217,7 @@ Data paths:
 Controller:
 #+begin_src scheme
   (controller
-   (assign guess (const 1))
+   (assign guess (const 1.0))
    (assign x (op read))
   test-ge
    (test (op good-enough) (reg guess))
