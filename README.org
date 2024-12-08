@@ -16367,6 +16367,10 @@ Answer:
 
 Recursive exponentiation:
 #+begin_src scheme
+  ;; - example: (expt 2 3); initial values:
+  ;;   - register b is set to 2
+  ;;   - register n is set to 3
+
   (controller
      (assign continue (label fact-done))
    expt-loop
@@ -16387,4 +16391,21 @@ Recursive exponentiation:
      (assign val (const 1))
      (goto (reg continue))
    expt-done)
+#+end_src
+
+Iterative exponentiation:
+#+begin_src scheme
+  ;; - example: (expt 2 3); initial values:
+  ;;   - register b is set to 2
+  ;;   - register counter is set to 3
+  ;;   - register product is set to 1
+
+  (controller
+   expt-loop
+     (test (op =) (reg counter) (const 0))
+     (branch expt-done)
+     (assign counter (op -) (reg counter) (const 1))
+     (assign product (op *) (reg b) (reg product))
+     (goto expt-loop)
+     expt-done)
 #+end_src
