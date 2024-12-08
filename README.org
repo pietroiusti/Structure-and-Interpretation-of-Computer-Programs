@@ -16335,3 +16335,56 @@ test-ge
   (assign guess (op average) (reg guess) (reg tmp))
 sqrt-done)
 #+end_src
+** Exercise 5.4
+Exercise:
+#+begin_quote
+Specify register machines that implement each of the following
+procedures.  For each machine, write a controller instruction sequence
+and draw a diagram showing the data paths.
+
+a. Recursive exponentiation:
+
+#+begin_src scheme
+  (define (expt b n)
+    (if (= n 0)
+        1
+        (* b (expt b (- n 1)))))
+#+end_src
+
+b. Iterative exponentiation:
+
+#+begin_src scheme
+  (define (expt b n)
+    (define (expt-iter counter product)
+      (if (= counter 0)
+          product
+          (expt-iter (- counter 1) (* b product))))
+    (expt-iter n 1))
+#+end_src
+#+end_quote
+
+Answer:
+
+Recursive exponentiation:
+#+begin_src scheme
+  (controller
+     (assign continue (label fact-done))
+   expt-loop
+     (test (op =) (reg n) (const 0))
+     (branch (label base-case))
+     (save continue)
+     (save n)
+     ;; no need to save b since it always holds the same val
+     (assign n (op -) (reg n) (const 1))
+     (assign continue (label after-expt))
+     (goto (label expt-loop))
+   after-expt
+     (restore n)
+     (restore continue)
+     (assign val (op *) (reg b) (reg val))
+     (goto continue)
+   base-case
+     (assign val (const 1))
+     (goto (reg continue))
+   expt-done)
+#+end_src
