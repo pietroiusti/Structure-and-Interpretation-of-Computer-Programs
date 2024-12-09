@@ -16409,3 +16409,93 @@ Iterative exponentiation:
      (goto expt-loop)
      expt-done)
 #+end_src
+*** C/asm exploration
+Using the Compiler explorer (~x86-64 gcc 14.2~ with the ~-Og~ flag),
+we can see that the ~gcc~ turns both a tail-recursive fact and a
+non-tail recursive ~fact~ into a machine level description of a
+/recursive/ process.
+
+#+begin_src C
+  int fact(int num) {
+      if (num == 1) {
+          return 1;
+      } else {
+          return (num * (fact (num - 1)));
+      }
+  }
+
+  int main(void) {
+      int res = fact(5);
+      return 0;
+  }
+#+end_src
+
+#+begin_src asm
+fact:
+        pushq   %rbx
+        movl    %edi, %ebx
+        cmpl    $1, %edi
+        jne     .L4
+.L2:
+        movl    %ebx, %eax
+        popq    %rbx
+        ret
+.L4:
+        leal    -1(%rdi), %edi
+        call    fact
+        imull   %eax, %ebx
+        jmp     .L2
+main:
+        subq    $8, %rsp
+        movl    $5, %edi
+        call    fact
+        movl    $0, %eax
+        addq    $8, %rsp
+        ret
+#+end_src
+
+#+begin_src c
+// still a recursive process!
+int fact_iter(int product, int counter, int n) {
+    if (counter > n) {
+        return product;
+    } else {
+        return fact_iter(
+            counter * product,
+            counter + 1,
+            n
+        );
+    }
+}
+
+int main(void) {
+    int res = fact_iter(1, 1, 3);
+    return 0;
+}
+#+end_src
+
+#+begin_src asm
+fact_iter:
+        movl    %edi, %eax
+        cmpl    %edx, %esi
+        jle     .L7
+        ret
+.L7:
+        subq    $8, %rsp
+        leal    1(%rsi), %ecx
+        movl    %esi, %edi
+        imull   %eax, %edi
+        movl    %ecx, %esi
+        call    fact_iter
+        addq    $8, %rsp
+        ret
+main:
+        subq    $8, %rsp
+        movl    $3, %edx
+        movl    $1, %esi
+        movl    $1, %edi
+        call    fact_iter
+        movl    $0, %eax
+        addq    $8, %rsp
+        ret
+#+end_src
