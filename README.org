@@ -16499,3 +16499,27 @@ main:
         addq    $8, %rsp
         ret
 #+end_src
+** Exercise 5.5
+Exercise:
+
+#+begin_quote
+Hand-simulate the factorial and Fibonacci machines, using some
+nontrivial input (requiring execution of at least one recursive call).
+Show the contents of the stack at each significant point in the
+execution.
+#+end_quote
+
+
+Answer:
+
+- Contents of the stack with ~factorial~ with ~5~ as an input (the
+  stack grows backwards).
+  - []
+  - [5|fact-done]
+  - [4|after-fact|5|fact-done]
+  - [3|after-fact|4|after-fact|5|fact-done]
+  - [2|after-fact|3|after-fact|4|after-fact|5|fact-done]
+  - [3|after-fact|4|after-fact|5|fact-done]
+  - [4|after-fact|5|fact-done]
+  - [5|fact-done]
+  - []
