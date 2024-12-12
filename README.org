@@ -16509,17 +16509,23 @@ Show the contents of the stack at each significant point in the
 execution.
 #+end_quote
 
-
 Answer:
 
-- Contents of the stack with ~factorial~ with ~5~ as an input (the
-  stack grows backwards).
-  - []
-  - [5|fact-done]
-  - [4|after-fact|5|fact-done]
-  - [3|after-fact|4|after-fact|5|fact-done]
+- Relevant contents of the stack when computing the ~factorial~ of ~5~
+  (the stack grows backwards):
+  -                                                   []
+  -                                        [5|fact-done]
+  -                           [4|after-fact|5|fact-done]
+  -              [3|after-fact|4|after-fact|5|fact-done]
   - [2|after-fact|3|after-fact|4|after-fact|5|fact-done]
-  - [3|after-fact|4|after-fact|5|fact-done]
-  - [4|after-fact|5|fact-done]
-  - [5|fact-done]
-  - []
+  -              [3|after-fact|4|after-fact|5|fact-done]
+  -                           [4|after-fact|5|fact-done]
+  -                                        [5|fact-done]
+  -                                                   []
+
+- Relevant contents of the stack when computing the ~fib~ of ~2~:
+  -           []  (starting point)
+  - [2|fib-done]  (when setting up the computation of fib(n-1))
+  -           []  (before setting up the computation of fib(n-2))
+  - [1|fib-done]  (setting up the computation of fib(n-2))
+  -           []  (before computing fib(n-1) + fib(n-2))
