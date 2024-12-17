@@ -16068,6 +16068,53 @@ then some ellipses.
 #+end_src
 
 * 5. Computing with Register Machines
+
+- The book began talking about ``processes''. [Question as an ex
+  philophy student: can we say that processes are to procedures what
+  semantic content is to linguistic expressions? If the answer is yes,
+  we might want to avoid saying that procedures /describe/
+  processes...]
+
+- We have described processes in terms of procedures written in Lisp.
+
+- The ``meaning'' of those procedures, Authors say, has been explained
+  by using ``models of evaluations'':
+  - the substitution model (chapter 1);
+  - the environment model (chapter 3);
+  - the metacircular evaluator (chapter 4).
+
+- [Q: doesn't the metacircular evaluator implement an enviromnent
+  model of evaluation?]
+
+- Much mystery has been cleared away.
+
+- But important questions have been left unanswered.
+  - The mechanisms of control have not been explained.
+    - How are values returned by the evaluation of subexpressions to
+      the expressions that use them?
+    - Why some recursive procedures generate iterative process (that
+      is, processes whose growth complexity in space is constant) and
+      some recursive procedures generate recursive processes?
+
+- The reason such important questions remain unanswered is that the
+  metacircular evaluator is itself a Lisp program so it inherits the
+  control structure of the underlying Lisp system.
+
+- To elucidate the control structure of the Lisp evaluator we shall
+  descend at a more primitive level.
+
+- In this chapter we describe processes in terms of the operations of
+  a traditional computer, a.k.a. /register machine/.
+
+- A register machine ``sequentially executes /instructions/ that
+  manipulate the contents of a fixed set of storage elements called
+  /registers/'' (491).
+
+- ``[W]e will examine some procedures and design a register machine
+  for each of them. Thus, we will approach our task from the
+  perspective of a hardware architect rather than that of a
+  machine-language computer programmer'' (492).
+
 ** 5.1 Designing Register Machines
 *** Exercise 5.1
 #+begin_quote
