@@ -16068,7 +16068,6 @@ then some ellipses.
 #+end_src
 
 * 5. Computing with Register Machines
-
 - The book began talking about ``processes''. [Question as an ex
   philophy student: can we say that processes are to procedures what
   semantic content is to linguistic expressions? If the answer is yes,
@@ -16115,7 +16114,32 @@ then some ellipses.
   perspective of a hardware architect rather than that of a
   machine-language computer programmer'' (492).
 
+- 5.2 implements a Lisp program that simulates the machine we design.
+
+- 5.3 presents the implementation, in terms of more elementary
+  operations, of those relatively elaborate storage-allocation
+  mechanism needed for memory operations ~car~, ~cdr~, and ~cons~.
+
+- 5.4 shows the design of a machine which describes the same process
+  described by the metacircular evaluator of section 4.1.
+
+- 5.5 presents a compiler. The compiler ``translates Scheme programs
+  into sequences of instructions that can be executed directly with
+  the registers and operations of the evaluator register machine''.
+
 ** 5.1 Designing Register Machines
+- To design a register machine, me must design
+  - its /datapaths/;
+  - its /controller/.
+
+- only one register can be assigned a new value at each step
+
+- Authors present a way to represents datapaths and controllers with
+  diagrams.
+
+- As an example, they draw the datapaths and controller of a ~GCD~
+  machine.
+
 *** Exercise 5.1
 #+begin_quote
 Design a register machine to compute factorials using the iterative
@@ -16185,6 +16209,9 @@ controller diagrams for this machine.
                                                                                       +---------+
        The result is stored in the product register.
 #+end_src
+*** 5.1.1 A language for Describing Register Machines
+- Authors present a wawy to describe machines in a textual form and
+  presents a specification of the of the GCD machine.
 *** Exercise 5.2
 #+begin_quote
 Use the register-machine language to describe the iterative factorial
@@ -16203,6 +16230,7 @@ machine of Exercise 5.1
    (goto (label test-counter-n))
   factorial-done)
 #+end_src
+*** 5.1.2 Abstraction in Machine Design
 *** Exercise 5.3
 #+begin_quote
 Design a machine to compute square roots using Newton's method, as
@@ -16383,6 +16411,15 @@ test-ge
   (assign guess (op average) (reg guess) (reg tmp))
 sqrt-done)
 #+end_src
+*** 5.1.3 Subroutines
+- `Subroutine': what's the def?
+- Authors show that we can use a register to hold a label.
+*** 5.1.4 Using a Stack to Implement Recursion
+- Authors show how to use a stack to implement recursion
+
+- ~factorial~
+
+- ~fib~ (double recursion)
 *** Exercise 5.4
 Exercise:
 #+begin_quote
@@ -16589,7 +16626,39 @@ removed to make a faster machine.  Where are these instructions?
 - Hypothesis 1: we don't need to store the value of n. Because, we
   know that the relevant value is, in one case, n-1 and, in the other
   case, n-2.
+*** 5.1.5 Instruction Summary
+- ~(assign <REGISTER-NAME> (reg <REGISTER-NAME>))~
+
+- ~(assign <REGISTER-NAME> (const <CONSTANT-VALUE>))~
+
+- ~(assign <REGISTER-NAME> (op <OPERATION-NAME>) <INPUT_1> ... <INPUT_N>)~
+
+- ~(perform (op <OPERATION-NAME>) <INPUT_1> ... <INPUT_N>)~
+
+- ~(test (op <OPERATION-NAME>) <INPUT_1> ... <INPUT_N>)~
+
+- ~(branch (label <LABEL-NAME>))~
+
+- ~(goto (label <LABEL-NAME>))~
+
+- ~(assign <REGISTER-NAME> (label <LABEL-NAME>))~
+
+- ~(goto (reg <REGISTER-NAME>))~
+
+- ~(save <REGISTER-NAME>)~
+
+- ~(restore <REGISTER-NAME>)~
+
 ** 5.2 A Register-Machine Simulator
+[ From the beginning of chapter 5:
+
+#+begin_quote
+We will also present a language for describing designs for register
+machines.  In section *Note 5-2:: we will implement a Lisp program that
+uses these descriptions to simulate the machines we design. (492)
+#+end_quote
+]
+
 - how to test the machine we design?
   - hand-simulation
     - tedious
@@ -16608,7 +16677,7 @@ removed to make a faster machine.  Where are these instructions?
     machine, starting from the beginning of the controller sequence
     and stopping when it reaches the end of the sequence.
 
-- Example:
+- Example of usage:
   #+begin_src scheme
     (define gcd-machine
       (make-machine
@@ -16635,69 +16704,111 @@ removed to make a faster machine.  Where are these instructions?
     (get-register-contents gcd-machine 'a)
     2
   #+end_src
+
+*** Exercise 5.7
+#+begin_quote
+Use the simulator to test the machines you designed in *Note Exercise 5.4.
+#+end_quote
+
+I wonder how am I supposed to do this exercise at this point, given
+that we haven't implemented the simulator yet, but only presented its
+interface.
 *** 5.2.1 The Machine Model
-#+begin_src scheme
-  (define (make-machine register-names ops controller-text)
-         (let ((machine (make-new-machine)))
-           (for-each (lambda (register-name)
-                       ((machine 'allocate-register) register-name))
-                     register-names)
-           ((machine 'install-operations) ops)
-           ((machine 'install-instruction-sequence)
-            (assemble controller-text machine))
-           machine))
-#+end_src
+- ~Make-machine~, we have said, generates the machine model.
 
-#+begin_src scheme
-  (define (make-register name)
-    (let ((contents '*unassigned*))
-      (define (dispatch message)
-        (cond ((eq? message 'get) contents)
-              ((eq? message 'set)
-               (lambda (value) (set! contents value)))
-              (else
-               (error "Unknown request -- REGISTER" message))))
-      dispatch))
-#+end_src
+  - Such a model is implemented (``represented'') as a procedure with
+    local state using using the message-passing techniques presented in
+    Chapter 3.
 
-#+begin_src scheme
-  (define (get-contents register)
-    (register 'get))
+  - ~Make-machine~ creates a basic model of the machine the using
+    ~make-new-machine~ procedure.
 
-  (define (set-contents! register value)
-    ((register 'set) value))
-#+end_src
+  - ~Make-machine~ then extends the basic model created by
+    ~make-new-machine~ so that it includes the registers, operations,
+    and controller of the relevant machine.
 
-#+begin_src scheme
-  (define (make-stack)
-         (let ((s '()))
-           (define (push x)
-             (set! s (cons x s)))
-           (define (pop)
-             (if (null? s)
-                 (error "Empty stack -- POP")
-                 (let ((top (car s)))
-                   (set! s (cdr s))
-                   top)))
-           (define (initialize)
-             (set! s '())
-             'done)
-           (define (dispatch message)
-             (cond ((eq? message 'push) push)
-                   ((eq? message 'pop) (pop))
-                   ((eq? message 'initialize) (initialize))
-                   (else (error "Unknown request -- STACK"
-                                message))))
-           dispatch))
-#+end_src
+  - ~Make-machine~ uses the assembler ``to transform the controller list
+    into instructions for the new machine and installs these as the
+    machine's instruction sequence.''
 
-#+begin_src scheme
-  (define (pop stack)
-    (stack 'pop))
+  #+begin_src scheme
+    (define (make-machine register-names ops controller-text)
+           (let ((machine (make-new-machine)))
+             (for-each (lambda (register-name)
+                         ((machine 'allocate-register) register-name))
+                       register-names)
+             ((machine 'install-operations) ops)
+             ((machine 'install-instruction-sequence)
+              (assemble controller-text machine))
+             machine))
+  #+end_src
 
-  (define (push stack value)
-    ((stack 'push) value))
-#+end_src
+- Registers are represented as procedures with local state.
+
+  #+begin_src scheme
+    (define (make-register name)
+      (let ((contents '*unassigned*))
+        (define (dispatch message)
+          (cond ((eq? message 'get) contents)
+                ((eq? message 'set)
+                 (lambda (value) (set! contents value)))
+                (else
+                 (error "Unknown request -- REGISTER" message))))
+        dispatch))
+  #+end_src
+
+  #+begin_src scheme
+    (define (get-contents register)
+      (register 'get))
+
+    (define (set-contents! register value)
+      ((register 'set) value))
+  #+end_src
+
+- The stack is represented as a procedures with local state too.
+
+  #+begin_src scheme
+    (define (make-stack)
+      (let ((s '()))
+        (define (push x)
+          (set! s (cons x s)))
+        (define (pop)
+          (if (null? s)
+              (error "Empty stack -- POP")
+              (let ((top (car s)))
+                (set! s (cdr s))
+                top)))
+        (define (initialize)
+          (set! s '())
+          'done)
+        (define (dispatch message)
+          (cond ((eq? message 'push) push)
+                ((eq? message 'pop) (pop))
+                ((eq? message 'initialize) (initialize))
+                (else (error "Unknown request -- STACK"
+                             message))))
+        dispatch))
+  #+end_src
+
+  #+begin_src scheme
+    (define (pop stack)
+      (stack 'pop))
+
+    (define (push stack value)
+      ((stack 'push) value))
+  #+end_src
+
+- ~Make-new-machine~ is a procedure with local state too. Its state
+  includes a i) stack, ii) an (initially empty) instruction sequence,
+  iii) a list of operations (which initially contains an operation to
+  initialize the stack), and iv) a register table (which initially
+  contains two registers: ~flag~ and ~pc~).
+
+- Each machine instruction in the model is a data structure which
+  includes a procedure that, when called, simulates its execution.
+
+- The value of the ~pc~ (``program counter'') register points to the
+  next instruction in the sequence to be executed.
 
 #+begin_src scheme
   (define (make-new-machine)
@@ -16729,38 +16840,40 @@ removed to make a faster machine.  Where are these instructions?
                 (begin
                   ((instruction-execution-proc (car insts)))
                   (execute)))))
-        (define (dispatch message)
-          (cond ((eq? message 'start)
-                 (set-contents! pc the-instruction-sequence)
-                 (execute))
-                ((eq? message 'install-instruction-sequence)
-                 (lambda (seq) (set! the-instruction-sequence seq)))
-                ((eq? message 'allocate-register) allocate-register)
-                ((eq? message 'get-register) lookup-register)
-                ((eq? message 'install-operations)
-                 (lambda (ops) (set! the-ops (append the-ops ops))))
-                ((eq? message 'stack) stack)
-                ((eq? message 'operations) the-ops)
-                (else (error "Unknown request -- MACHINE" message))))
-        dispatch)))
-#+end_src
+          (define (dispatch message)
+            (cond ((eq? message 'start)
+                   (set-contents! pc the-instruction-sequence)
+                   (execute))
+                  ((eq? message 'install-instruction-sequence)
+                   (lambda (seq) (set! the-instruction-sequence seq)))
+                  ((eq? message 'allocate-register) allocate-register)
+                  ((eq? message 'get-register) lookup-register)
+                  ((eq? message 'install-operations)
+                   (lambda (ops) (set! the-ops (append the-ops ops))))
+                  ((eq? message 'stack) stack)
+                  ((eq? message 'operations) the-ops)
+                  (else (error "Unknown request -- MACHINE" message))))
+          dispatch)))
+  #+end_src
 
-#+begin_src scheme
-  (define (start machine)
-    (machine 'start))
+- Procedures provided for convenience:
 
-  (define (get-register-contents machine register-name)
-    (get-contents (get-register machine register-name)))
+  #+begin_src scheme
+    (define (start machine)
+      (machine 'start))
 
-  (define (set-register-contents! machine register-name value)
-    (set-contents! (get-register machine register-name) value)
-    'done)
-#+end_src
+    (define (get-register-contents machine register-name)
+      (get-contents (get-register machine register-name)))
 
-#+begin_src scheme
-  (define (get-register machine reg-name)
-    ((machine 'get-register) reg-name))  
-#+end_src
+    (define (set-register-contents! machine register-name value)
+      (set-contents! (get-register machine register-name) value)
+      'done)
+  #+end_src
+
+  #+begin_src scheme
+    (define (get-register machine reg-name)
+      ((machine 'get-register) reg-name))
+  #+end_src
 *** 5.2.2 The Assembler
 #+begin_src scheme
   (define (assemble controller-text machine)
@@ -17149,7 +17262,7 @@ Putting together the code and the gcd example which was given:
     'done)
 
   (define (get-register machine reg-name)
-    ((machine 'get-register) reg-name))  
+    ((machine 'get-register) reg-name))
 
   (define (assemble controller-text machine)
     (extract-labels controller-text
@@ -17396,4 +17509,13 @@ Putting together the code and the gcd example which was given:
   (start gcd-machine) ;; => done
   (get-register-contents gcd-machine 'a) ;; => 2
 #+end_src
-
+** 5.3 Storage Allocation and Garbage Collection
+[ From the beginning of chapter 5:
+#+begin_quote
+Most of the primitive operations of our register machines are very
+simple... In order to deal with list structure, however, we will also
+use the memory operations `car', `cdr', and `cons', which require an
+elaborate storage-allocation mechanism.  In section *Note 5-3 we study
+their implementation in terms of more elementary operations. (492)
+#+end_quote
+]
