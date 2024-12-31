@@ -17397,6 +17397,53 @@ adavance ~pc~.
           (cadr val)
           (error "Unknown operation -- ASSEMBLE" symbol))))
 #+end_src
+*** Exercise 5.9
+*Exercise*:
+
+#+begin_quote
+The treatment of machine operations above permits them to operate on
+labels as well as on constants and the contents of registers.  Modify
+the expression-processing procedures to enforce the condition that
+operations can be used only with registers and constants.
+#+end_quote
+
+*Answer*:
+
+(
+
+(What is passing label values to operations useful for?)
+
+Here is an example machine which uses a label in a simple operation
+(which simply prints back the value receveid):
+
+#+begin_src scheme
+  (define gp-machine
+    (make-machine
+     '(a)
+     (list (list '>= >=)
+           (list '+ +)
+           (list 'print-val (lambda (a) (display a) (display "\n"))))
+     '(beginning
+       lab
+        (perform (op print-val) (label lab))
+        done)))
+#+end_src
+
+)
+
+#+begin_src scheme
+  (define (make-operation-exp exp machine labels operations)
+    (let ((op (lookup-prim (operation-exp-op exp) operations))
+          (aprocs
+           (map (lambda (e)
+                  (if (label-exp? e)
+                      (error "Cannot use labels as operation operands")
+                      (make-primitive-exp e machine labels)))
+                (operation-exp-operands exp))))
+      (lambda ()
+        (apply op (map (lambda (p) (p)) aprocs)))))
+#+end_src
+
 *** Example:
 Putting together the code and the gcd example which was given:
 
