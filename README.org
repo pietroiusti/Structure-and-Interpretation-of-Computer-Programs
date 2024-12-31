@@ -16653,7 +16653,61 @@ removed to make a faster machine.  Where are these instructions?
 - Stack operations
   - ~(save <REGISTER-NAME>)~
   - ~(restore <REGISTER-NAME>)~
+*** Some tests/exmaples
+#+begin_src scheme
+  (define gp-machine
+    (make-machine
+     '(a b c)
+     (list (list '= =)
+           (list 'print-message (lambda () (display "hello there\n")))
+           (list 'gp-foo (lambda (a b)
+                           (display "first arg:")
+                           (display a)
+                           (display "\n")
+                           (display "second arg:")
+                           (display b)
+                           (display "\n")))
+           (list 'identity (lambda (el) el))
+           (list 'return-5 (lambda () 5)))
+     '(beginning
+        (assign a (const 10))
+        (assign b (reg a))
+        (test (op =) (reg a) (reg b))
+        (branch (label test-positive))
+        (assign c (op return-5))
+        (goto (label done))
+        test-positive
+        (assign c (const 9))
+        (perform (op print-message))
+        (perform (op gp-foo) (const 1) (const 2))
+        (assign c (op identity) (reg a))
+        done)))
 
+  (start gp-machine)
+  (get-register-contents gp-machine 'c)
+#+end_src
+
+Loop example:
+
+#+begin_src scheme
+  (define gp-machine
+    (make-machine
+     '(a b c)
+     (list (list '>= >=)
+           (list '+ +)
+           (list 'print-val (lambda (a) (display a) (display "\n"))))
+     '(beginning
+        (assign a (const 0))
+        gp-test
+        (test (op >=) (reg a) (const 10))
+        (branch (label done))
+        (perform (op print-val) (reg a))
+        (assign a (op +) (reg a) (const 1))
+        (goto (label gp-test))
+        done)))
+
+  (start gp-machine)
+#+end_src
 ** 5.2 A Register-Machine Simulator
 [ From the beginning of chapter 5:
 
@@ -17172,6 +17226,14 @@ procedures, which are used by ~make-assign~.
     (set-contents! pc (cdr (get-contents pc))))
 #+end_src
 
+~Make-test~ is the generator for ~test~ instructions. Similarly to
+~make-assign~, it returns an execution procedure --- in this case, an
+execution procedure for the relevant ~assign~ instruction. Such a
+procedure is called at simulation time. It sets the content of ~flag~
+and advances ~pc~. The content of ~flag~ is updated by setting it to
+the value returned by a ~condition-proc~ which is generated at
+assembly time.
+
 #+begin_src scheme
   (define (make-test inst machine labels operations flag pc)
     (let ((condition (test-condition inst)))
@@ -17188,6 +17250,12 @@ procedures, which are used by ~make-assign~.
     (cdr test-instruction))
 #+end_src
 
+~Make-branch~ returns an execution procedure which, depending on the
+content of ~flag~, either updates sets ~pc~ to the branch destination
+(if the branch is taken) or simply adavances ~pc~ (if the branch is
+not taken). The destination branch must be a label. The labels is look
+up only once at assembly time.
+
 #+begin_src scheme
   (define (make-branch inst machine labels flag pc)
     (let ((dest (branch-dest inst)))
@@ -17203,6 +17271,9 @@ procedures, which are used by ~make-assign~.
   (define (branch-dest branch-instruction)
     (cadr branch-instruction))
 #+end_src
+
+~Make-goto~ is the generator for unconditional branches (~goto~s). In
+this case the destination can be either a label or a register.
 
 #+begin_src scheme
   (define (make-goto inst machine labels pc)
@@ -17225,6 +17296,8 @@ procedures, which are used by ~make-assign~.
     (cadr goto-instruction))
 #+end_src
 
+~save~ and ~restore~.
+
 #+begin_src scheme
   (define (make-save inst machine stack pc)
     (let ((reg (get-register machine
@@ -17243,6 +17316,10 @@ procedures, which are used by ~make-assign~.
   (define (stack-inst-reg-name stack-instruction)
     (cadr stack-instruction))
 #+end_src
+
+~Make-perform~ generates the execution procedure for an action. The
+procedure is called at simulation time to perform the action and
+adavance ~pc~.
 
 #+begin_src scheme
   (define (make-perform inst machine labels operations pc)
