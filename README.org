@@ -16627,27 +16627,32 @@ removed to make a faster machine.  Where are these instructions?
   know that the relevant value is, in one case, n-1 and, in the other
   case, n-2.
 *** 5.1.5 Instruction Summary
-- ~(assign <REGISTER-NAME> (reg <REGISTER-NAME>))~
+- Possible inputs:
+  - ~(reg <REGISTER-NAME>)~
+  - ~(const <CONSTANT-VALUE>)~
 
-- ~(assign <REGISTER-NAME> (const <CONSTANT-VALUE>))~
+- Assigning a value to a register:
+  - ~(assign <REGISTER-NAME> (reg <REGISTER-NAME>))~
+  - ~(assign <REGISTER-NAME> (const <CONSTANT-VALUE>))~
+  - ~(assign <REGISTER-NAME> (op <OPERATION-NAME>) <INPUT_1> ... <INPUT_N>)~
+  - ~(assign <REGISTER-NAME> (label <LABEL-NAME>))~
 
-- ~(assign <REGISTER-NAME> (op <OPERATION-NAME>) <INPUT_1> ... <INPUT_N>)~
+- Performing an operation:
+  - ~(perform (op <OPERATION-NAME>) <INPUT_1> ... <INPUT_N>)~
 
-- ~(perform (op <OPERATION-NAME>) <INPUT_1> ... <INPUT_N>)~
+- Performing a test:
+  - ~(test (op <OPERATION-NAME>) <INPUT_1> ... <INPUT_N>)~
 
-- ~(test (op <OPERATION-NAME>) <INPUT_1> ... <INPUT_N>)~
+- Conditional branching:
+  - ~(branch (label <LABEL-NAME>))~
 
-- ~(branch (label <LABEL-NAME>))~
+- Unconditional branching:
+  - ~(goto (label <LABEL-NAME>))~
+  - ~(goto (reg <REGISTER-NAME>))  ~
 
-- ~(goto (label <LABEL-NAME>))~
-
-- ~(assign <REGISTER-NAME> (label <LABEL-NAME>))~
-
-- ~(goto (reg <REGISTER-NAME>))~
-
-- ~(save <REGISTER-NAME>)~
-
-- ~(restore <REGISTER-NAME>)~
+- Stack operations
+  - ~(save <REGISTER-NAME>)~
+  - ~(restore <REGISTER-NAME>)~
 
 ** 5.2 A Register-Machine Simulator
 [ From the beginning of chapter 5:
