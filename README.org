@@ -17443,6 +17443,76 @@ Here is an example machine which uses a label in a simple operation
       (lambda ()
         (apply op (map (lambda (p) (p)) aprocs)))))
 #+end_src
+*** Exercise 5.10
+*Exercise*:
+
+#+begin_quote
+Design a new syntax for register-machine instructions and modify the
+simulator to use your new syntax.  Can you implement your new syntax
+without changing any part of the simulator except the syntax
+procedures in this section?
+#+end_quote
+
+*Answer*:
+
+- Syntax changes:
+  - 1.
+    #+begin_src scheme
+      (assign (reg <REGISTER-NAME>) ...)
+    #+end_src
+    instead of
+    #+begin_src scheme
+      (assign <REGISTER-NAME> ...)
+    #+end_src
+  - 2.
+    #+begin_src scheme
+      (op <OPERATION-NAME> <INPUT_1> ... <INPUT_N>)
+    #+end_src
+    instead of
+    #+begin_src scheme
+      ((op <OPERATION-NAME>) <INPUT_1> ... <INPUT_N>))
+    #+end_src
+
+- Changes in the code:
+  #+begin_src scheme
+    ;; redefined procedures:
+
+    (define (assign-reg-name assign-instruction)
+      (cadadr assign-instruction))
+
+    (define (operation-exp? exp)
+      (and (pair? exp) (tagged-list? exp 'op)))
+
+    (define (operation-exp-op operation-exp)
+      (cadr operation-exp))
+
+    (define (operation-exp-operands operation-exp)
+      (cddr operation-exp))
+  #+end_src
+
+- Rephrasing the gcd-machine given the new syntax:
+    #+begin_src scheme
+      (define gcd-machine
+        (make-machine
+         '(a b t)
+         (list (list 'rem remainder) (list '= =))
+         '(test-b
+           (test op = (reg b) (const 0))
+           (branch (label gcd-done))
+           (assign (reg t) op rem (reg a) (reg b))
+           (assign (reg a) (reg b))
+           (assign (reg b) (reg t))
+           (goto (label test-b))
+           gcd-done)))
+
+      (set-register-contents! gcd-machine 'a 206)
+
+      (set-register-contents! gcd-machine 'b 40)
+
+      (start gcd-machine)
+
+      (get-register-contents gcd-machine 'a)
+    #+end_src
 
 *** Example:
 Putting together the code and the gcd example which was given:
