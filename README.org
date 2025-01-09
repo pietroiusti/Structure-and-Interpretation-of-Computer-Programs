@@ -16614,8 +16614,8 @@ Answer:
   -           []  (before setting up the computation of fib(n-2))
   - [1|fib-done]  (setting up the computation of fib(n-2))
   -           []  (before computing fib(n-1) + fib(n-2))
-*** IN PROGRESS Exercise 5.6
-Exercise:
+*** Exercise 5.6
+*Exercise*:
 
 #+begin_quote
 Ben Bitdiddle observes that the Fibonacci machine's controller
@@ -16623,9 +16623,69 @@ sequence has an extra `save' and an extra `restore', which can be
 removed to make a faster machine.  Where are these instructions?
 #+end_quote
 
-- Hypothesis 1: we don't need to store the value of n. Because, we
-  know that the relevant value is, in one case, n-1 and, in the other
-  case, n-2.
+*Answer*:
+
+Those two instructions are the ~(restore continue)~ and ~(save
+continue)~ in ~after-fib-n-2~. Here I create a fib-machine without
+those two instructions and show that it works nonetheless:
+
+#+begin_src
+  ;; racket repl in emacs provided by racket-mode.el
+
+  repl.rkt> (define fib-machine
+              (make-machine
+               '(continue n val)
+               (list (list '+ +) (list '< <) (list '- -))
+               '(
+                 (assign continue (label fib-done))
+                 fib-loop
+                 (test (op <) (reg n) (const 2))
+                 (branch (label immediate-answer))
+                 (save continue)
+                 (assign continue (label afterfib-n-1))
+                 (save n)
+                 (assign n (op -) (reg n) (const 1))
+                 (goto (label fib-loop))
+                 afterfib-n-1
+                 (restore n)
+                 ;; (restore continue) <----------------------------------
+                 (assign n (op -) (reg n) (const 2))
+                 ;; (save continue)    <----------------------------------
+                 (assign continue (label afterfib-n-2))
+                 (save val)
+                 (goto (label fib-loop))
+                 afterfib-n-2
+                 (assign n (reg val))
+                 (restore val)
+                 (restore continue)
+                 (assign val
+                         (op +) (reg val) (reg n))
+                 (goto (reg continue))
+                 immediate-answer
+                 (assign val (reg n))
+                 (goto (reg continue))
+                 fib-done)))
+  repl.rkt> (set-register-contents! fib-machine 'n 4)
+  'done
+  repl.rkt> (start fib-machine)
+  'done
+  repl.rkt> (get-register-contents fib-machine 'val)
+  3
+  repl.rkt> (set-register-contents! fib-machine 'n 5)
+  'done
+  repl.rkt> (start fib-machine)
+  'done
+  repl.rkt> (get-register-contents fib-machine 'val)
+  5
+  repl.rkt> (set-register-contents! fib-machine 'n 6)
+  'done
+  repl.rkt> (start fib-machine)
+  'done
+  repl.rkt> (get-register-contents fib-machine 'val)
+  8
+  repl.rkt>
+#+end_src
+
 *** 5.1.5 Instruction Summary
 - Possible inputs:
   - ~(reg <REGISTER-NAME>)~
