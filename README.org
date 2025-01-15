@@ -17691,7 +17691,280 @@ procedures in this section?
 
       (get-register-contents gcd-machine 'a)
     #+end_src
+*** Exercise 5.11
+**** Exercise
+#+begin_quote
+When we introduced ~save~ and ~restore~ in section 5.1.4, we didn't
+specify what would happen if you tried to restore a register that was
+not the last one saved, as in the sequence
 
+#+begin_src scheme
+  (save y)
+  (save x)
+  (restore y)
+#+end_src
+
+There are several reasonable possibilities for the meaning of
+`restore':
+
+a. ~(restore y)~ puts into ~y~ the last value saved on the stack,
+regardless of what register that value came from.  This is the way our
+simulator behaves.  Show how to take advantage of this behavior to
+eliminate one instruction from the Fibonacci machine of section 5.1.4
+(see Figure 5.12).
+
+b. ~(restore y)~ puts into ~y~ the last value saved on the stack, but
+only if that value was saved from ~y~; otherwise, it signals an error.
+Modify the simulator to behave this way.  You will have to change
+~save~ to put the register name on the stack along with the value.
+
+c. ~(restore y)~ puts into ~y~ the last value saved from ~y~
+regardless of what other registers were saved after ~y~ and not
+restored.  Modify the simulator to behave this way.  You will have to
+associate a separate stack with each register.  You should make the
+~initialize-stack~ operation initialize all the register stacks.
+#+end_quote
+**** Answer
+***** a
+#+begin_src scheme
+  (define fib-machine
+    (make-machine
+     '(continue n val)
+     (list (list '+ +) (list '< <) (list '- -))
+     '(
+       (assign continue (label fib-done))
+       fib-loop
+       (test (op <) (reg n) (const 2))
+       (branch (label immediate-answer))
+       (save continue)
+       (assign continue (label afterfib-n-1))
+       (save n)
+       (assign n (op -) (reg n) (const 1))
+       (goto (label fib-loop))
+       afterfib-n-1
+       (restore n)
+       (restore continue)
+       (assign n (op -) (reg n) (const 2))
+       (save continue)
+       (assign continue (label afterfib-n-2))
+       (save val)
+       (goto (label fib-loop))
+       afterfib-n-2
+       ;;(assign n (reg val)) <---------------
+       ;;(restore val)        <---------------
+       (restore n)        ;;  <---------------
+       (restore continue)
+       (assign val
+               (op +) (reg val) (reg n))
+       (goto (reg continue))
+       immediate-answer
+       (assign val (reg n))
+       (goto (reg continue))
+       fib-done)))
+#+end_src
+
+It works. Here is the modified machine running:
+
+#+begin_src scheme
+  repl.rkt> (define fib-machine
+              (make-machine
+               '(continue n val)
+               (list (list '+ +) (list '< <) (list '- -))
+               '(
+                 (assign continue (label fib-done))
+                 fib-loop
+                 (test (op <) (reg n) (const 2))
+                 (branch (label immediate-answer))
+                 (save continue)
+                 (assign continue (label afterfib-n-1))
+                 (save n)
+                 (assign n (op -) (reg n) (const 1))
+                 (goto (label fib-loop))
+                 afterfib-n-1
+                 (restore n)
+                 (restore continue)
+                 (assign n (op -) (reg n) (const 2))
+                 (save continue)
+                 (assign continue (label afterfib-n-2))
+                 (save val)
+                 (goto (label fib-loop))
+                 afterfib-n-2
+                 ;;(assign n (reg val)) <---------------
+                 ;;(restore val)        <---------------
+                 (restore n)        ;;  <---------------
+                 (restore continue)
+                 (assign val
+                         (op +) (reg val) (reg n))
+                 (goto (reg continue))
+                 immediate-answer
+                 (assign val (reg n))
+                 (goto (reg continue))
+                 fib-done)))
+  repl.rkt> (set-register-contents! fib-machine 'n 4)
+  'done
+  repl.rkt> (start fib-machine)
+  'done
+  repl.rkt> (get-register-contents fib-machine 'val)
+  3
+  repl.rkt> (set-register-contents! fib-machine 'n 5)
+  'done
+  repl.rkt> (start fib-machine)
+  'done
+  repl.rkt> (get-register-contents fib-machine 'val)
+  5
+  repl.rkt> (set-register-contents! fib-machine 'n 6)
+  'done
+  repl.rkt> (start fib-machine)
+  'done
+  repl.rkt> (get-register-contents fib-machine 'val)
+  8
+  repl.rkt>
+#+end_src
+***** b
+I have:
+
+- modified the definition of ~push~ within ~make-stack~:
+  #+begin_src scheme
+    (define (make-stack)
+      ;;...
+      (define (push x reg-name)
+        (let ((obj (cons x reg-name)))
+          (set! s (cons obj s))))
+      ;;...
+      ))
+  #+end_src
+
+- modified ~push~:
+  #+begin_src scheme
+    (define (push stack value reg-name)
+      ((stack 'push) value reg-name))
+  #+end_src
+
+- created a couple of helper functions (one to extract the value of
+  the object stored in the stack; the other to extract the name of the
+  corresponding register)
+  #+begin_src scheme
+    (define (stack-obj-value stack-obj)
+      (car stack-obj))
+
+    (define (stack-obj-reg-name stack-obj)
+      (cdr stack-obj))
+  #+end_src
+
+- modified the ~make-save~ and the ~make-restore~ procedures:
+
+  #+begin_src scheme
+    (define (make-save inst machine stack pc)
+      (let ((reg-name (stack-inst-reg-name inst)))
+        (let ((reg (get-register machine reg-name)))
+          (lambda ()
+            (push stack (get-contents reg) reg-name)
+            (advance-pc pc)))))
+  #+end_src
+
+  #+begin_src scheme
+    (define (make-restore inst machine stack pc)
+      (let ((reg (get-register machine
+                               (stack-inst-reg-name inst))))
+        (lambda ()
+          (let ((stack-obj (pop stack)))
+            (let ((stack-val (stack-obj-value stack-obj))
+                  (stack-reg-name (stack-obj-reg-name stack-obj)))
+              (if (not (eq? (stack-inst-reg-name inst)
+                            stack-reg-name))
+                  (error "Cannot restore value in different register. Original register: ...; Attempting to save in ...")
+                  (begin
+                    (set-contents! reg stack-val)
+                    (advance-pc pc))))))))
+  #+end_src
+
+Notice that the error is raised at simulation time.
+
+***** c
+We can treat ~s~ as a list of stacks; each stacks being associated to
+a register.
+
+A register stack in the list can be represented as a list whose ~car~
+is the name of the relevant register and whose ~cdr~ is the list of
+the elements in the stack.
+
+We can establish that, if a register ~foo~ has no stack in the list,
+then its stack is empty.
+
+Given so, we can keep the ~initialize-stack~ operation as it is. By
+setting the list of register stacks to an empty list it makes it the
+case that all registers have an empty stack.
+
+When a value ~bar~ for register ~foo~ is saved and there is no ~foo~
+stack in the list of stacks, then a ~foo~ stack is created and ~bar~
+saved into it.
+
+Modified parts of the code:
+#+begin_src scheme
+  (define (make-stack);; actually it's a list of stacks (los) now
+    (let ((s '()))
+      (define (find-reg-stack los name)
+        (cond ((null? los)
+               '())
+              ((eq? (caar los) name) ;; check tag
+               (car los))
+              (else
+               (find-reg-stack (cdr los) name))))
+      (define (push-in-los x reg-name)
+        (display "push-in-los ")
+        (let ((reg-stack (find-reg-stack s reg-name)))
+          (if (null? reg-stack) ;; register stack not found
+              ;; create reg-stack
+              ;; push value
+              ;; add reg-stack to los
+              (let ((new-reg-stack (cons reg-name
+                                         (cons x '()))))
+                (set! s (cons new-reg-stack s)))
+              ;; else
+              ;; push-value in reg-stack
+              (set-cdr! reg-stack (cons x (cdr reg-stack))))))
+      (define (pop-from-los reg-name)
+        (display "pop-from-los ")
+        (let ((reg-stack (find-reg-stack s reg-name)))
+          (if (null? reg-stack) ;; not found
+              (error "Empty stack --- POP")
+              (if (null? (cdr reg-stack))
+                  (error "Empty stack --- POP")
+                  (let ((top (car (cdr reg-stack))))
+                    (set-cdr! reg-stack (cdr (cdr reg-stack)))
+                    top)))))
+      (define (initialize)
+        (set! s '())
+        'done)
+      (define (dispatch message)
+        (cond ((eq? message 'push) push-in-los)
+              ((eq? message 'pop) pop-from-los)
+              ((eq? message 'initialize) (initialize))
+              (else (error "Unknown request -- STACK"
+                           message))))
+      dispatch))
+
+  (define (pop stack reg-name)
+    ((stack 'pop) reg-name))
+
+  (define (push stack value reg-name)
+    ((stack 'push) value reg-name))
+
+  (define (make-save inst machine stack pc)
+    (let ((reg-name (stack-inst-reg-name inst)))
+      (let ((reg (get-register machine
+                               reg-name)))
+        (lambda ()
+          (push stack (get-contents reg) reg-name)
+          (advance-pc pc)))))
+
+  (define (make-restore inst machine stack pc)
+    (let ((reg-name (stack-inst-reg-name inst)))
+      (let ((reg (get-register machine reg-name)))
+        (lambda ()
+          (set-contents! reg (pop stack reg-name))
+          (advance-pc pc)))))
+#+end_src
 *** Example:
 Putting together the code and the gcd example which was given:
 
