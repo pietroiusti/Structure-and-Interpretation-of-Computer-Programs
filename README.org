@@ -16447,90 +16447,93 @@ sqrt-done)
      ;;
      ;; When we are done computing it, we have finished.
      ;;
-     ;; The `continue` register stores the address of the instructions we
-     ;; have to perform when we are done doing something.
+     ;; The `continue` register stores the address of the instruction we
+     ;; have to execute when we are done doing something.
      ;;
-     ;; In this case, when we are done, we have to do nothing. So we set
-     ;; `continue` to `fib-done`.
+     ;; When we are done with computing (fib n), we have nothing left to
+     ;; do. So we set `continue` to `fib-done`.
 
      (assign continue (label 'fib-done))
-     ;; Then we initiate the computation of (fib n). We will come back to
-     ;; this piece of code when, if ever, n will have lower values; so we
-     ;; use a label.
+     ;; Then we initiate the computation of `(fib n)`. We will come back
+     ;; to this piece of code when, if ever, n will have lower values than
+     ;; the initial one; so we use a label.
 
      fib-loop
      ;; We test whether n < 2.
      (test (op <) (reg n) (const 2))
      (branch (label immediate-answer))
-     ;; If don't have the answer for (fib n) we need to recur. When we
-     ;; recur, we first compute (fib (- n 1)), and then we compute (fib (-
-     ;; n 2)), and finally we add the two results.
+     ;; Either we have the answer for `(fib n)` or we don't. If we do,
+     ;; then we jump to the `immediate-answer` label with the instruction
+     ;; above. If don't, then we need to recur. When we recur, we first
+     ;; compute `(fib (- n 1))`, and then we compute `(fib (- n 2))`, and
+     ;; finally we add the two results.
      ;;
-     ;; Since we are we have to postpone the computation of (fib n), let's
-     ;; save the current values of `n` and `continue` onto the stack, so
-     ;; we can come back to them when we need to do so. Once those values
-     ;; are saved in the stack, we can update n and continue. We are going
-     ;; to compute (fib (- n 1)) so we set n to n-1. Once we are done with
-     ;; that, we will be done computing the (fib (- n 1)) so we set the
-     ;; `continue` register to the 'after-fib-n-1 label.
+     ;; Since we have to postpone the computation of `(fib n)`, let's save
+     ;; the current values of `n` and `continue` onto the stack, so we can
+     ;; come back to them when we need to do so. Once those values are
+     ;; saved in the stack, we can update `n` and `continue`. We are going
+     ;; to compute `(fib (- n 1))` so we set `n` to `n-1`. Once we are
+     ;; done with that, we will be done computing the `(fib (- n 1))` so
+     ;; we set the the value of the `continue` register to the
+     ;; `after-fib-n-1` label.
      (save continue)
      (assign continue (label after-fib-n-1))
      (assign n (op -) (reg n) (const 1))
      (save n)
-     ;; Now we can start the computation of (fib (- n 1)) so we loop back
-     ;; to the portion of code which starts the compuation of a fib.
+     ;; Now we can start the computation of `(fib (- n 1))` so we loop
+     ;; back to the portion of code which starts the compuation of a fib.
      (goto (label fib-loop))
 
      after-fib-n-1
-     ;; If we are here it means we have just put the value of a (fib (- n
-     ;; 2)) in the `val` register.
+     ;; If we are here, then it means we have just put the value of a
+     ;; `(fib (- n 1))` in the `val` register.
      ;;
      ;; Given the so, we still have to compute the value of the relevant
-     ;; (fib (- n 2)), before we can compute the value of the relevant
-     ;; (fib n) --- which is the sum of (fib (- n 1)) and (fib (- n 2)).
-     ;;
+     ;; `(fib (- n 2))`, before we can compute the value of the relevant
+     ;; (fib n) --- which, as we have already said, is the sum of `(fib (-
+     ;; n 1))` and `(fib (- n 2))`.
      (restore n)
      (restore continue)
 
      (save continue)
      (assign continue (label after-fib-n-2))
 
-     ;; We want to save the result of (fib (- n 1)), which we have stored
-     ;; in val, since val will be used to store the result of (fib (- n
-     ;; 2))
+     ;; We want to save the result of `(fib (- n 1))`, which we have
+     ;; stored in val, since val will be used to store the result of `(fib
+     ;; (- n 2))`
      (save val)
      (goto (label fib-loop))
 
      after-fib-n-2
-     ;; If we are here it means we have just put the value of a (fib (- n
-     ;; 2)) in the `val` register.
+     ;; If we are here, then it means we have just put the value of a
+     ;; `(fib (- n 2))` in the `val` register.
      ;;
-     ;; Remember, moreover, that the value of (fib (- n 1)) is stored at
-     ;; the top of the stack. We want to restore the value of (fib (- n
-     ;; 1)), but we don't want to overwrite and lose the value currently
-     ;; stored in the `val` register, so we moved the value stored in the
+     ;; Remember, moreover, that the value of `(fib (- n 1))` is stored at
+     ;; the top of the stack. We want to restore the value of `(fib (- n
+     ;; 1))`, but we don't want to overwrite and lose the value currently
+     ;; stored in the `val` register, so we move the value stored in the
      ;; the `val` register into the `n` register.
      (assign n (reg val))
      (restore val)
      ;; we restore `continue` so we know what to do once we have computed
-     ;; (fib n).
+     ;; `(fib n)`.
      (restore continue)
-     ;; the value of (fib (- n 1)) is in the `val` register and the value
-     ;; of (fib (- n 1)) is in the `n` register. We can now add them up to
-     ;; get the value of (fib n)
+     ;; the value of `(fib (- n 1))` is in the `val` register and the
+     ;; value of `(fib (- n 1))` is in the `n` register. We can now add
+     ;; them up to get the value of `(fib n)`
      (assign val (op +) (reg val) (reg n))
      (goto (reg continue))
 
      immediate-answer
-     ;; If we are here it means that we are computing (fib n) where n < 2
-     ;; The result of that is n. We put the result into the `val`
-     ;; register.
+     ;; If we are here, then it means that we are computing `(fib n)`
+     ;; where n < 2. The result of that is n. We put the result into the
+     ;; `val` register.
      (assign val (reg n))
      ;; now that the result is in the `val` register, we need to know what
      ;; to do. In order to know what to do, we need to know what result is
      ;; have computed. There are three possibilities: 1) we are done; 2)
-     ;; we have computed the value of a (fib (- n 1)) recursion; 3) we
-     ;; have computed the value of a (fib (- n 2)) recursion. The
+     ;; we have computed the value of a `(fib (- n 1))` recursion; 3) we
+     ;; have computed the value of a `(fib (- n 2))` recursion. The
      ;; `continue` register is expected to hold the relevant label to let
      ;; us know what value we have just finished computing.
      (goto (reg continue))
