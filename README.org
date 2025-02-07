@@ -17997,12 +17997,6 @@ machine from Figure 5-12 and examine the lists you constructed.
 
 Temporary work:
 
-What about modifying ~update-insts!~?  That procedure iterates over
-each instruction (and label) of the controller text and mutates each
-element of the instruction sequence which stored in the model. We can
-make ~update-insts!~ do more; more specifially we can make it
-construct and store the relevant lists.
-
 #+begin_src scheme
   (require sicp)
 
@@ -18162,26 +18156,46 @@ construct and store the relevant lists.
                   (cons (cons (make-instruction next-inst) insts)
                         labels)))))))
 
-  (define (store-additional-info inst machine)
+  ;; add instruction to list of sorted instructions. Given exercises
+  ;; instructions it should not add duplicates and it should insert
+  ;; respecting alphabetic order of instruction type ('assign', 'goto',
+  ;; etc.) I'm ignoring that for now.
+  (define (add-inst-to-sorted-insts inst-text list)
+    (cons inst-text list))
 
-    (display "I'm going to do stuff!\n")
+  (define (update-sorted-instructions inst-text current-list)
+    ;; inst is an inst obj: (text . <#proc>)
+    (add-inst-to-sorted-insts inst-text current-list))
 
-    (display inst)
+  (define (update-entry-point-regs inst-text current-list)
+    (if (and (eq? (car inst-text) 'goto)
+             (eq? (caadr inst-text) 'reg))
+        ;; actually we should insert without creating duplicated here
+        ;; too
+        (cons (cadadr inst-text) current-list)
+        current-list))
 
-    ;; testing the message-passing interface
-    ((machine 'install-sorted-instructions) '(install sorted instructions))
+  (define (update-saved-or-restored-regs inst-text current-list)
+    (if (or (eq? (car inst-text) 'save)
+            (eq? (car inst-text) 'restore))
+        ;; actually we should insert without creating duplicated here
+        ;; too
+        (cons (cadr inst-text) current-list)
+        current-list))
 
-    ((machine 'install-entry-point-regs) '(install entry point regs))
-
-    ((machine 'install-saved-or-restored-regs) '(install saved or restored regs))
-
-    ((machine 'install-reg-sources) '(install reg sources)))
+  (define (update-reg-sources inst current-list)
+    ;; TODO
+    current-list)
 
   (define (update-insts! insts labels machine)
     (let ((pc (get-register machine 'pc))
           (flag (get-register machine 'flag))
           (stack (machine 'stack))
-          (ops (machine 'operations)))
+          (ops (machine 'operations))
+          (sorted-instructions '())
+          (entry-point-regs '())
+          (saved-restored-regs '())
+          (reg-sources '()))
       (for-each
        (lambda (inst)
          (set-instruction-execution-proc!
@@ -18189,8 +18203,21 @@ construct and store the relevant lists.
           (make-execution-procedure
            (instruction-text inst) labels machine
            pc flag stack ops))
-         (store-additional-info inst machine))
-       insts)))
+         (let ((inst-text (instruction-text inst)))
+           ;; add info into the local lists
+           (set! sorted-instructions
+                 (update-sorted-instructions inst-text sorted-instructions))
+           (set! entry-point-regs
+                 (update-entry-point-regs inst-text entry-point-regs))
+           (set! saved-restored-regs
+                 (update-saved-or-restored-regs inst-text saved-restored-regs))
+           (set! reg-sources
+                 (update-reg-sources inst-text reg-sources))))
+       insts)
+      ((machine 'install-sorted-instructions) sorted-instructions)
+      ((machine 'install-entry-point-regs) entry-point-regs)
+      ((machine 'install-saved-or-restored-regs) saved-restored-regs)
+      ((machine 'install-reg-sources) reg-sources)))
 
   (define (make-instruction text)
     (cons text '()))
@@ -18384,25 +18411,64 @@ construct and store the relevant lists.
           (cadr val)
           (error "Unknown operation -- ASSEMBLE" symbol))))
 
-  ;; example
-  (define gcd-machine
-    (make-machine
-     '(a b t)
-     (list (list 'rem remainder) (list '= =))
-     '(test-b
-       (test (op =) (reg b) (const 0))
-       (branch (label gcd-done))
-       (assign t (op rem) (reg a) (reg b))
-       (assign a (reg b))
-       (assign b (reg t))
-       (goto (label test-b))
-       gcd-done)))
-  (set-register-contents! gcd-machine 'a 206) ;; => done
-  (set-register-contents! gcd-machine 'b 40) ;; => done
-  (start gcd-machine) ;; => done
-  (get-register-contents gcd-machine 'a) ;; => 2
-#+end_src
+  ;; example: gcd-machine
+  ;; (define gcd-machine
+  ;;   (make-machine
+  ;;    '(a b t)
+  ;;    (list (list 'rem remainder) (list '= =))
+  ;;    '(test-b
+  ;;      (test (op =) (reg b) (const 0))
+  ;;      (branch (label gcd-done))
+  ;;      (assign t (op rem) (reg a) (reg b))
+  ;;      (assign a (reg b))
+  ;;      (assign b (reg t))
+  ;;      (goto (label test-b))
+  ;;      gcd-done)))
+  ;; (set-register-contents! gcd-machine 'a 206) ;; => done
+  ;; (set-register-contents! gcd-machine 'b 40) ;; => done
+  ;; (start gcd-machine) ;; => done
+  ;; (get-register-contents gcd-machine 'a) ;; => 2
 
+
+  ;; example: fib-machine
+  (define fib-machine
+    (make-machine
+     '(continue n val)
+     (list (list '+ +) (list '< <) (list '- -))
+     '(
+       (assign continue (label fib-done))
+       fib-loop
+       (test (op <) (reg n) (const 2))
+       (branch (label immediate-answer))
+       (save continue)
+       (assign continue (label afterfib-n-1))
+       (save n)
+       (assign n (op -) (reg n) (const 1))
+       (goto (label fib-loop))
+       afterfib-n-1
+       (restore n)
+       (restore continue)
+       (assign n (op -) (reg n) (const 2))
+       (save continue)
+       (assign continue (label afterfib-n-2))
+       (save val)
+       (goto (label fib-loop))
+       afterfib-n-2
+       (assign n (reg val))
+       (restore val)
+       (restore continue)
+       (assign val
+               (op +) (reg val) (reg n))
+       (goto (reg continue))
+       immediate-answer
+       (assign val (reg n))
+       (goto (reg continue))
+       fib-done)))
+
+  (set-register-contents! fib-machine 'n 4)
+  (start fib-machine)
+  (get-register-contents fib-machine 'val)
+#+end_src
 
 *** Example:
 Putting together the code and the gcd example which was given:
