@@ -18156,16 +18156,57 @@ Temporary work:
                   (cons (cons (make-instruction next-inst) insts)
                         labels)))))))
 
-  ;; add instruction to list of sorted instructions. Given exercises
-  ;; instructions it should not add duplicates and it should insert
-  ;; respecting alphabetic order of instruction type ('assign', 'goto',
-  ;; etc.) I'm ignoring that for now.
-  (define (add-inst-to-sorted-insts inst-text list)
-    (cons inst-text list))
+  ;; I'm using this list to insert alphabetically in the
+  ;; sorted-instructions list
+  (define insts-names-in-order
+    '(assign branch goto perform restore save test))
+
+  ;; compare instruction alphabetically
+  ;; return 0 if i1 = i2
+  ;;        1 if i1 > i2
+  ;;       -1 if i1 < i2
+  (define (inst-alph-cmp i1 i2)
+    (define (iter insts-names-in-order)
+      (cond ((eq? i1 i2)
+             0)
+            ((eq? i1 (car insts-names-in-order))
+             -1)
+            ((eq? i2 (car insts-names-in-order))
+             1)
+            (else
+             (iter (cdr insts-names-in-order)))))
+    (iter insts-names-in-order))
+
+  ;; return true if instruction type i1 comes alphabetically before
+  ;; instruction type i2
+  (define (comes-before? i1 i2)
+    (= (inst-alph-cmp i1 i2) -1))
+
+  ;; return true if instruction type i1 comes alphabetically after
+  ;; instruction type i2
+  (define (comes-after? i1 i2)
+    (= (inst-alph-cmp i1 i2) 1))
+
+  ;; insert inst (alphabetically using the inst type) into list of insts
+  ;; `items` if it's not already there
+  (define (insert-inst-to-sorted-insts inst-text items)
+    (let ((name (car inst-text)))
+      (cond ((null? items)
+             (cons inst-text items))
+            ((comes-before? name (caar items))
+             (cons inst-text items))
+            ((equal? inst-text (car items)) ;; same inst
+             items)
+            ((eq? name (caar items)) ;; same inst type but not same inst
+             (cons (car items)
+                   (insert-inst-to-sorted-insts inst-text (cdr items))))
+            ((comes-after? name (caar items))
+             (cons (car items)
+                   (insert-inst-to-sorted-insts inst-text (cdr items)))))))
 
   (define (update-sorted-instructions inst-text current-list)
     ;; inst is an inst obj: (text . <#proc>)
-    (add-inst-to-sorted-insts inst-text current-list))
+    (insert-inst-to-sorted-insts inst-text current-list))
 
   (define (update-entry-point-regs inst-text current-list)
     (if (and (eq? (car inst-text) 'goto)
@@ -18410,25 +18451,6 @@ Temporary work:
       (if val
           (cadr val)
           (error "Unknown operation -- ASSEMBLE" symbol))))
-
-  ;; example: gcd-machine
-  ;; (define gcd-machine
-  ;;   (make-machine
-  ;;    '(a b t)
-  ;;    (list (list 'rem remainder) (list '= =))
-  ;;    '(test-b
-  ;;      (test (op =) (reg b) (const 0))
-  ;;      (branch (label gcd-done))
-  ;;      (assign t (op rem) (reg a) (reg b))
-  ;;      (assign a (reg b))
-  ;;      (assign b (reg t))
-  ;;      (goto (label test-b))
-  ;;      gcd-done)))
-  ;; (set-register-contents! gcd-machine 'a 206) ;; => done
-  ;; (set-register-contents! gcd-machine 'b 40) ;; => done
-  ;; (start gcd-machine) ;; => done
-  ;; (get-register-contents gcd-machine 'a) ;; => 2
-
 
   ;; example: fib-machine
   (define fib-machine
