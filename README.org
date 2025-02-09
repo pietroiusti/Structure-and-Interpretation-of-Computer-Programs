@@ -17995,7 +17995,7 @@ machine from Figure 5-12 and examine the lists you constructed.
 
 *Answer*:
 
-Temporary work:
+Working solution to explain:
 
 #+begin_src scheme
   (require sicp)
@@ -18187,8 +18187,8 @@ Temporary work:
   (define (comes-after? i1 i2)
     (= (inst-alph-cmp i1 i2) 1))
 
-  ;; insert inst (alphabetically using the inst type) into list of insts
-  ;; `items` if it's not already there
+  ;; insert inst into current list of sorted insts. In alphabetic
+  ;; order. No duplicates.
   (define (insert-inst-to-sorted-insts inst-text items)
     (let ((name (car inst-text)))
       (cond ((null? items)
@@ -18204,6 +18204,15 @@ Temporary work:
              (cons (car items)
                    (insert-inst-to-sorted-insts inst-text (cdr items)))))))
 
+  (define (insert-no-duplicates x items)
+    (cond ((null? items)
+           (cons x items))
+          ((eq? x (car items))
+           items)
+          (else
+           (cons (car items)
+                 (insert-no-duplicates x (cdr items))))))
+
   (define (update-sorted-instructions inst-text current-list)
     ;; inst is an inst obj: (text . <#proc>)
     (insert-inst-to-sorted-insts inst-text current-list))
@@ -18211,22 +18220,45 @@ Temporary work:
   (define (update-entry-point-regs inst-text current-list)
     (if (and (eq? (car inst-text) 'goto)
              (eq? (caadr inst-text) 'reg))
-        ;; actually we should insert without creating duplicated here
-        ;; too
-        (cons (cadadr inst-text) current-list)
+        (let ((reg-name (cadadr inst-text)))
+          (insert-no-duplicates reg-name current-list))
         current-list))
 
   (define (update-saved-or-restored-regs inst-text current-list)
     (if (or (eq? (car inst-text) 'save)
             (eq? (car inst-text) 'restore))
-        ;; actually we should insert without creating duplicated here
-        ;; too
-        (cons (cadr inst-text) current-list)
+        (let ((reg-name (cadr inst-text)))
+          (insert-no-duplicates reg-name current-list))
         current-list))
 
-  (define (update-reg-sources inst current-list)
-    ;; TODO
-    current-list)
+  (define (insert-no-equal-duplicates x items)
+    (cond ((null? items)
+           (cons x items))
+          ((equal? x (car items))
+           items)
+          (else (cons (car items)
+                      (insert-no-equal-duplicates x (cdr items))))))
+
+  (define (update-reg-sources inst-text current-list)
+    (if (eq? (car inst-text) 'assign)
+        (insert-source inst-text current-list)
+        current-list))
+
+  (define (insert-source inst-text current-list)
+    (let ((reg-name (cadr inst-text))
+          (source (cddr inst-text)))
+      (cond ((null? current-list)
+             (list (list reg-name
+                         source)))
+            ((eq? (caar current-list) reg-name)
+             (list (cons reg-name
+                         (cons (insert-no-equal-duplicates
+                                source
+                                (cdar current-list))
+                               (cdr current-list)))))
+            (else ;; not the same reg
+             (cons (car current-list)
+                   (insert-source inst-text (cdr current-list)))))))
 
   (define (update-insts! insts labels machine)
     (let ((pc (get-register machine 'pc))
