@@ -18009,9 +18009,15 @@ Here is the code I've modified or added:
   (require sicp)
 
   ;; make copy of object
+  ;;
+  ;; I use to it to prevent mutations of the lists stored in the model
   (define (make-copy obj)
-    ;; todo
-    obj)
+    (cond ((null? obj)
+           '())
+          ((pair? obj)
+           (cons (make-copy (car obj))
+                 (make-copy (cdr obj))))
+          (else obj)))
 
   (define (make-new-machine)
     (let ((pc (make-register 'pc))
@@ -18277,9 +18283,15 @@ Here is the code I've modified or added:
     ((stack 'push) value))
 
   ;; make copy of object
+  ;;
+  ;; I use to it to prevent mutations of the lists stored in the model
   (define (make-copy obj)
-    ;; todo
-    obj)
+    (cond ((null? obj)
+           '())
+          ((pair? obj)
+           (cons (make-copy (car obj))
+                 (make-copy (cdr obj))))
+          (else obj)))
 
   (define (make-new-machine)
     (let ((pc (make-register 'pc))
