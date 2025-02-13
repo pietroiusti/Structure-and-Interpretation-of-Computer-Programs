@@ -18174,11 +18174,11 @@ Here is the code I've modified or added:
              (list (list reg-name
                          source)))
             ((eq? (caar current-list) reg-name)
-             (list (cons reg-name
-                         (cons (insert-no-equal-duplicates
-                                source
-                                (cdar current-list))
-                               (cdr current-list)))))
+             (cons (cons reg-name
+                         (insert-no-equal-duplicates
+                          source
+                          (cdar current-list)))
+                   (cdr current-list)))
             (else ;; not the same reg
              (cons (car current-list)
                    (insert-source inst-text (cdr current-list)))))))
@@ -18302,10 +18302,30 @@ These are the results with the fib-machine:
   saved-or-restored-regs:
   (continue n val)
 
-  reg-sources:
-  ((continue ((((label fib-done)) ((label afterfib-n-1))) ((label afterfib-n-2))) (n (((op -) (reg n) (const 1)) ((op -) (reg n) (const 2)))))
-   (n ((reg val)))
-   (val (((op +) (reg val) (reg n)) ((reg n)))))
+  reg-sources: ;; manually formatted to make structure explicit
+  ((continue
+
+    ((label fib-done))
+
+    ((label afterfib-n-1))
+
+    ((label afterfib-n-2)))
+
+
+   (n
+
+    ((op -) (reg n) (const 1))
+
+    ((op -) (reg n) (const 2))
+
+    ((reg val)))
+
+
+   (val
+
+    ((op +) (reg val) (reg n))
+
+    ((reg n))))
 #+end_src
 
 *** 5.12 entire code
@@ -18570,11 +18590,11 @@ These are the results with the fib-machine:
              (list (list reg-name
                          source)))
             ((eq? (caar current-list) reg-name)
-             (list (cons reg-name
-                         (cons (insert-no-equal-duplicates
-                                source
-                                (cdar current-list))
-                               (cdr current-list)))))
+             (cons (cons reg-name
+                         (insert-no-equal-duplicates
+                          source
+                          (cdar current-list)))
+                   (cdr current-list)))
             (else ;; not the same reg
              (cons (car current-list)
                    (insert-source inst-text (cdr current-list)))))))
