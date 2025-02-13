@@ -18217,6 +18217,97 @@ Here is the code I've modified or added:
       ((machine 'install-reg-sources) reg-sources)))
 #+end_src
 
+These are the results with the fib-machine:
+
+#+begin_src racket
+  (define fib-machine
+    (make-machine
+     '(continue n val)
+     (list (list '+ +) (list '< <) (list '- -))
+     '(
+       (assign continue (label fib-done))
+       fib-loop
+       (test (op <) (reg n) (const 2))
+       (branch (label immediate-answer))
+       (save continue)
+       (assign continue (label afterfib-n-1))
+       (save n)
+       (assign n (op -) (reg n) (const 1))
+       (goto (label fib-loop))
+       afterfib-n-1
+       (restore n)
+       (restore continue)
+       (assign n (op -) (reg n) (const 2))
+       (save continue)
+       (assign continue (label afterfib-n-2))
+       (save val)
+       (goto (label fib-loop))
+       afterfib-n-2
+       (assign n (reg val))
+       (restore val)
+       (restore continue)
+       (assign val
+               (op +) (reg val) (reg n))
+       (goto (reg continue))
+       immediate-answer
+       (assign val (reg n))
+       (goto (reg continue))
+       fib-done)))
+
+  (set-register-contents! fib-machine 'n 4)
+  (start fib-machine)
+  (get-register-contents fib-machine 'val)
+
+  (display "\nsorted instructions:\n")
+  (fib-machine 'sorted-instructions)
+
+  (display "\nentry-point-regs:\n")
+  (fib-machine 'entry-point-regs)
+
+  (display "\nsaved-or-restored-regs:\n")
+  (fib-machine 'saved-or-restored-regs)
+
+  (display "\nreg-sources:\n")
+  (fib-machine 'reg-sources)
+#+end_src
+
+#+begin_src scheme
+  done
+  done
+  3
+
+  sorted instructions:
+  ((assign continue (label fib-done))
+   (assign continue (label afterfib-n-1))
+   (assign n (op -) (reg n) (const 1))
+   (assign n (op -) (reg n) (const 2))
+   (assign continue (label afterfib-n-2))
+   (assign n (reg val))
+   (assign val (op +) (reg val) (reg n))
+   (assign val (reg n))
+   (branch (label immediate-answer))
+   (goto (label fib-loop))
+   (goto (reg continue))
+   (restore n)
+   (restore continue)
+   (restore val)
+   (save continue)
+   (save n)
+   (save val)
+   (test (op <) (reg n) (const 2)))
+
+  entry-point-regs:
+  (continue)
+
+  saved-or-restored-regs:
+  (continue n val)
+
+  reg-sources:
+  ((continue ((((label fib-done)) ((label afterfib-n-1))) ((label afterfib-n-2))) (n (((op -) (reg n) (const 1)) ((op -) (reg n) (const 2)))))
+   (n ((reg val)))
+   (val (((op +) (reg val) (reg n)) ((reg n)))))
+#+end_src
+
 *** 5.12 entire code
 
 #+begin_src scheme
