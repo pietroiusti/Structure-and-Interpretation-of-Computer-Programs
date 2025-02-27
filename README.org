@@ -20543,7 +20543,7 @@ I'm using the repl provided by racket-mode in Emacs.
   repl.rkt>
 #+end_src
 *** 5.2.4 Monitoring Machine Performance
-**** Example of code provided
+*** Example of code provided
 Authors provide some changes to let the machine simulator print some
 statistics.
 
@@ -20987,20 +20987,19 @@ about the fib-machine.
        immediate-answer
        (assign val (reg n))               ; base case:  _Fib_(n) = n
        (goto (reg continue))
-       fib-done)))
+       fib-done
+       (perform (op print-stack-statistics)))))
+
   (set-register-contents! fib-machine 'n 3)
 
   (start fib-machine)
 
   (get-register-contents fib-machine 'val)
 
-  ((fib-machine 'stack) 'print-statistics)
+  ;; done
 
-  ;; done
-  ;; done
+  ;; (total-pushes = 8 maximum-depth = 4)done
   ;; 2
-
-  ;; (total-pushes = 8 maximum-depth = 4)
 #+end_src
 ** 5.3 Storage Allocation and Garbage Collection
 [ From the beginning of chapter 5:
