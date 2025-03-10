@@ -22223,6 +22223,44 @@ Added/modified code:
   ;; ...
 
 #+end_src
+*** Comparing performance with scheme and js
+- fib of 25:
+  - virtual machine: 1779.344 ms
+    #+begin_src scheme
+      (define start-time (runtime))
+      (set-register-contents! fib-machine 'n 25)
+      (start fib-machine)
+      (define end (runtime))
+      (define elapsed-time (- end start-time))
+      (display elapsed-time)
+    #+end_src
+- racket sicp: 0.348 ms
+    #+begin_src scheme
+      (define (fib n)
+        (if (< n)
+            n
+            (+ (fib (- n 1)) (fib (- n 2)))))
+      (define start (runtime))
+      (fib 25)
+      (define end (runtime))
+      (define res (- end start))
+      (display res)
+    #+end_src
+
+- javascript (chromium): 5 ms
+
+    #+begin_src js
+      function fib(n) {
+        if (n < 2)
+          return n;
+        else
+          return fib(n-1) + fib(n-2);
+      }
+      let start = Date.now();
+      fib(25);
+      let end = Date.now();
+      console.log(end - start);
+    #+end_src
 ** 5.3 Storage Allocation and Garbage Collection
 [ From the beginning of chapter 5:
 #+begin_quote
