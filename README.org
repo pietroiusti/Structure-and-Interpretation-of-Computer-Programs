@@ -23122,3 +23122,173 @@ Here is all the code:
   ;; ;;; EC-Eval value:
   ;; (a b c d e f)
 #+end_src
+
+*** Exercise 5.23
+*Exercise*:
+
+#+begin_quote
+Extend the evaluator to handle derived expressions such as `cond',
+`let', and so on (section *Note 4-1-2::).  You may "cheat" and assume
+that the syntax transformers such as `cond->if' are available as
+machine operations. (fn: This isn't really cheating.  In an actual
+implementation built from scratch, we would use our explicit-control
+evaluator to interpret a Scheme program that performs source-level
+transformations like `cond->if' in a syntax phase that runs before
+execution.)
+#+end_quote
+
+*Answer*:
+
+In order to add support for ~let~, I have:
+
+- Defined ~cond?~ and ~cond->if~:
+  #+begin_src racket
+    (define (cond? exp) (tagged-list? exp 'cond))
+
+    (define (cond-clauses exp) (cdr exp))
+
+    (define (cond-else-clause? clause)
+      (eq? (cond-predicate clause) 'else))
+
+    (define (cond-predicate clause) (car clause))
+
+    (define (cond-actions clause) (cdr clause))
+
+    (define (cond->if exp)
+      (expand-clauses (cond-clauses exp)))
+
+    (define (expand-clauses clauses)
+      (if (null? clauses)
+          'false                          ; no `else' clause
+          (let ((first (car clauses))
+                (rest (cdr clauses)))
+            (if (cond-else-clause? first)
+                (if (null? rest)
+                    (sequence->exp (cond-actions first))
+                    (error "ELSE clause isn't last -- COND->IF"
+                           clauses))
+                (make-if (cond-predicate first)
+                         (sequence->exp (cond-actions first))
+                         (expand-clauses rest))))))
+  #+end_src
+
+- Added ~cond?~ and ~cond->if~ to the ~eceval-operations~:
+  #+begin_src racket
+    (define eceval-operations
+      (list (list 'self-evaluating? self-evaluating?)
+            (list 'empty-arglist empty-arglist)
+            ;; ...
+            (list 'cond? cond?)
+            (list 'cond->if cond->if)
+            ;; ...
+            (list 'define-variable! define-variable!)))
+  #+end_src
+
+- Added a ~test~ and a ~branch~ instructions to the ~eval-dispatch~
+  section in the controller text:
+  #+begin_src racket
+  eval-dispatch
+    (test (op self-evaluating?) (reg exp))
+    (branch (label ev-self-eval))
+    ;; ...
+    (test (op cond?) (reg exp))
+    (branch (label ev-cond))
+    ;; ...
+    (branch (label ev-application))
+    (goto (label unknown-expression-type))
+  #+end_src
+
+- Added an ~ev-cond~ section in the controller text:
+  #+begin_src racket
+  ev-sequence
+    ;; ...
+
+  ev-cond
+    (assign exp (op cond->if) (reg exp))
+    (goto (label eval-dispatch))
+
+  ev-if
+    ;; ...
+  #+end_src
+
+I have done the same, mutatis mutandis, in order to add support for
+~let~:
+
+#+begin_src racket
+  (define (let? exp) (tagged-list? exp 'let))
+
+  (define (let-vars exp)
+    (map car (cadr exp)))
+
+  (define (let-exps exp)
+    (map cadr (cadr exp)))
+
+  (define (let-body exp)
+    (cddr exp))
+
+  (define (named-let->combination exp)
+    (let ((nameless (cons (car exp) (cddr exp)))
+          (name (cadr exp)))
+
+      (cons 'begin (list (cons 'define
+                               (cons (cons name (let-vars nameless))
+                                     (let-body nameless)))
+                         (cons name (let-exps nameless))))))
+
+  (define (let->combination exp)
+    (if (not (pair? (cadr exp)))
+        (named-let->combination exp)
+        (cons (cons 'lambda
+                    (cons (let-vars exp)
+                          (let-body exp)))
+              (let-exps exp))))
+
+  (define eceval-operations
+    (list (list 'self-evaluating? self-evaluating?)
+          ;; ...
+          (list 'let? let?)
+          (list 'let->combination let->combination)
+          ;; ...
+          (list 'define-variable! define-variable!)))
+
+  (define eceval
+    (make-machine
+     '(exp env val proc argl continue unev)
+     eceval-operations
+     '(
+       ;; ...
+
+       eval-dispatch
+         (test (op self-evaluating?) (reg exp))
+         (branch (label ev-self-eval))
+         (test (op variable?) (reg exp))
+         (branch (label ev-variable))
+         (test (op quoted?) (reg exp))
+         (branch (label ev-quoted))
+         (test (op assignment?) (reg exp))
+         (branch (label ev-assignment))
+         (test (op definition?) (reg exp))
+         (branch (label ev-definition))
+         (test (op if?) (reg exp))
+         (branch (label ev-if))
+         (test (op cond?) (reg exp))
+         (branch (label ev-cond))
+         (test (op let?) (reg exp))
+         (branch (label ev-let))
+         (test (op lambda?) (reg exp))
+         (branch (label ev-lambda))
+         (test (op begin?) (reg exp))
+         (branch (label ev-begin))
+         (test (op application?) (reg exp))
+         (branch (label ev-application))
+         (goto (label unknown-expression-type))
+
+       ;; ...
+
+       ev-let
+         (assign exp (op let->combination) (reg exp))
+         (goto (label eval-dispatch))
+
+       ;; ...
+       )))
+#+end_src
