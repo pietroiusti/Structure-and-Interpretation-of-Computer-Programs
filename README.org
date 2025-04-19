@@ -22824,7 +22824,7 @@ Here is all the code:
           (list 'if? if?)
           (list 'lambda? lambda?)
           (list 'begin? begin?)
-          (list 'application? application?)        
+          (list 'application? application?)
           (list 'lookup-variable-value lookup-variable-value)
           (list 'text-of-quotation text-of-quotation)
           (list 'lambda-parameters lambda-parameters)
@@ -22911,7 +22911,7 @@ Here is all the code:
        (test (op application?) (reg exp))
        (branch (label ev-application))
        (goto (label unknown-expression-type))
-       
+
        ev-self-eval
        (assign val (reg exp))
        (goto (reg continue))
@@ -22936,7 +22936,7 @@ Here is all the code:
        (assign exp (op operator) (reg exp))
        (assign continue (label ev-appl-did-operator))
        (goto (label eval-dispatch))
-       
+
        ev-appl-did-operator
        (restore unev)                  ; the operands
        (restore env)
@@ -22963,7 +22963,7 @@ Here is all the code:
        (assign argl (op adjoin-arg) (reg val) (reg argl))
        (assign unev (op rest-operands) (reg unev))
        (goto (label ev-appl-operand-loop))
-       
+
        ev-appl-last-arg
        (assign continue (label ev-appl-accum-last-arg))
        (goto (label eval-dispatch))
@@ -22972,21 +22972,21 @@ Here is all the code:
        (assign argl (op adjoin-arg) (reg val) (reg argl))
        (restore proc)
        (goto (label apply-dispatch))
-       
+
        apply-dispatch
        (test (op primitive-procedure?) (reg proc))
        (branch (label primitive-apply))
        (test (op compound-procedure?) (reg proc))
        (branch (label compound-apply))
        (goto (label unknown-procedure-type))
-       
+
        primitive-apply
        (assign val (op apply-primitive-procedure)
                (reg proc)
                (reg argl))
        (restore continue)
        (goto (reg continue))
-       
+
        compound-apply
        (assign unev (op procedure-parameters) (reg proc))
        (assign env (op procedure-environment) (reg proc))
@@ -23019,7 +23019,7 @@ Here is all the code:
        (goto (label eval-dispatch))
        ;; check different implementation in the book
 
-       
+
        ev-if
        (save exp)                    ; save expression for later
        (save env)
@@ -23041,7 +23041,7 @@ Here is all the code:
        ev-if-consequent
        (assign exp (op if-consequent) (reg exp))
        (goto (label eval-dispatch))
-       
+
        ev-assignment
        (assign unev (op assignment-variable) (reg exp))
        (save unev)                   ; save variable for later
@@ -23058,7 +23058,7 @@ Here is all the code:
         (op set-variable-value!) (reg unev) (reg val) (reg env))
        (assign val (const ok))
        (goto (reg continue))
-       
+
        ev-definition
        (assign unev (op definition-variable) (reg exp))
        (save unev)                   ; save variable for later
