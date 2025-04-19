@@ -23292,3 +23292,77 @@ I have done the same, mutatis mutandis, in order to add support for
        ;; ...
        )))
 #+end_src
+
+*** Exercise 5.24
+*Exercise*:
+
+#+begin_quote
+Implement ~cond~ as a new basic special form without reducing it to
+~if~.  You will have to construct a loop that tests the predicates of
+successive ~cond~ clauses until you find one that is true, and then
+use ~ev-sequence~ to evaluate the actions of the clause.
+#+end_quote
+
+*Answer*:
+
+I have:
+
+- Defined (and added to the machine) some operations:
+
+  #+begin_src racket
+    (define (cond? exp) (tagged-list? exp 'cond))
+
+    (define (cond-clauses exp) (cdr exp))
+
+    (define (cond-predicate clause) (car clause))
+
+    (define (cond-actions clause) (cdr clause))
+
+    (define (cond-first-clause clauses)
+      (car clauses))
+
+    (define (cond-rest-clauses clauses)
+  #+end_src
+
+  #+begin_src racket
+    (define eceval-operations
+      (list (list 'self-evaluating? self-evaluating?)
+            ;; ...
+            (list 'cond? cond?)
+            (list 'cond-clauses cond-clauses)
+            (list 'cond-first-clause cond-first-clause)
+            (list 'cond-rest-clauses cond-rest-clauses)
+            (list 'cond-predicate cond-predicate)
+            (list 'cond-actions cond-actions)
+            ;; ...
+            (list 'define-variable! define-variable!)))
+  #+end_src
+
+- Updated the controller:
+  #+begin_src racket
+    ev-cond
+      (assign exp (op cond-clauses) (reg exp)) ;; get rid of cond tag
+      (save env)
+      (save continue)
+    ev-cond-loop
+      (save exp) ;; save clauses for later
+      (assign continue (label ev-cond-decide))
+      (assign exp (op cond-first-clause) (reg exp)) ;; put predicate of first clause
+      (assign exp (op cond-predicate) (reg exp))    ;; in exp
+      (goto (label eval-dispatch))
+
+    ev-cond-decide
+      (restore exp)
+      (test (op true?) (reg val))
+      (branch (label ev-cond-actions))
+      (assign exp (op cond-rest-clauses) (reg exp))
+      (goto (label ev-cond-loop))
+
+    ev-cond-actions
+      (restore continue)
+      (restore env)
+      (assign unev (op cond-first-clause) (reg exp)) ;; put clause's actions
+      (assign unev (op cond-actions) (reg unev))     ;; in unev
+      (save continue) ;; cf. ev-begin...
+      (goto (label ev-sequence))
+  #+end_src
