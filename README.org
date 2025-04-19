@@ -23342,10 +23342,15 @@ I have:
   #+begin_src racket
     ev-cond
       (assign exp (op cond-clauses) (reg exp)) ;; get rid of cond tag
-      (save env)
+      (save env) ;; FIXME should I save the env in the loop?
       (save continue)
     ev-cond-loop
       (save exp) ;; save clauses for later
+
+      ;; FIXME should I add a check for the else clause?
+
+      ;; FIXME should I add a check for the case in which the clauses are an empty list?
+
       (assign continue (label ev-cond-decide))
       (assign exp (op cond-first-clause) (reg exp)) ;; put predicate of first clause
       (assign exp (op cond-predicate) (reg exp))    ;; in exp
