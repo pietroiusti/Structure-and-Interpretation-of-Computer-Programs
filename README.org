@@ -23483,3 +23483,130 @@ We know that ~a~ is 35.
 By substituting we can find the value of ~b~, which is 29.
 
 So, this should be the formula: ~ops(n!) = 35n + 29~.
+
+*** Exercise 5.27
+*Exercise*:
+
+#+begin_quote
+For comparison with exercise 5.26, explore the behavior of the
+following procedure for computing factorials recursively:
+
+#+begin_src scheme
+  (define (factorial n)
+    (if (= n 1)
+        1
+        (* (factorial (- n 1)) n)))
+#+end_src
+
+By running this procedure with the monitored stack, determine, as
+a function of n, the maximum depth of the stack and the total
+number of pushes used in evaluating n! for n >= 1.  (Again, these
+functions will be linear.)  Summarize your experiments by filling
+in the following table with the appropriate expressions in terms
+of n:
+
+                 Maximum depth       Number of pushes
+
+  Recursive
+  factorial
+
+  Iterative
+  factorial
+
+The maximum depth is a measure of the amount of space used by the
+evaluator in carrying out the computation, and the number of pushes
+correlates well with the time required.
+#+end_quote
+
+*Answer*:
+
+#+begin_src racket
+  ;; monitoring the recursive factorial
+
+  ;;; EC-Eval input:
+  (define (factorial n)
+    (if (= n 1)
+        1
+        (* (factorial (- n 1)) n)))
+
+  (total-pushes = 3 maximum-depth = 3)
+  ;;; EC-Eval value:
+  ok
+
+  ;;; EC-Eval input:
+  (factorial 1)
+
+  (total-pushes = 16 maximum-depth = 8)
+  ;;; EC-Eval value:
+  1
+
+  ;;; EC-Eval input:
+  (factorial 2)
+
+  (total-pushes = 48 maximum-depth = 13)
+  ;;; EC-Eval value:
+  2
+
+  ;;; EC-Eval input:
+  (factorial 3)
+
+  (total-pushes = 80 maximum-depth = 18)
+  ;;; EC-Eval value:
+  6
+
+  ;;; EC-Eval input:
+  (factorial 4)
+
+  (total-pushes = 112 maximum-depth = 23)
+  ;;; EC-Eval value:
+  24
+
+  ;;; EC-Eval input:
+  (factorial 5)
+
+  (total-pushes = 144 maximum-depth = 28)
+  ;;; EC-Eval value:
+  120
+
+  ;;; EC-Eval input:
+  (factorial 6)
+
+  (total-pushes = 176 maximum-depth = 33)
+  ;;; EC-Eval value:
+  720
+
+  ;;; EC-Eval input:
+  (factorial 7)
+
+  (total-pushes = 208 maximum-depth = 38)
+  ;;; EC-Eval value:
+  5040
+
+  ;;; EC-Eval input:
+  (factorial 8)
+
+  (total-pushes = 240 maximum-depth = 43)
+  ;;; EC-Eval value:
+  40320
+
+  ;;; EC-Eval input:
+  (factorial 9)
+
+  (total-pushes = 272 maximum-depth = 48)
+  ;;; EC-Eval value:
+  362880
+#+end_src
+
+- recursive factorial:
+  - number of pushes:
+    - ~ops(n!) = 32 * n + 16~
+  - Max depth:
+    - ~max_depth(n!) = 5 * n + 3~
+
+|           | Maximum depth | Number of pushes |
+|-----------+---------------+------------------|
+| recursive |               | w                |
+| factorial | 5 * n + 3     | 32 * n + 16      |
+|-----------+---------------+------------------|
+| Iterative | 10            | 35 * n + 29      |
+| factorial |               |                  |
