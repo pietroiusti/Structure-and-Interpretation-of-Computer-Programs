@@ -23471,5 +23471,15 @@ function of n and is thus determined by two constants.
 
 a: The depth is 10.
 
-b: The number of push operations for the computation of n! is the
-number of operations for the computation of (n-1)! + 35.
+b: The difference between the stack operations needed for ~n!~ and
+those needed for ~(n+1)!~ is 35.
+
+The linear function can be written in the form ~ops(n!) = a * n + b~,
+where ~a~ is the rate at which operations increase (the slope) and ~b~
+is the base number of operations.
+
+We know that ~a~ is 35.
+
+By substituting we can find the value of ~b~, which is 29.
+
+So, this should be the formula: ~ops(n!) = 35n + 29~.
