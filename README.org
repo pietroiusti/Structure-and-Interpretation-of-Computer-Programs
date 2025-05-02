@@ -22273,6 +22273,35 @@ their implementation in terms of more elementary operations. (492)
 ]
 
 ** 5.4 The Explicit-Control Evaluator
+Previously we have designed and simulated a stack-and-register-based
+machine to compute factorials, and one to compute fibonaccis.
+
+Section 5.4 describes a machine for general purpose computing
+(Cf. p. 566). It does so, by translating the metacircular evaluator
+--- a Scheme program which evaluates Scheme expressions --- into the
+controller of a machine with the appropriate data paths (registers and
+operations).
+
+The metacircular evaluator showed us the general structure of the
+evaluation process in terms of ~eval~ and ~apply~. The
+explicit-control evaluator shows how to translate that in terms of
+operations on registers and stacks.
+#+begin_quote
+This [...] fill[s] in the gap in our understanding of how Scheme
+expressions are interpreted, by providing an explicit model for the
+mechanisms of control in the evaluator. (p. 492)
+#+end_quote
+
+We can now see how ``a subexpression manages to return a value to the
+expression that uses this value'' (p. 491) and why ``some recursive
+procedures generate iterative processes (that is, are evaluated using
+constant space) whereas other recursive procedures generate recursive
+processes'' (p. 491) --- a distinction introduced in Chapter 1.
+
+Studying the explicit-control evaluator --- as well the other virtual
+machines we have designed --- is a great exercise in digesting how
+real machines operate, since the language of the controller is very
+similar to actual Assembly languages.
 
 *** running the explicit-control evaluator
 Here is all the code:
