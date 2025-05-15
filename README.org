@@ -23213,8 +23213,8 @@ In order to add support for ~let~, I have:
             (list 'define-variable! define-variable!)))
   #+end_src
 
-- Added a ~test~ and a ~branch~ instructions to the ~eval-dispatch~
-  section in the controller text:
+- Added a ~test~ instruction and a ~branch~ instruction to the
+  ~eval-dispatch~ section in the controller text:
   #+begin_src racket
   eval-dispatch
     (test (op self-evaluating?) (reg exp))
@@ -23897,3 +23897,66 @@ say what ~k~ is.  Then show that ~S(n)~ can be expressed as
   The first formula is ~S(n) = S(n-1) + S(n-2) + 40~.
 
   The second one...?
+*** Exercise 5.31
+#+begin_quote
+In evaluating a procedure application, the explicit-control evaluator
+always saves and restores the ~env~ register around the evaluation of
+the operator, saves and restores ~env~ around the evaluation of each
+operand (except the final one), saves and restores ~argl~ around the
+evaluation of each operand, and saves and restores ~proc~ around the
+evaluation of the operand sequence.  For each of the following
+combinations, say which of these ~save~ and ~restore~ operations are
+superfluous and thus could be eliminated by the compiler's
+~preserving~ mechanism:
+
+(f 'x 'y)
+
+((f) 'x 'y)
+
+(f (g 'x) y)
+
+(f (g 'x) 'y)
+#+end_quote
+
+- None of the aforementioned operations is needed for ~(f 'x 'y)~.
+  - We don't need the ~save~ and the ~restore~ of ~env~ around the
+    evaluation of ~f~.
+    - The evaluation of ~f~ is accomplished by the machine operation
+      ~lookup-variable-value~ which doesn't alter any
+      register. (Cf. 569)
+  - We don't need the ~save~ and the ~restore~ of ~proc~ around the
+    evaluation of the operand sequence. The evaluation ~'x~ and ~'y~
+    won't modify ~proc~.
+  - We don't need the ~save~ and the ~restore~ of ~env~ and ~argl~
+    around the evaluation of the ~'x~.
+    - The evaluation ~'x~ won't modify neither ~env~ nor ~argl~.)
+  - We don't need the ~save~ and the ~restore~ of ~env~ and ~argl~
+    around the evaluation of the ~'y~. The evaluation ~'y~ won't
+    modify neither ~env~ nor ~argl~.
+
+- ~((f) 'x 'y)~:
+  - +We only need to ~save~ and ~restore~ ~env~ around the evaluation
+    of ~(f)~, since the+ +evaluation of a procedure application makes
+    use of that register+
+  - Again, none of the aformentioned operations is needed. In
+    particular, we don't need to save/restore ~env~ around ~(f)~,
+    since both the evaluation of ~'x~ and the evaluation of ~'y~ won't
+    require an environment, and the application of the procedure
+    returned by ~(f)~ will use the env stored in that procedure.
+
+- ~(f (g 'x) y)~:
+  - We need to:
+    - ~save~ and ~restore~ ~proc~ (needed for the application of ~f~)
+      around the evaluation of the operand sequence, since one the
+      operands is a procedure application --- whose evaluation makes
+      use of the ~proc~ register.
+    - ~save~ and ~restore~ ~env~ (need for the evaluation of ~y~)
+      around the evaluation of ~(g 'x)~, since that's a procedure
+      application --- whose evaluation makes use of the ~proc~
+      register. (*Are you sure?* Isn't the compiler dealing with the
+      operands in reverse?)
+    - ~save~ and ~restore~ ~argl~ (needed for the application of ~f~)
+      around the evaluation of ~(g 'x)~, since that's a procedure
+      application --- whose evaluation makes use of ~argl~.
+
+- ~(f (g 'x) 'y)~: ?
