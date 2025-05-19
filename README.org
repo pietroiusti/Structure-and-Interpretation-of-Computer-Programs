@@ -23897,6 +23897,79 @@ say what ~k~ is.  Then show that ~S(n)~ can be expressed as
   The first formula is ~S(n) = S(n-1) + S(n-2) + 40~.
 
   The second one...?
+
+** 5.5 Compilation
+- Interpretation VS Compilation
+  - More or less literally from the lecture 10A:
+
+    #+begin_quote
+    The Explicit Control Evaluator bridged the gap between all these
+    high level languages like Lisp and a conventional register machine.
+
+    You can think of the Explicit Control Evaluator either as the code
+    for a lisp interpreter written in the assembly language of a
+    conventional register machine, or the microcode of a machine which
+    is especially designed to run Lisp. In either case, we are taking
+    a machine that speaks some low level language and we are raising
+    the machine to a high level language like Lisp, by writing an
+    interpreter.
+
+    Compilation is a little bit different...
+
+    In interpretation we are /raising the machine/ to the level of our
+    language like Lisp. In compilation we are /lowering our program
+    down/ to the program which is spoken by the machine.
+    #+end_quote
+
+- This section deal with compilation.
+  - It develops a compiler that translate Scheme's program into
+    programs written in the machine language of the Explicit Control
+    Evaluator.
+
+- While interpretation shines in interactivity by allowing to examine
+  and modify at run time the program being executed, compilation can
+  improve efficiency over interpretation in different ways.
+
+- Modern Lisp environments are able to mix interpretation and
+  compilation in order to enjoy the benefits of both.
+
+- ``In general, the compiler translates a source program into an
+  object program that performs essentially the same register
+  operations as would the interpreter in evaluating the same source
+  program.''
+
+- So, a simple strategy to implement a compiler is to do whatever the
+  interpreter does, except for evaluating the expressions; as opposed
+  to evaluating the expression, the compile shall accumulate the
+  relevant instruction into what will become the ``object program''.
+
+- Efficiency improvement:
+  - ``Each time the interpreter evaluates an expression--for example,
+    `(f 84 96)'--it performs the work of classifying the expression
+    (discovering that this is a procedure application) and testing for
+    the end of the operand list (discovering that there are two
+    operands).  With a compiler, the expression is analyzed only once,
+    when the instruction sequence is generated at compile time.
+    - Example? A loop? Consider a loop that evaluates foo 10
+      times... Other examples?
+
+- Further opportunity to gain efficiency.
+  - ``When the interpreter evaluates an expression, it must be
+    prepared for any contingency... A compiler, on the other hand, can
+    exploit the structure of the particular expression it is
+    processing to generate code that avoids unnecessary stack
+    operations''.
+    - Consider: ~(f 84 96)~.
+
+  - ``A compiler can also optimize access to the environment.  Having
+    analyzed the code, the compiler can in many cases know in which
+    frame a particular variable will be located and access that frame
+    directly, rather than performing the `lookup-variable-value'
+    search''
+
+  - ``...coding primitive operations "in line" instead of using a
+    general `apply' mechanism...''.
+
 *** Exercise 5.31
 #+begin_quote
 In evaluating a procedure application, the explicit-control evaluator
