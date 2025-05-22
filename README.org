@@ -24093,3 +24093,85 @@ superfluous and thus could be eliminated by the compiler's
       application --- whose evaluation makes use of ~argl~.
 
 - ~(f (g 'x) 'y)~: ?
+
+*** Exercise 5.32
+*Exercise*:
+
+#+begin_quote
+Using the `preserving' mechanism, the compiler will avoid saving and
+restoring `env' around the evaluation of the operator of a combination
+in the case where the operator is a symbol.  We could also build such
+optimizations into the evaluator.  Indeed, the explicit-control
+evaluator of section 5.4 already performs a similar optimization, by
+treating combinations with no operands as a special case.
+
+a. Extend the explicit-control evaluator to recognize as a separate
+class of expressions combinations whose operator is a symbol, and to
+take advantage of this fact in evaluating such expressions.
+
+b. Alyssa P. Hacker suggests that by extending the evaluator to
+recognize more and more special cases we could incorporate all the
+compiler's optimizations, and that this would eliminate the advantage
+of compilation altogether.  What do you think of this idea?
+#+end_quote
+
+*Answer*:
+
+This is a (seemingly) working sketch. It is rather inelegant.
+
+I have added a ~is-symbol?~ operation:
+
+#+begin_src scheme
+  (define (is-symbol? exp)
+    (symbol? exp))
+
+  (define eceval-operations
+    ...
+    (list 'is-symbol? is-symbol?)
+    ...
+    )
+#+end_src
+
+I have modified ~ev-application~ and ~ev-appl-did-operator~, and added
+~ev-application-symbol~ and ~ev-appl-did-operator-symbol~:
+
+#+begin_src scheme
+     ev-application-symbol ;; not saving env here
+     (perform (op gp-print) (reg exp))
+     (assign continue (label ev-appl-did-operator-symbol))
+     (goto (label eval-dispatch))
+
+   ev-appl-did-operator-symbol ;; like ev-appl-did-operator but doesn't restore env
+     (restore unev)
+     (assign argl (op empty-arglist))
+     (assign proc (reg val))
+     (test (op no-operands?) (reg unev))
+     (branch (label apply-dispatch))
+     (save proc)
+     (goto (label ev-appl-operand-loop)) ;; continue where ev-appl-did-operator would continue
+
+   ev-application
+     (save continue)
+
+     (assign unev (op operands) (reg exp))
+     (save unev)
+
+     (assign exp (op operator) (reg exp))
+     (test (op is-symbol?) (reg exp)) ;; test whether operator is a symbol
+     (branch (label ev-application-symbol)) ;; change path if so
+
+     ;; do the old stuff otherwise
+     (save env)
+
+     (assign continue (label ev-appl-did-operator))
+     (goto (label eval-dispatch))
+
+   ev-appl-did-operator
+     (restore env) ;; Gotta swap the restores since I have swapped the saves above
+     (restore unev)
+     (assign argl (op empty-arglist))
+     (assign proc (reg val))
+     (test (op no-operands?) (reg unev))
+     (branch (label apply-dispatch))
+     (save proc)
+#+end_src
