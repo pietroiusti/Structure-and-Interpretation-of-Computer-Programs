@@ -23969,6 +23969,66 @@ say what ~k~ is.  Then show that ~S(n)~ can be expressed as
 
   - ``...coding primitive operations "in line" instead of using a
     general `apply' mechanism...''.
+*** 5.5.1 Structure of the Compiler
+~Compile~ corresponds to our old ~eval~ (and to the ~analyze~ of
+section 4.1.7 and the ~eval-dispatch~ of the explicit-control
+evaluator).
+
+#+begin_src scheme
+  (define (compile exp target linkage)
+    (cond ((self-evaluating? exp)
+           (compile-self-evaluating exp target linkage))
+          ((quoted? exp) (compile-quoted exp target linkage))
+          ((variable? exp)
+           (compile-variable exp target linkage))
+          ((assignment? exp)
+           (compile-assignment exp target linkage))
+          ((definition? exp)
+           (compile-definition exp target linkage))
+          ((if? exp) (compile-if exp target linkage))
+          ((lambda? exp) (compile-lambda exp target linkage))
+          ((begin? exp)
+           (compile-sequence (begin-actions exp)
+                             target
+                             linkage))
+          ((cond? exp) (compile (cond->if exp) target linkage))
+          ((application? exp)
+           (compile-application exp target linkage))
+          (else
+           (error "Unknown expression type -- COMPILE" exp))))
+#+end_src
+
+~Target~ ``specifies the register in which the compiled code is to
+return the value of the expression''.
+
+~Linkage~ ``describes how the code resulting from the compilation of
+the expression should proceed when it has finished its execution.''
+(it can either continue, return, or jump to a label.)
+
+- ~append-instruction-sequences~ ...;
+
+- ~preserving~ ...;
+  - benefits
+    - compiler avoids unnecessary stack operations;
+    - save/restore instructions are an isolated concern of preserving
+      (code generators do not explicitly produce save/restore
+      instructions);
+
+- representing an instruction sequence as a simple list would entail a
+  complex and inefficient implementation of ~preserving~. An
+  instruction sequence will then include three pieces of information
+  1. the set of registers that must be initialized before the
+     instructions in the sequence are executed;
+  2. the set of registers whose values are modified by the
+     instructions in the sequence;
+  3. the actual instructions (also called "statements") in the
+     sequence.
+
+- Here is then the way we represent an instruction sequence:
+  #+begin_src scheme
+    (define (make-instruction-sequence needs modifies statements)
+      (list needs modifies statements))
+  #+end_src
 
 *** Exercise 5.31
 #+begin_quote
