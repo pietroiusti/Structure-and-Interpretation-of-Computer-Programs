@@ -13433,7 +13433,7 @@ b:
 - If a program is executed many times, then its syntax is expensively
   and wastefully analyzed each of those times.
 
-- Consider:
+- Authors provide ~factorial~ as an example:
   #+begin_src scheme
     (define (factorial n)
       (if (= n 1)
@@ -13441,11 +13441,20 @@ b:
           (* (factorial (- n 1)) n)))
   #+end_src
 
-  Each time ~factorial~ is called the evaluator must determine that
-  the body is an ~if~ statement and act accordingly. Each time ~(*
-  (factorial (- n 1)) n)~, ~(factorial (- n 1))~, and ~(- n 1)~ are
-  evaluated, the evaluator must determine that they are applications
-  and act accordingly.
+  Each time ~factorial~ is called the evaluator must analyse its body.
+
+- But ~factorial~ has nothing special in this regard. Consider a
+  simpler example:
+  #+begin_src scheme
+    (define (print-hello)
+      'hello)
+  #+end_src
+  - each time we call ~print-hello~, we perform a syntactic analysis
+    of ~'hello~ (which extracts the text of the quotation).
+  - This chapter presents an evaluator which performs such an analysis
+    only once, when evaluating the definition of
+    ~print-hello~. (Calling ~print-hello~ won't require extracting the
+    text of the quotation again.)
 
 - Authors present a way, used by Jonathan Rees in 1982 and
   indepedently invented by Marc Feeley in 1986, to perform syntactic
