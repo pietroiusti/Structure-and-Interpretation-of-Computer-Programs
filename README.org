@@ -13668,12 +13668,10 @@ This, instead, is what happens with Alyssa's program:
     (lambda (env) (execute-sequence ((lambda (env) q))
                                     env))
   #+end_src
-- if this latter value is applied to an environment, then it evaluates
-  to this call:
-  #+begin_src scheme
-    ((lambda (env) 1) env)
-  #+end_src
-  which evaluates to 1.
+- if this latter lambda is applied to an environment, unlike the
+  procedure in the main text, we will have to evaluate the ~cond~
+  once, which will entail one evaluation of ~(null? (cdr procs))~ and
+  one evaluation of ~(car procs)~.
 
 Let's now consider the sequence with the self-evaluting expression ~1~
 and the self-evaluting expression ~2~: ~(1 2)~.
@@ -13705,26 +13703,19 @@ This is what happens with Alyssa's program:
                                      (lambda (env) 2))
                                     env))
   #+end_src
-- When we apply this final value (which is a ~lambda~) to an
-  environment, we evaluate this application, which evaluates to 1:
-  #+begin_src scheme
-    ((lambda (env) 1) env)
-  #+end_src
-  But also also this one:
-  #+begin_src scheme
-    (execute-sequence ((lambda (env) 2)) env)
-  #+end_src
-  which evaluates to
-  #+begin_src scheme
-    ((lambda (env) 2 ) env)
-  #+end_src
-  which evaluates to 2.
+- When we apply this latter lambda to an environment, unlike the
+  procedure in the main text, we will have to evaluate the ~cond~
+  expression twice, which will entail two evaluations of ~(null? (cdr
+  procs))~, two evaluations of ~(car procs)~ and one evaluation of
+  ~(cdr procs)~.
 
-  The program in the main text and Alyssa's program give the same
-  result. However, Alyssa's program returns a lambda which does more
-  work when it is called; it has to construct the final lambda
-  calls. The program in the main text returns a lambda whose body
-  already contains those final lambda calls.
+The program in the main text and Alyssa's program give the same result
+--- they both i) map a sequence of expressions to their corresponding
+execution procedures, and ii) return a lambda which takes an
+environment and apply each of those execution procedures to that
+environment. However, Alyssa's program returns a lambda which, when
+called, does more work --- work which has previously been performed by
+the program in the main text during the construction of the lambda.
 
 ** Variation on a Scheme --- Lazy Evaluation
 ** Normal Order and Applicative Order
